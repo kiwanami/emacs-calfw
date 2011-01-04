@@ -23,7 +23,7 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'cl))
+(require 'cl)
 (require 'calendar)
 (require 'holidays)
 
@@ -151,7 +151,9 @@
 
 (defun cfw:rt (text face)
   (unless (stringp text) (setq text (format "%s" (or text ""))))
-  (put-text-property 0 (length text) 'face face text) text)
+  (put-text-property 0 (length text) 'face face text)
+  (put-text-property 0 (length text) 'font-lock-face face text)
+  text)
 
 (defun cfw:tp (text prop value)
   (if (< 0 (length text))
@@ -232,7 +234,7 @@
      (apply 'encode-time 
             (let (ret)
               (dotimes (i 6)
-                (push (string-to-int (or (match-string (+ i 1) str) "0")) ret))
+                (push (string-to-number (or (match-string (+ i 1) str) "0")) ret))
               ret))))
 
 (defun cfw:parsetime (str)
@@ -279,22 +281,73 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; High level API
 
+;; buffer
+
 (defun cfw:open-calendar-buffer (&optional date)
+  "一番手っ取り早くカレンダーを表示するコマンド。
+DATE省略時は今日の日付。"
   (interactive)
-  (let* ((dest (cfw:dest-init-buffer))
-         (buf (cfw:dest-buffer dest)))
-    (cfw:calendar-update dest)
-    (with-current-buffer buf
-      (cfw:navi-goto-date (or date (calendar-current-date))))
-    (switch-to-buffer buf)))
+  (switch-to-buffer (cfw:get-calendar-buffer-custom date)))
 
 (defun cfw:get-calendar-buffer-custom (&optional date buffer custom-map)
+  "カレンダーのバッファを返す。
+描画先オブジェクトはバッファローカル変数の`cfw:dest'に保存する。
+サイズはBUFFERが表示されているウインドウサイズか、現在選択されているウインドウサイズ。
+DATE省略時は今日の日付。
+BUFFERはカレンダーを表示させたいバッファ。省略時は`cfw:calendar-buffer-name'を使う。
+CUSTOM-MAPは標準の`cfw:calendar-mode-map'に追加したいキーマップ。"
   (let* ((dest (cfw:dest-init-buffer buffer nil nil custom-map))
          (buf (cfw:dest-buffer dest)))
     (cfw:calendar-update dest)
     (with-current-buffer buf
       (cfw:navi-goto-date (or date (calendar-current-date))))
     buf))
+
+;; region
+
+(defun cfw:insert-calendar-region (&optional date width height custom-map)
+  "カレンダーのリージョンを入れて描画する。
+描画先オブジェクトはバッファローカル変数の`cfw:dest'に保存する。（※このことから現状では1バッファにつき1つしかカレンダーを描画できない。）
+サイズはBUFFERが表示されているウインドウサイズか、現在選択されているウインドウサイズ。
+DATE省略時は今日の日付。
+WIDTH, HEIGHTはカレンダーの参考サイズ。十分なサイズ（大体45x20程度）があればそれ以下のサイズ、十分なサイズでなければ最小限のサイズで描画する。
+CUSTOM-MAPはカレンダーリージョン内のテキストに割り当てたいキーマップ（テキストプロパティの`keymap'に割り当てる）。脱出できるようなキーを入れていた方が良いかも。"
+  (let (mark-begin mark-end dest)
+    (setq mark-begin (point-marker))
+    (insert "\n")
+    (setq mark-end (point-marker))
+    (save-excursion
+      (setq dest (cfw:dest-init-region (current-buffer) mark-begin mark-end width height))
+      (setf (cfw:dest-update-func dest) 
+            (lexical-let ((custom-map custom-map) (dest dest))
+              (lambda () 
+                (cfw:dest-with-region dest
+                  (let (buffer-read-only)
+                    (put-text-property (point-min) (point-max)
+                                       'keymap custom-map))))))
+      (set (make-local-variable 'cfw:dest) dest)
+      (cfw:calendar-update dest)
+      (cfw:navi-goto-date (or date (calendar-current-date))))
+    dest))
+
+;; inline
+
+(defun cfw:get-schedule-text (&optional date width height custom-map)
+  "カレンダーが描画されたテキストを返す。カレンダーを単純に貼り付けたい場合向け。
+描画先オブジェクトは使い捨てなので、自立して再描画できない。
+DATE省略時は今日の日付。
+WIDTH, HEIGHTはカレンダーの参考サイズ。十分なサイズ（大体45x20程度）があればそれ以下のサイズ、十分なサイズでなければ最小限のサイズで描画する。
+CUSTOM-MAPはそのテキストに割り当てたいキーマップ（テキストプロパティの`keymap'に割り当てる）。"
+  (let* ((dest (cfw:dest-init-inline width height))
+         (buf (cfw:dest-buffer dest)) text)
+    (cfw:calendar-update dest)
+    (setq text
+          (with-current-buffer buf
+            (buffer-substring (point-min) (point-max))))
+    (kill-buffer buf)
+    (when custom-map
+      (cfw:tp text 'keymap custom-map))
+    text))
 
 
 
@@ -310,9 +363,10 @@
 ;; max-func 描画範囲の下限を返す関数
 ;; width カレンダーの描画サイズ。このサイズよりも小さくなる。
 ;; height カレンダーの描画サイズ。このサイズよりも小さくなる。
-;; clear-func 描画範囲をクリアする関数。
+;; clear-func 描画範囲をクリアする関数。描画開始用フックとしても使える。
+;; update-func 描画が終わったときに呼ばれる関数。nil可。
 
-(defstruct cfw:dest type buffer min-func max-func width height clear-func)
+(defstruct cfw:dest type buffer min-func max-func width height clear-func update-func)
 
 ;; shortcut functions
 
@@ -331,6 +385,10 @@
 
 (defun cfw:dest-clear (c)
   (funcall (cfw:dest-clear-func c)))
+
+(defun cfw:dest-update (c)
+  (when (cfw:dest-update-func c)
+    (funcall (cfw:dest-update-func c))))
 
 ;; Buffer
 
@@ -371,7 +429,7 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
 (defun cfw:dest-init-region (buf mark-begin mark-end &optional width height)
   "カレンダーの描画先として指定されたバッファのマーク範囲の中を使う。
 別のアプリの組み込みとしての使用を想定。mark-beginとmark-endの間には1文字以上（出来れば改行が望ましい）が必要。
-メジャー（マイナー）モードやキーバインドは設定しないが、最低限必要なマウス操作でのローカルキーバインドは設定する。
+メジャー（マイナー）モードやキーバインドは設定しない。
 組み込むアプリ側でキーバインドを設定し、カーソール位置の属性やAPIを操作してカレンダーを利用する。
 ここで作成した描画先構造体はアプリケーション側が管理する。アクションの関数はこの変数があることを前提として動作するため、letでダイナミック変数 `cfw:dest' に格納して呼ぶこと。
 サイズは指定されたバッファが表示されていればそのウインドウサイズを使用。
@@ -388,11 +446,38 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
      :height (or height (window-height window))
      :clear-func 
      (lambda () 
-       (let ((begin (marker-position mark-begin))
-             (end (marker-position mark-end)))
-         (when (< 2 (- end begin))
-           (delete-region begin (1- end)))))
+         (cfw:dest-region-clear (marker-position mark-begin) 
+                                (marker-position mark-end)))
      )))
+
+(defun cfw:dest-region-clear (begin end)
+  (when (< 2 (- end begin))
+    (delete-region begin (1- end)))
+  (goto-char begin))
+
+;; Inline text
+
+(defconst cfw:dest-background-buffer " *cfw:dest-background*")
+
+(defun cfw:dest-init-inline (width height)
+  "単純に描画したカレンダーのテキストを返す。"
+  (lexical-let
+      ((buffer (get-buffer-create cfw:dest-background-buffer))
+       (window (selected-window))
+       dest)
+    (setq dest
+          (make-cfw:dest
+           :type 'buffer
+           :min-func 'point-min
+           :max-func 'point-max
+           :buffer buffer
+           :width (or width (window-width window))
+           :height (or height (window-height window))
+           :clear-func (lambda () 
+                         (with-current-buffer buffer
+                           (erase-buffer)))))
+    dest))
+
 
 ;;; Buffer and layout
 
@@ -414,7 +499,8 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
            (cfw:model-month-create month year)
            (cfw:render-month-calc-param dest))
           (cfw:render-overlays-put)))
-      (run-hooks 'cfw:calendar-update-after-hook))))
+      (run-hooks 'cfw:calendar-update-after-hook)
+      (cfw:dest-update dest))))
 
 
 
@@ -490,9 +576,9 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
   "画面サイズに合うようにサイズを計算する"
   (let*
       ((win-width (cfw:dest-width dest))
-       (win-height (max 20 (- (cfw:dest-height dest) 16)))
+       (win-height (max 15 (- (cfw:dest-height dest) 16)))
        (cell-width  (max 5 (/ (- win-width 8) 7)))
-       (cell-height (max 3 (/ (- win-height 6) 5)))
+       (cell-height (max 2 (/ (- win-height 6) 5)))
        (total-width (+ (* cell-width cfw:week-days) 8)))
     `((cell-width . ,cell-width)
       (cell-height . ,cell-height)
@@ -511,7 +597,7 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
                          "+" EOL) 'cfw:face-grid)))
     ;; header
     (insert
-     (cfw:rt (format "%4s / %s\n" 
+     (cfw:rt (format "%4s / %s" 
                      (cfw:k 'year model)
                      (aref calendar-month-name-array (1- (cfw:k 'month model))))
              'cfw:face-title)
@@ -592,7 +678,9 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
         with ret = (substring str 0)
         with face = (or default-face 'cfw:face-default-content)
         unless (get-text-property i 'face ret)
-        do (put-text-property i (1+ i) 'face face ret)
+        do 
+        (put-text-property i (1+ i) 'face face ret)
+        (put-text-property i (1+ i) 'font-lock-face face ret)
         finally return ret))
 
 (defun cfw:render-get-week-face (daynum &optional default-face)

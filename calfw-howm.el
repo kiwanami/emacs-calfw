@@ -22,7 +22,7 @@
 
 ;; (require 'calfw-howm)
 ;; (cfw:install-howm-schedules)
-;; (define-key howm-mode-map (kbd "M-C") 'cfw:open-howm-schedule)
+;; (define-key howm-mode-map (kbd "M-C") 'cfw:open-howm-calendar)
 
 ;; If you are using Elscreen, here is useful.
 ;; (define-key howm-mode-map (kbd "M-C") 'cfw:elscreen-open-howm-calendar)
@@ -86,7 +86,7 @@
   (cfw:define-keymap
    '(
      ("RET" . cfw:howm-from-calendar)
-     ("q"   . cfw:open-howm-schedule)
+     ("q"   . kill-buffer)
      )))
 
 (defun cfw:open-howm-calendar ()
@@ -106,13 +106,27 @@
                (encode-time 0 0 0 d m y))))
     (howm-keyword-search key)))
 
+;;; Region
+
+(defvar cfw:howm-schedule-inline-keymap
+  (cfw:define-keymap
+   '(("RET" . cfw:howm-from-calendar))))
+
+(defun cfw:howm-schedule-inline (&optional width height)
+  (let ((custom-map (copy-keymap cfw:howm-schedule-inline-keymap)))
+    (set-keymap-parent custom-map cfw:calendar-mode-map)
+    (cfw:insert-calendar-region nil width (or height 10) custom-map)
+    ""))
+
 ;;; Installation
 
 (defun cfw:install-howm-schedules ()
   (interactive)
   "howmスケジュールからデータを取って表示する。"
   (add-to-list 'cfw:contents-functions 'cfw:howm-schedule-region-to-calendar)
-  (add-hook 'howm-after-save-hook 'cfw:howm-schedule-cache-clear))
+  (add-hook 'howm-after-save-hook 'cfw:howm-schedule-cache-clear)
+  (add-to-list 'howm-menu-allow 'cfw:howm-schedule-inline)
+  )
 
 ;;; for Elscreen
 
@@ -122,7 +136,7 @@
        (interactive)
        (save-current-buffer
          (elscreen-create))
-       (cfw:open-howm-schedule))
+       (cfw:open-howm-calendar))
 
      (defun cfw:elscreen-kill-calendar ()
        (interactive)
