@@ -642,7 +642,7 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
                                        (cfw:render-get-week-face 
                                         week-day 'cfw:face-default-day)))
                              (if num-label (concat " " num-label))
-                             (if hday (concat " " (cfw:rt hday 'cfw:face-holiday))))
+                             (if hday (concat " " (cfw:rt (substring hday 0) 'cfw:face-holiday))))
                  collect
                  (cons date (cons (cons tday ant) prs-contents)))))))
 
