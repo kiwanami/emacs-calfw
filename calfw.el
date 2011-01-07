@@ -252,6 +252,43 @@
                (1+ (calendar-absolute-from-gregorian d)))))
     (nreverse ret)))
 
+;;; Rendering destination
+
+;; cfw:dest 描画先構造体
+;; type 描画先の識別シンボル。buffer か region
+;; buffer 描画先のバッファ
+;; min-func 描画範囲の上限を返す関数
+;; max-func 描画範囲の下限を返す関数
+;; width カレンダーの描画サイズ。このサイズよりも小さくなる。
+;; height カレンダーの描画サイズ。このサイズよりも小さくなる。
+;; clear-func 描画範囲をクリアする関数。描画開始用フックとしても使える。
+;; update-func 描画が終わったときに呼ばれる関数。nil可。
+
+(defstruct cfw:dest type buffer min-func max-func width height clear-func update-func)
+
+;; shortcut functions
+
+(defmacro cfw:dest-with-region (dest &rest body)
+  `(save-restriction
+     (narrow-to-region 
+      (cfw:dest-point-min dest) (cfw:dest-point-max dest))
+     ,@body))
+(put 'cfw:dest-with-region 'lisp-indent-function 1)
+
+(defun cfw:dest-point-min (c)
+  (funcall (cfw:dest-min-func c)))
+
+(defun cfw:dest-point-max (c)
+  (funcall (cfw:dest-max-func c)))
+
+(defun cfw:dest-clear (c)
+  (funcall (cfw:dest-clear-func c)))
+
+(defun cfw:dest-update (c)
+  (when (cfw:dest-update-func c)
+    (funcall (cfw:dest-update-func c))))
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -353,42 +390,6 @@ CUSTOM-MAPはそのテキストに割り当てたいキーマップ（テキス�
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Low level API
-
-;;; Rendering destination
-
-;; cfw:dest 描画先構造体
-;; type 描画先の識別シンボル。buffer か region
-;; buffer 描画先のバッファ
-;; min-func 描画範囲の上限を返す関数
-;; max-func 描画範囲の下限を返す関数
-;; width カレンダーの描画サイズ。このサイズよりも小さくなる。
-;; height カレンダーの描画サイズ。このサイズよりも小さくなる。
-;; clear-func 描画範囲をクリアする関数。描画開始用フックとしても使える。
-;; update-func 描画が終わったときに呼ばれる関数。nil可。
-
-(defstruct cfw:dest type buffer min-func max-func width height clear-func update-func)
-
-;; shortcut functions
-
-(defmacro cfw:dest-with-region (dest &rest body)
-  `(save-restriction
-     (narrow-to-region 
-      (cfw:dest-point-min dest) (cfw:dest-point-max dest))
-     ,@body))
-(put 'cfw:dest-with-region 'lisp-indent-function 1)
-
-(defun cfw:dest-point-min (c)
-  (funcall (cfw:dest-min-func c)))
-
-(defun cfw:dest-point-max (c)
-  (funcall (cfw:dest-max-func c)))
-
-(defun cfw:dest-clear (c)
-  (funcall (cfw:dest-clear-func c)))
-
-(defun cfw:dest-update (c)
-  (when (cfw:dest-update-func c)
-    (funcall (cfw:dest-update-func c))))
 
 ;; Buffer
 
