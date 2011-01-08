@@ -20,6 +20,35 @@
 
 ;;; Commentary:
 
+;; This program is a framework for the Calendar component. In the
+;; Emacs, uses can show schedules in the calendar views, like iCal,
+;; Outlook and Google Calendar.
+
+;;; Installation:
+
+;; Place this program in your load path and add following code.
+
+;; (require 'calfw)
+
+;;; Usage:
+
+;; Executing the command `cfw:open-calendar-buffer', switch to the calendar buffer.
+;; You can navigate the date like calendar.el.
+
+;; Schedule data which are shown in the calendar view, are collected
+;; by the variables `cfw:contents-functions' and
+;; `cfw:annotations-functions'. The former variable defines schedule
+;; contents. The later one does date annotations like the moon phases.
+;; This program gets the holidays using the function
+;; `calendar-holiday-list'. See the document for the holidays.el and
+;; the Info text.
+
+;;; Add-ons
+
+;; Following programs are also useful:
+;; - calfw-howm.el : Display howm schedules
+;; - calfw-ical.el : Display schedules of the iCalendar format.
+
 
 ;;; Code:
 
@@ -140,27 +169,26 @@
 
 ;;; Utilities
 
-(defun cfw:mapsub (len lst)
-  (when (vectorp lst)
-    (setq lst (append lst nil))) ; vector to list
-  (loop for i in lst collect
-        (substring i 0 len)))
-
 (defun cfw:k (key alist)
+  "[internal] Get a content by key from the given alist."
   (cdr (assq key alist)))
 
 (defun cfw:rt (text face)
+  "[internal] Put a face to the given text."
   (unless (stringp text) (setq text (format "%s" (or text ""))))
   (put-text-property 0 (length text) 'face face text)
   (put-text-property 0 (length text) 'font-lock-face face text)
   text)
 
 (defun cfw:tp (text prop value)
+  "[internal] Put a text property to the entire text string."
   (if (< 0 (length text))
     (put-text-property 0 (length text) prop value text))
   text)
 
 (defun cfw:define-keymap (keymap-list)
+  "[internal] Key map definition utility. 
+KEYMAP-LIST is a source list like ((key . command) ... )."
   (let ((map (make-sparse-keymap)))
     (mapc 
      (lambda (i)
@@ -172,6 +200,7 @@
     map))
 
 (defun cfw:trim (str)
+  "[internal] Trim the spece charactors."
   (if (string-match "^[ \t\n\r]*\\(.*?\\)[ \t\n\r]*$" str)
       (match-string 1 str)
     str))
@@ -181,6 +210,7 @@
 ;;; Date Time Transformation
 
 (defun cfw:date (month day year)
+  "Construct a date object in the calendar format."
   (and month day year
        (list month day year)))
 
@@ -197,7 +227,8 @@
                (calendar-extract-year date)))
 
 (defun cfw:month-year-equal-p (date1 date2)
-  "DATE1 と DATE2 の年月が同じであれば t。"
+  "Return `t' if numbers of month and year of DATE1 is equals to
+ones of DATE2. Otherwise is `nil'."
   (and 
    (= (calendar-extract-month date1)
       (calendar-extract-month date2))
@@ -205,31 +236,33 @@
       (calendar-extract-year date2))))
 
 (defun cfw:date-less-equal-p (d1 d2)
-  ""
+  "Return `t' if date value D1 is less than or equals to date value D2."
   (let ((ed1 (cfw:calendar-to-emacs d1))
         (ed2 (cfw:calendar-to-emacs d2)))
     (or (equal ed1 ed2)
         (time-less-p ed1 ed2))))
 
 (defun cfw:date-between (begin end date)
-  "BEGIN と END の間（両端含む）にDATEがあればt。日付はカレンダー形式。"
+  "Return `t' if date value DATE exists between BEGIN and END."
   (and (cfw:date-less-equal-p begin date)
        (cfw:date-less-equal-p date end)))
 
 (defun cfw:month-year-contain-p (month year date2)
-  "MONTH / YEAR に DATE2 が含まれていれば t。"
+  "Return `t' if date value DATE2 is included in MONTH and YEAR."
   (and 
    (= month (calendar-extract-month date2))
    (= year (calendar-extract-year date2))))
 
 (defun cfw:strtime-emacs (time)
+  "Format emacs time value TIME to the string form YYYY/MM/DD."
   (format-time-string "%Y/%m/%d" time))
 
 (defun cfw:strtime (date)
-  "Format string form from calendar time format."
+  "Format calendar date value DATE to the string form YYYY/MM/DD."
   (cfw:strtime-emacs (cfw:calendar-to-emacs date)))
 
 (defun cfw:parsetime-emacs (str)
+  "Transform the string format YYYY/MM/DD to an emacs time value."
   (when (string-match "\\([0-9]+\\)\\/\\([0-9]+\\)\\/\\([0-9]+\\)" str)
      (apply 'encode-time 
             (let (ret)
@@ -238,9 +271,11 @@
               ret))))
 
 (defun cfw:parsetime (str)
+  "Transform the string format YYYY/MM/DD to a calendar date value."
   (cfw:emacs-to-calendar (cfw:parsetime-emacs str)))
 
 (defun cfw:enumerate-days (begin end)
+  "Enumerate date objects between BEGIN and END."
   (when (> (calendar-absolute-from-gregorian begin)
            (calendar-absolute-from-gregorian end))
     (error "Invalid region period : %S - %S" begin end))
@@ -252,17 +287,21 @@
                (1+ (calendar-absolute-from-gregorian d)))))
     (nreverse ret)))
 
+
 ;;; Rendering destination
 
-;; cfw:dest 描画先構造体
-;; type 描画先の識別シンボル。buffer か region
-;; buffer 描画先のバッファ
-;; min-func 描画範囲の上限を返す関数
-;; max-func 描画範囲の下限を返す関数
-;; width カレンダーの描画サイズ。このサイズよりも小さくなる。
-;; height カレンダーの描画サイズ。このサイズよりも小さくなる。
-;; clear-func 描画範囲をクリアする関数。描画開始用フックとしても使える。
-;; update-func 描画が終わったときに呼ばれる関数。nil可。
+;; This structure object is the abstraction of the rendering
+;; destinations, such as buffers, regions and so on.
+
+;; [cfw:dest]
+;; type        : identify symbol for destination type. (buffer, region, text)
+;; buffer      : a buffer object of rendering destination.
+;; min-func    : a function that returns upper limit of rendering destination.
+;; max-func    : a function that returns lower limit of rendering destination.
+;; width       : width of the reference size.
+;; height      : height of the reference size.
+;; clear-func  : a function that clears the rendering destination.
+;; update-func : a function that is called at the end of rendering routine.
 
 (defstruct cfw:dest type buffer min-func max-func width height clear-func update-func)
 
@@ -468,7 +507,7 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
        dest)
     (setq dest
           (make-cfw:dest
-           :type 'buffer
+           :type 'text
            :min-func 'point-min
            :max-func 'point-max
            :buffer buffer
