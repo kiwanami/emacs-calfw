@@ -200,7 +200,7 @@ KEYMAP-LIST is a source list like ((key . command) ... )."
     map))
 
 (defun cfw:trim (str)
-  "[internal] Trim the spece charactors."
+  "[internal] Trim the space char-actors."
   (if (string-match "^[ \t\n\r]*\\(.*?\\)[ \t\n\r]*$" str)
       (match-string 1 str)
     str))
@@ -333,26 +333,38 @@ ones of DATE2. Otherwise is `nil'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; API
 
-;; ○内容関数の仕様
-;; 範囲の日付（両端含む）を受け取って、(日付 . 内容の文字列のリスト)のconsセルを返す
-;; 順番は問わないが、日付のエントリーはユニークであること
-;; 文字列はそのまま出力されるのでtextプロパティで修飾しておいて良い
-;; 期間スケジュール
+;; * Contents functions
+
+;; A list of contents functions. A "Content" means a schedule on a
+;; day. The "contents function" receives two arguments, begin date and
+;; end date, and returns a list of cons cells of (DATE . ("ContentA"
+;; "ContentB" ...)), that is, alist of DATE and a list of texts
+;; between the begin date and end one. The alist should not be
+;; ordered, but the dates should be unique. The content texts of the
+;; schedules can have text properties and the properties are displayed
+;; in the view.
+
+;; The contents function can return periods of schedules. Then, the
+;; alist has the record that consists of symbol `regions' and a list
+;; of period lists. A period list has begin date, end date and content
+;; text.
+
 ;; Input  : begin[DATE] end[DATE]
 ;; Output : '((DATE CONTENT1 CONTENT2 ...) (DATE CONTENT ... )
 ;;            (regions (DATE DATE CONTENT) (DATE DATE CONTENT) ... ))
 
-(defvar cfw:contents-functions nil "期間からスケジュールのリストを返す関数のリスト")
+(defvar cfw:contents-functions nil "A list of contents functions.")
 
-;; ○アノテーション関数の仕様
-;; 範囲の日付（両端含む）を受け取って、(日付 . 内容の文字列)のconsセルを返す
-;; 複数指定された場合は適当に混ぜて表示される
+;; * Annotations functions
 
-(defvar cfw:annotations-functions nil "期間からアノテーションのリストを返す関数のリスト")
+;; A list of annotation functions. The "annotation function" receives
+;; two arguments, begin date and end date, and returns an alist of
+;; DATE and annotation text. If more than two functions return
+;; annotations on the same day, those annotations are joined into one
+;; text.
 
-;; ○休日
-;; calendar-holidays に日付を設定する。
-;; `calendar-holidays'のdocstringを参照。
+(defvar cfw:annotations-functions nil "A list of annotation functions")
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; High level API
@@ -360,18 +372,23 @@ ones of DATE2. Otherwise is `nil'."
 ;; buffer
 
 (defun cfw:open-calendar-buffer (&optional date)
-  "一番手っ取り早くカレンダーを表示するコマンド。
-DATE省略時は今日の日付。"
+  "Open a calendar buffer simply.
+DATE is initial focus date. If it is nil, today is selected
+initially.  This function uses the function
+`cfw:get-calendar-buffer-custom' internally."
   (interactive)
   (switch-to-buffer (cfw:get-calendar-buffer-custom date)))
 
 (defun cfw:get-calendar-buffer-custom (&optional date buffer custom-map)
-  "カレンダーのバッファを返す。
-描画先オブジェクトはバッファローカル変数の`cfw:dest'に保存する。
-サイズはBUFFERが表示されているウインドウサイズか、現在選択されているウインドウサイズ。
-DATE省略時は今日の日付。
-BUFFERはカレンダーを表示させたいバッファ。省略時は`cfw:calendar-buffer-name'を使う。
-CUSTOM-MAPは標準の`cfw:calendar-mode-map'に追加したいキーマップ。"
+  "Return a calendar buffer with some customize parameters.
+This function binds the rendering destination object at the
+buffer local variable `cfw:dest'.  The size of calendar is
+calculated from the window that shows BUFFER or the selected
+window.  DATE is initial focus date. If it is nil, today is
+selected initially.  BUFFER is the buffer to be rendered. If
+BUFFER is nil, this function creates a new buffer named
+`cfw:calendar-buffer-name'.  CUSTOM-MAP is the additional keymap
+that is added to default keymap `cfw:calendar-mode-map'."
   (let* ((dest (cfw:dest-init-buffer buffer nil nil custom-map))
          (buf (cfw:dest-buffer dest)))
     (cfw:calendar-update dest)
@@ -382,7 +399,9 @@ CUSTOM-MAPは標準の`cfw:calendar-mode-map'に追加したいキーマップ�
 ;; region
 
 (defun cfw:insert-calendar-region (&optional date width height custom-map)
-  "カレンダーのリージョンを入れて描画する。
+  "
+
+カレンダーのリージョンを入れて描画する。
 描画先オブジェクトはバッファローカル変数の`cfw:dest'に保存する。（※このことから現状では1バッファにつき1つしかカレンダーを描画できない。）
 サイズはBUFFERが表示されているウインドウサイズか、現在選択されているウインドウサイズ。
 DATE省略時は今日の日付。
@@ -939,15 +958,18 @@ regions-stackから描画用の内容に変換する。"
 
 ;;; Navigation
 
-;; 以下の関数はカレントバッファにカレンダーが描画してあることが前提
+;; Following functions assume that the current buffer is a calendar view.
 
 (defun cfw:cursor-to-date (&optional pos)
-  "カーソールのその場にある日付を取ってくる。見つからなかったらnil。"
+  "[internal] Return the date at the cursor. If the text does not
+have the text-property `cfw:date', return nil."
   (get-text-property (or pos (point)) 'cfw:date))
 
 (defun cfw:cursor-to-nearest-date ()
-  "カーソールの近所のdateを取ってくる。近所に見つからなかったらバッファの先頭や後方から探す。
-nilであることはあり得ない。nilの場合は探すバッファが間違ってる。"
+  "Return the date at the cursor. If the point of cursor does not
+have the date, search the date around the cursor position. If the
+current buffer is not calendar view (it may be bug), this
+function may return nil."
   (or (cfw:cursor-to-date)
       (let* ((r (lambda () (when (not (eolp)) (forward-char))))
              (l (lambda () (when (not (bolp)) (backward-char))))
@@ -969,18 +991,19 @@ nilであることはあり得ない。nilの場合は探すバッファが間�
              (t (cfw:find-last-date)))))))
 
 (defun cfw:find-first-date ()
-  "バッファの一番先頭にある日付を取ってくる"
+  "[internal] Return the first date in the current buffer."
   (let ((pos (next-single-property-change (point-min) 'cfw:date)))
     (and pos (cfw:cursor-to-date pos))))
 
 (defun cfw:find-last-date ()
-  "バッファの一番後ろにある日付を取ってくる"
+  "[internal] Return the last date in the current buffer."
   (let ((pos (previous-single-property-change (point-max) 'cfw:date)))
     (and pos (cfw:cursor-to-date (1- pos)))))
 
 (defun cfw:find-by-date (date)
-  "DATEで指定された日付のpointを返す。バッファの先頭から探していくため、左上の場所。
-見つからなかったらnilを返す。"
+  "[internal] Return a point where the text property `cfw:date'
+is equal to DATE in the current calender view. If DATE is not
+found in the current view, return nil."
   (let ((pos (point-min)) begin ret)
     (while (setq begin (next-single-property-change pos 'cfw:date))
       (setq pos begin
@@ -991,7 +1014,10 @@ nilであることはあり得ない。nilの場合は探すバッファが間�
     ret))
 
 (defun cfw:find-all-by-date (date func)
-  "バッファの先頭からDATEで指定された日付のリージョンをすべてfuncに渡す。overlayを設置するなどに使う。FUNCは２つの引数（begin end）をとる関数。"
+  "[internal] Call the function FUNC in each reagions where the
+text-property `cfw:date' is equal to DATE. The function FUNC
+receives two arguments, begin date and end one. This function is
+mainly used at functions for putting overlays."
   (let ((pos (point-min)) begin text-date)
     (while (setq begin (next-single-property-change pos 'cfw:date))
       (setq text-date (cfw:cursor-to-date begin))
@@ -1001,26 +1027,31 @@ nilであることはあり得ない。nilの場合は探すバッファが間�
           (funcall func begin end)))
       (setq pos begin))))
 
-(defvar cfw:move-hook nil "選択状態にした後に呼ばれるフック。引数1つ（DATE）の関数。")
+(defvar cfw:move-hook nil "List of functions called whenever the cursor moves in the calendar. The functions receive one argument, DATE.")
 (make-variable-buffer-local 'cfw:navi-selection-overlays)
 
 (defun cfw:navi-goto-date-internal (date)
+  "[internal] Move the cursor to DATE on the current calendar
+view and put selection."
   (goto-char (cfw:find-by-date date))
   (cfw:navi-selection-clear)
   (cfw:navi-selection-set date)
   (run-hook-with-args 'cfw:move-hook date))
 
-(defvar cfw:navi-selection-overlays nil "[internal]")
+(defvar cfw:navi-selection-overlays nil "[internal] Selection overlays in the current buffer.")
 (make-variable-buffer-local 'cfw:navi-selection-overlays)
 
 (defun cfw:navi-selection-clear ()
+  "Clear the selection overlays on the current calendar view."
   (loop for i in cfw:navi-selection-overlays
         do (delete-overlay i))
   (setq cfw:navi-selection-overlays nil))
 
 (defun cfw:navi-selection-set (date)
-  "DATEで指定した日付を選択状態にする。何度も呼んで複数つけることも出来る。
-バッファ内にDATEが存在しない場合は何もしない。"
+  "Put a selection overlay on DATE. The selection overlay can be
+ put on some days, calling this function many times.  If DATE is
+ not included on the current calendar view, do nothing. This
+ function does not manage the selections, just put the overlay."
   (cfw:find-all-by-date 
    date
    (lambda (begin end) 
@@ -1032,7 +1063,9 @@ nilであることはあり得ない。nilの場合は探すバッファが間�
        (add-to-list 'cfw:navi-selection-overlays overlay)))))
 
 (defun cfw:navi-goto-date (date)
-  "DATEの日付の日に移動して選択状態にする。"
+  "Move the cursor to DATE and put selection. If DATE is not
+included on the current calendar, this function changes the
+calendar view."
   (unless (cfw:find-by-date date)
     (cfw:calendar-update cfw:dest
                          (calendar-extract-month date)
@@ -1075,7 +1108,8 @@ nilであることはあり得ない。nilの場合は探すバッファが間�
      ("r" . cfw:refresh-calendar-buffer)
 
      ("g" . cfw:navi-goto-date-command)
-     ("t" . cfw:navi-goto-today-command))))
+     ("t" . cfw:navi-goto-today-command)))
+  "Default key map of calendar views.")
 
 (defun cfw:calendar-mode-map (&optional custom-map)
   (cond
@@ -1084,10 +1118,11 @@ nilであることはあり得ない。nilの場合は探すバッファが間�
     custom-map)
    (t cfw:calendar-mode-map)))
 
-(defvar cfw:calendar-mode-hook nil "バッファ初回設定時のメジャーモード設定後に呼ばれる。")
+(defvar cfw:calendar-mode-hook nil
+  "This hook is called at end of setting up major mode `cfw:calendar-mode'.")
 
 (defun cfw:calendar-mode (&optional custom-map)
-  "メジャーモードを設定する"
+  "Set up major mode `cfw:calendar-mode'."
   (kill-all-local-variables)
   (setq truncate-lines t)
   (use-local-map (cfw:calendar-mode-map custom-map))
@@ -1100,6 +1135,7 @@ nilであることはあり得ない。nilの場合は探すバッファが間�
 ;;; Actions
 
 (defun cfw:refresh-calendar-buffer ()
+  "Clear the calendar and render again."
   (interactive)
   (when cfw:dest
     (let ((date (or (cfw:cursor-to-nearest-date) 
@@ -1108,6 +1144,7 @@ nilであることはあり得ない。nilの場合は探すバッファが間�
       (cfw:navi-goto-date date))))
 
 (defun cfw:navi-goto-week-begin-command ()
+  "Move the cursor to the first day of the current week."
   (interactive)
   (let* ((cursor-date (cfw:cursor-to-nearest-date))
          (back-num (% (- (calendar-day-of-week cursor-date) 
@@ -1116,6 +1153,7 @@ nilであることはあり得ない。nilの場合は探すバッファが間�
     (cfw:navi-previous-day-command back-num)))
 
 (defun cfw:navi-goto-week-end-command ()
+  "Move the cursor to the last day of the current week."
   (interactive)
   (let* ((cursor-date (cfw:cursor-to-nearest-date))
          (forward-num (% (- cfw:week-saturday (calendar-day-of-week cursor-date)
@@ -1123,18 +1161,19 @@ nilであることはあり得ない。nilの場合は探すバッファが間�
                          cfw:week-days)))
     (cfw:navi-next-day-command forward-num)))
 
-(defun cfw:navi-goto-date-command (arg)
-  "日付を手入力して移動する"
+(defun cfw:navi-goto-date-command (string-date)
+  "Move the cursor to the specified date."
   (interactive "sInput Date (YYYY/MM/DD): ")
-  (cfw:navi-goto-date (cfw:parsetime arg)))
+  (cfw:navi-goto-date (cfw:parsetime string-date)))
 
 (defun cfw:navi-goto-today-command ()
+  "Move the cursor to today."
   (interactive)
   (cfw:navi-goto-date (cfw:emacs-to-calendar (current-time))))
 
 (defun cfw:navi-next-day-command (&optional num)
-  "カーソールのある日付の次の日付に移動する。
-NUMは移動量。省略した場合は１。"
+  "Move the cursor forward NUM days. If NUM is nil, 1 is used.
+Moves backward if NUM is negative."
   (interactive)
   (unless num (setq num 1))
   (let* ((cursor-date (cfw:cursor-to-nearest-date))
@@ -1144,36 +1183,36 @@ NUMは移動量。省略した場合は１。"
     (cfw:navi-goto-date new-cursor-date)))
 
 (defun cfw:navi-previous-day-command (&optional num)
-  "カーソールのある日付の前の日付に移動する。
-NUMは移動量。省略した場合は１。"
+  "Move the cursor back NUM days. If NUM is nil, 1 is used.
+Moves forward if NUM is negative."
   (interactive)
   (cfw:navi-next-day-command (- (or num 1))))
 
 (defun cfw:navi-goto-first-date-command ()
-  "表示中のカレンダーの初日に移動する"
+  "Move the cursor to the first day on the current calendar view."
   (interactive)
   (cfw:navi-goto-date (cfw:find-first-date)))
 
 (defun cfw:navi-goto-last-date-command ()
-  "表示中のカレンダーの最終日に移動する"
+  "Move the cursor to the last day on the current calendar view."
   (interactive)
   (cfw:navi-goto-date (cfw:find-last-date)))
 
 (defun cfw:navi-next-week-command (&optional num)
-  "カーソールのある日付の次の週に移動する。
-NUMは移動量。省略した場合は１。"
+  "Move the cursor forward NUM weeks. If NUM is nil, 1 is used.
+Moves backward if NUM is negative."
   (interactive)
   (cfw:navi-next-day-command (* cfw:week-days (or num 1))))
 
 (defun cfw:navi-previous-week-command (&optional num)
-  "カーソールのある日付の前の週に移動する。
-NUMは移動量。省略した場合は１。"
+  "Move the cursor back NUM weeks. If NUM is nil, 1 is used.
+Moves forward if NUM is negative."
   (interactive)
   (cfw:navi-next-day-command (* (- cfw:week-days) (or num 1))))
 
 (defun cfw:navi-next-month-command (&optional num)
-  "カーソールのある日付の次の月に移動する。
-NUMは移動量。省略した場合は１。"
+  "Move the cursor forward NUM months. If NUM is nil, 1 is used.
+Movement is backward if NUM is negative."
   (interactive)
   (unless num (setq num 1))
   (let* ((cursor-date (cfw:cursor-to-nearest-date))
@@ -1188,8 +1227,8 @@ NUMは移動量。省略した場合は１。"
     (cfw:navi-goto-date new-cursor-date)))
 
 (defun cfw:navi-previous-month-command (&optional num)
-  "カーソールのある日付の前の週に移動する。
-NUMは移動量。省略した場合は１。"
+  "Move the cursor back NUM months. If NUM is nil, 1 is used.
+Movement is forward if NUM is negative."
   (interactive)
   (cfw:navi-next-month-command (- (or num 1))))
 
