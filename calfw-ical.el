@@ -26,6 +26,7 @@
 ;;; Installation:
 
 ;; (require 'calfw-ical)
+;; (cfw:install-ical-schedules)
 ;; (setq cfw:ical-calendar-contents-sources '("http://www.google.com/calendar/ical/.../basic.ics"))
 ;; (setq cfw:ical-calendar-annotations-sources '("http://www.google.com/calendar/ical/.../basic.ics"))
 
@@ -43,12 +44,12 @@
    (nth 4 dec) (nth 3 dec) (nth 5 dec)))
 
 (defun cfw:ical-event-get-dates (event)
-  "ICSのイベントオブジェクトから日付を返す。
-期間イベントであれば (list 'region start-date end-date) 、
-時間イベントであれば (list 'time date start-time end-time) 。
-end-dateは終了日も含む。
-icalendar--convert-ical-to-diaryからコードを引用。
-リピートイベントには対応してない。"
+  "Return date-time information from iCalendar event object:
+period event (list 'region start-date end-date), time span
+event (list 'time date start-time end-time).  The period includes
+end-date.  This function is copied from
+`icalendar--convert-ical-to-diary' and modified.  Recursive
+events have not been supported yet."
   (let*
       ((dtstart (icalendar--get-event-property event 'DTSTART))
        (dtstart-zone (icalendar--find-time-zone
@@ -162,11 +163,9 @@ icalendar--convert-ical-to-diaryからコードを引用。
          "*ical-debug*")
       (kill-buffer buf))))
 
-(defvar cfw:ical-calendar-contents-sources  nil 
-  "データとして表示したいカレンダーデータ")
+(defvar cfw:ical-calendar-contents-sources  nil "a list of URL of iCalendar (contents)")
 
-(defvar cfw:ical-calendar-annotations-sources  nil
-  "アノテーションとして表示したいカレンダーデータ")
+(defvar cfw:ical-calendar-annotations-sources  nil "a list of URL of iCalendar (annotations)")
 
 (defvar cfw:ical-calendar-contents-sources-cache nil "[internal]")
 (defvar cfw:ical-calendar-annotations-sources-cache nil "[internal]")
@@ -260,19 +259,6 @@ icalendar--convert-ical-to-diaryからコードを引用。
   (add-to-list 'cfw:contents-functions 'cfw:ical-to-calendar)
   (add-to-list 'cfw:annotations-functions 'cfw:ical-to-annotation))
 
-;; for debug
-
-;;(progn (eval-current-buffer) (cfw:ical-debug "~/temp/test.ics"))
-;;(setq cfw:ical-calendar-contents-sources nil cfw:ical-calendar-annotations-sources nil)
-;;(setq cfw:ical-calendar-contents-sources '("~/temp/test.ics") cfw:ical-calendar-annotations-sources  '("~/temp/basic.ics"))
-;;(setq cfw:ical-calendar-contents-sources '("http://www.google.com/calendar/ical/.../basic.ics") cfw:ical-calendar-contents-sources '("http://www.google.com/calendar/ical/.../basic.ics"))
-
-;;(setq cfw:contents-functions '(cfw:ical-to-calendar) cfw:annotations-functions '(cfw:ical-to-annotation))
-
-;;(progn (eval-current-buffer) (cfw:ical-to-calendar (cfw:date 2 1 2011) (cfw:date 2 31 2011)))
-;;(progn (eval-current-buffer) (cfw:ical-to-annotation (cfw:date 2 1 2011) (cfw:date 2 31 2011)))
-;;(cfw:ical-calendar-clear-cache)
-;;(cfw:open-calendar-buffer (cfw:date 2 2 2011))
 
 (provide 'calfw-ical)
 ;;; calfw-ical.el ends here

@@ -52,7 +52,7 @@
 
 ;;; Code:
 
-(require 'cl)
+(eval-when-compile (require 'cl))
 (require 'calendar)
 (require 'holidays)
 
@@ -205,6 +205,16 @@ KEYMAP-LIST is a source list like ((key . command) ... )."
       (match-string 1 str)
     str))
 
+(defun cfw:copy-list (list)
+  "[internal] [imported from cl.el] Return a copy of LIST, which may be a dotted list.
+The elements of LIST are not copied, just the list structure
+itself."
+  (if (consp list)
+      (let ((res nil))
+	(while (consp list) (push (pop list) res))
+	(prog1 (nreverse res) (setcdr res list)))
+    (car list)))
+
 
 
 ;;; Date Time Transformation
@@ -281,7 +291,7 @@ ones of DATE2. Otherwise is `nil'."
     (error "Invalid region period : %S - %S" begin end))
   (let ((d begin) ret (cont t))
     (while cont
-      (push (copy-list d) ret)
+      (push (cfw:copy-list d) ret)
       (setq cont (not (equal d end)))
       (setq d (calendar-gregorian-from-absolute
                (1+ (calendar-absolute-from-gregorian d)))))
@@ -399,17 +409,16 @@ that is added to default keymap `cfw:calendar-mode-map'."
 ;; region
 
 (defun cfw:insert-calendar-region (&optional date width height custom-map)
-  "
-
-カレンダーのリージョンを入れて描画する。
-描画先オブジェクトはバッファローカル変数の`cfw:dest'に保存する。（※このことから現状では1バッファにつき1つしかカレンダーを描画できない。）
-サイズはBUFFERが表示されているウインドウサイズか、現在選択されているウインドウサイズ。
-DATE省略時は今日の日付。
-WIDTH, HEIGHTはカレンダーの参考サイズ。十分なサイズ（大体45x20程度）があればそれ以下のサイズ、十分なサイズでなければ最小限のサイズで描画する。
-CUSTOM-MAPはカレンダーリージョン内のテキストに割り当てたいキーマップ（テキストプロパティの`keymap'に割り当てる）。脱出できるようなキーを入れていた方が良いかも。"
+  "Insert markers for the rendering destination and display the calendar view.
+This function returns the destination object and stores at the
+buffer local variable `cfw:dest'.  DATE is initial focus date. If
+it is nil, today is selected initially.  WIDTH and HEIGHT are
+reference size of the calendar view.  If those are nil, the size
+is calculated from the selected window. CUSTOM-MAP is the keymap
+that is put to the text property `keymap'."
   (let (mark-begin mark-end dest)
     (setq mark-begin (point-marker))
-    (insert "\n")
+    (insert " ")
     (setq mark-end (point-marker))
     (save-excursion
       (setq dest (cfw:dest-init-region (current-buffer) mark-begin mark-end width height))
@@ -427,12 +436,17 @@ CUSTOM-MAPはカレンダーリージョン内のテキストに割り当てた�
 
 ;; inline
 
-(defun cfw:get-schedule-text (&optional date width height custom-map)
-  "カレンダーが描画されたテキストを返す。カレンダーを単純に貼り付けたい場合向け。
-描画先オブジェクトは使い捨てなので、自立して再描画できない。
-DATE省略時は今日の日付。
-WIDTH, HEIGHTはカレンダーの参考サイズ。十分なサイズ（大体45x20程度）があればそれ以下のサイズ、十分なサイズでなければ最小限のサイズで描画する。
-CUSTOM-MAPはそのテキストに割り当てたいキーマップ（テキストプロパティの`keymap'に割り当てる）。"
+(defun cfw:get-schedule-text (width height &optional date)
+  "Return a text that is drew the calendar view.
+In this case, the rendering destination object is disposable.
+
+WIDTH and HEIGHT are reference size of the calendar view.  If the
+given size is larger than the minimum size (about 45x20), the
+calendar is displayed within the given size. If the given size is
+smaller, the minimum size is used.
+
+DATE is initial focus date. If it is nil, today is selected
+initially."
   (let* ((dest (cfw:dest-init-inline width height))
          (buf (cfw:dest-buffer dest)) text)
     (cfw:calendar-update dest)
@@ -440,8 +454,6 @@ CUSTOM-MAPはそのテキストに割り当てたいキーマップ（テキス�
           (with-current-buffer buf
             (buffer-substring (point-min) (point-max))))
     (kill-buffer buf)
-    (when custom-map
-      (cfw:tp text 'keymap custom-map))
     text))
 
 
@@ -451,17 +463,20 @@ CUSTOM-MAPはそのテキストに割り当てたいキーマップ（テキス�
 
 ;; Buffer
 
-(defconst cfw:calendar-buffer-name "*cfw-calendar*" "[internal]")
+(defconst cfw:calendar-buffer-name "*cfw-calendar*" "[internal] Default buffer name for the calendar view.")
 
 (defun cfw:dest-init-buffer (&optional buf width height custom-map)
-  "カレンダーの描画先としてバッファ全体を使う。
-カレンダー用のメジャーモードをセットし、キーバインドも設定する。
-BUFはバッファ名。nilであれば `cfw:calendar-buffer-name' のバッファを生成。
-サイズは指定されたバッファが表示されていればそのウインドウサイズを使用。
-もしウインドウが見つからなければ、現在選択されているウインドウサイズを使用。
-ここで作成した描画先構造体はバッファローカル変数 `cfw:dest' に格納される。
-CUSTOM-MAPはこのバッファで使う追加のキーバインド。
-キーバインドから呼ばれるアクションは、この変数があることを前提として動作する。"
+  "Create a buffer destination.
+This destination uses an entire buffer and set up the major-mode
+`cfw:calendar-mode' and the key map `cfw:calendar-mode-map'.  BUF
+is a buffer name to render the calendar view. If BUF is nil, the
+default buffer name `cfw:calendar-buffer-name' is used.  WIDTH
+and HEIGHT are reference size of the calendar view. If those are
+nil, the size of calendar is calculated from the window that
+shows BUF or the selected window.  The rendering destination
+object is stored at the buffer local variable `cfw:dest'.
+CUSTOM-MAP is the additional keymap that is added to default
+keymap `cfw:calendar-mode-map'."
   (lexical-let
       ((buffer (or buf (get-buffer-create cfw:calendar-buffer-name)))
        (window (or (and buf (get-buffer-window buf)) (selected-window)))
@@ -486,13 +501,13 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
 ;; Region
 
 (defun cfw:dest-init-region (buf mark-begin mark-end &optional width height)
-  "カレンダーの描画先として指定されたバッファのマーク範囲の中を使う。
-別のアプリの組み込みとしての使用を想定。mark-beginとmark-endの間には1文字以上（出来れば改行が望ましい）が必要。
-メジャー（マイナー）モードやキーバインドは設定しない。
-組み込むアプリ側でキーバインドを設定し、カーソール位置の属性やAPIを操作してカレンダーを利用する。
-ここで作成した描画先構造体はアプリケーション側が管理する。アクションの関数はこの変数があることを前提として動作するため、letでダイナミック変数 `cfw:dest' に格納して呼ぶこと。
-サイズは指定されたバッファが表示されていればそのウインドウサイズを使用。
-もしウインドウが見つからなければ、現在選択されているウインドウサイズを使用。"
+  "Create a region destination.  The calendar is drew between
+MARK-BEGIN and MARK-END in the buffer BUF.  MARK-BEGIN and
+MARK-END are separated by more than one character, such as a
+space.  This destination is employed to be embedded in the some
+application buffer.  Because this destination does not set up
+any modes and key maps for the buffer, the application that uses
+the calfw is responsible to manage the buffer and key maps."
   (lexical-let
       ((mark-begin mark-begin) (mark-end mark-end)
        (window (or (get-buffer-window buf) (selected-window))))
@@ -519,7 +534,7 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
 (defconst cfw:dest-background-buffer " *cfw:dest-background*")
 
 (defun cfw:dest-init-inline (width height)
-  "単純に描画したカレンダーのテキストを返す。"
+  "Create a text destination."
   (lexical-let
       ((buffer (get-buffer-create cfw:dest-background-buffer))
        (window (selected-window))
@@ -540,10 +555,10 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
 
 ;;; Buffer and layout
 
-(defvar cfw:calendar-update-after-hook nil "カレンダー描画後に呼ばれるフック")
+(defvar cfw:calendar-update-after-hook nil "List of functions called whenever updating the calendar.")
 
 (defun cfw:calendar-update (dest &optional month year)
-  "バッファの内容を指定された年月で更新する"
+  "Update the rendering destination DEST with MONTH and YEAR."
   (let* ((today (calendar-current-date))
          (month (or month (calendar-extract-month today)))
          (year (or year (calendar-extract-year today)))
@@ -565,15 +580,17 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
 
 ;;; Rendering
 
-(defvar cfw:render-overlays nil "[internal]")
+(defvar cfw:render-overlays nil "[internal] Decoration overlays.")
 (make-variable-buffer-local 'cfw:render-overlays)
 
 (defun cfw:render-overlays-clear ()
+  "[internal] Clear decoration overlays."
   (loop for i in cfw:render-overlays
         do (delete-overlay i))
   (setq cfw:render-overlays nil))
 
 (defun cfw:render-overlays-put ()
+  "[internal] Put decoration overlays, such as the today highlight."
   (cfw:find-all-by-date 
    (calendar-current-date)
    (lambda (begin end)
@@ -585,7 +602,8 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
        (add-to-list 'cfw:render-overlays overlay)))))
 
 (defun cfw:render-center (width string &optional padding)
-  "中央寄せ"
+  "[internal] Format STRING in the center, padding on the both
+sides with the character PADDING."
   (let* ((padding (or padding ?\ ))
          (cnt (or (and string 
                        (cfw:render-truncate string width t))
@@ -597,7 +615,7 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
      (make-string (- width len margin) padding))))
 
 (defun cfw:render-left (width string &optional padding)
-  "左寄せで右パディング"
+  "[internal] Format STRING, padding on the right with the character PADDING."
   (let* ((padding (or padding ?\ ))
          (cnt (or (and string 
                        (cfw:render-truncate string width t))
@@ -607,7 +625,7 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
     (concat cnt (make-string margin padding))))
 
 (defun cfw:render-right (width string &optional padding)
-  "右寄せで左パディング"
+  "[internal] Format STRING, padding on the left with the character PADDING."
   (let* ((padding (or padding ?\ ))
          (cnt (or (and string 
                        (cfw:render-truncate string width t))
@@ -617,7 +635,7 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
     (concat (make-string margin padding) cnt)))
 
 (defun cfw:render-add-right (width left right &optional padding)
-  "文字列leftの右側に空いた隙間に、右寄せで文字列rightを追加する"
+  "[internal] Layout strings LEFT and RIGHT within WIDTH."
   (let* ((padding (or padding ?\ ))
          (lcnt (or (and left 
                         (cfw:render-truncate left width t))
@@ -632,7 +650,8 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
     (concat lcnt (if (< 0 cmargin) (make-string cmargin padding)) rcnt)))
 
 (defun cfw:render-month-calc-param (dest)
-  "画面サイズに合うようにサイズを計算する"
+  "[internal] Calculate cell size from the reference size and
+return an alist of rendering parameters."
   (let*
       ((win-width (cfw:dest-width dest))
        (win-height (max 15 (- (cfw:dest-height dest) 16)))
@@ -644,7 +663,8 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
       (total-width . ,total-width))))
 
 (defun cfw:render-month (model param)
-  "月のカレンダーの枠を描画する。描画方法だけに専念する。"
+  "[internal] Render monthly calendar view. MODEL is a logical
+data. PARAM is an alist of the rendering parameters."
   (let* ((cell-width  (cfw:k 'cell-width  param))
          (cell-height (cfw:k 'cell-height param))
          (total-width (cfw:k 'total-width param))
@@ -705,8 +725,9 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
                  (cons date (cons (cons tday ant) prs-contents)))))))
 
 (defun cfw:render-month-week (week-days)
-  "cfw:render-monthの内部関数。ローカル変数にreadonlyアクセス。
-日ごとに縦に並んでいるリストを横につなげてレイアウトする。"
+  "[internal] This function is an internal function of `cfw:render-month',
+then, uses some local variables in `cfw:render-month' as readonly ones.
+This function concatenates each rows on the days into a string of a physical line."
   (loop for day-rows in week-days
         for date = (car day-rows)
         for (tday . ant) = (cadr day-rows)
@@ -733,6 +754,8 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
   (insert cline))
 
 (defun cfw:render-default-content-face (str &optional default-face)
+  "[internal] Put the default content face. If STR has some
+faces, the faces are remained."
   (loop for i from 0 below (length str)
         with ret = (substring str 0)
         with face = (or default-face 'cfw:face-default-content)
@@ -743,6 +766,7 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
         finally return ret))
 
 (defun cfw:render-get-week-face (daynum &optional default-face)
+  "[internal] Put the default week face."
   (cond
    ((= daynum cfw:week-saturday)
     'cfw:face-saturday)
@@ -751,7 +775,7 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
    (t default-face)))
 
 (defun cfw:render-truncate (org limit-width &optional ellipsis)
-  "limit-widthよりも長い内容はポップアップを追加する。"
+  "[internal] Truncate a string ORG with LIMIT-WIDTH, like `truncate-string-to-width'."
   (if (< limit-width (string-width org))
       (let ((str (truncate-string-to-width 
                   (substring org 0) limit-width 0 nil ellipsis)))
@@ -761,8 +785,9 @@ CUSTOM-MAPはこのバッファで使う追加のキーバインド。
     org))
 
 (defun cfw:render-regions (date week-day regions-stack)
-  "cfw:render-monthの内部関数。ローカル変数にreadonlyアクセス。
-regions-stackから描画用の内容に変換する。"
+  "[internal] This function is an internal function of `cfw:render-month', then,
+uses some local variables in `cfw:render-month' as readonly ones.
+This function translates REGION-STACK to display content on the DATE."
   (when regions-stack
     (let ((stack (sort regions-stack (lambda (a b) (< (car a) (car b))))))
       (loop for i from 0 below (car (car stack))
@@ -789,8 +814,9 @@ regions-stackから描画用の内容に変換する。"
               "")))))
 
 (defun cfw:render-layout-regions-get-min (regions-each-days begin end)
-  "regions-each-daysの中から、beginとendの範囲で最小のrow番号を返す"
-  (loop for row-num from 0 below 10 ; 期間が10個重なることはないと仮定
+  "[internal] Find the minimum empty row number of the days between
+BEGIN and END from the REGIONS-EACH-DAYS."
+  (loop for row-num from 0 below 10 ; assuming the number of stacked periods is less than 10
         unless
         (loop for d in (cfw:enumerate-days begin end)
               for regions-stack = (cfw:contents-get d regions-each-days)
@@ -799,7 +825,8 @@ regions-stackから描画用の内容に変換する。"
         return row-num))
 
 (defun cfw:render-layout-regions-place (regions-each-days row region)
-  "regions-each-daysにregionを割り当てる"
+  "[internal] Assign REGION content to the ROW-th row on the days of the period,
+and append the result to regions-each-days."
   (loop for d in (cfw:enumerate-days (car region) (cadr region))
         for regions-stack = (cfw:contents-get d regions-each-days)
         if regions-stack
@@ -809,7 +836,9 @@ regions-stackから描画用の内容に変換する。"
   regions-each-days)
 
 (defun cfw:render-layout-regions (model)
-  "regionsのデータから、日ごとの regions-stack -> ((row-num . region) ... ) を作る"
+  "[internal] Arrange the `regions' records of the model and
+create period-stacks on the each days. 
+period-stack -> ((row-num . region) ... )"
   (let* (regions-each-days)
     (loop for region in (cfw:k 'regions model)
           for (begin end content) = region
@@ -826,9 +855,9 @@ regions-stackから描画用の内容に変換する。"
 ;;; Models
 
 (defun cfw:model-month-create (month year)
-  "月のカレンダーの論理モデルを作成する。
-表示内容や並び方についてはここで決定する。
-内容だけに専念し、どのように描画されるかについては関知しない。"
+  "[internal] Create a logical view model of monthly calendar.
+This function collects and arranges contents.  This function does
+not know how to display the contents in the destinations."
   (let* ((day-names 
           (loop for i from 0 below cfw:week-days 
                 collect (% (+ calendar-week-start-day i) cfw:week-days)))
@@ -860,23 +889,23 @@ regions-stackから描画用の内容に変換する。"
           (setq day (% (1+ day) cfw:week-days))
           (incf i))
     ;; model
-    `((month . ,month)       ; 1から始まる月の数字
-      (year . ,year)         ; 西暦
-      (headers . ,day-names) ; 曜日のindex。描画側が何を使うかを決める。
-      (holidays . ,holidays) ; (DATE 祝日名)のリスト
-      (annotations . ,(cfw:annotations-merge begin-date end-date)) ; (DATE 内容)のリスト
-      (contents . ,contents) ; (DATE 内容のリスト)のリスト
-      (regions . ,(cfw:k 'regions contents-all)) ; (DATE DATE 内容)のリスト
-      (weeks . ,(nreverse weeks)) ; 週ごとに日付の数字が並んでいる。headersの並びと対応。
+    `((month . ,month)       ; a number of month (it begins from 1)
+      (year . ,year)         ; a number of year
+      (headers . ,day-names) ; a list of the index of day-of-week
+      (holidays . ,holidays) ; an alist of holidays, (DATE HOLIDAY-NAME)
+      (annotations . ,(cfw:annotations-merge begin-date end-date)) ; an alist of annotations, (DATE ANNOTATION)
+      (contents . ,contents) ; an alist of contents, (DATE LIST-OF-CONTENTS)
+      (regions . ,(cfw:k 'regions contents-all)) ; a list of periods, (BEGIN-DATE END-DATE SUMMARY)
+      (weeks . ,(nreverse weeks)) ; a matrix of day-of-month, which corresponds to the index of `headers'
       )))
 
 (defun cfw:contents-get (date contents)
-  "指定した日付の内容リストを取得する。"
+  "[internal] Return a list of contents on the DATE."
   (cdr (cfw:contents-get-internal date contents)))
 
 (defun cfw:contents-get-internal (date contents)
-  "指定した日付の内容リストを取得する。
-先頭がDATE、後続のリストが表示するべき内容。破壊的につなげる。"
+  "[internal] Return a cons cell that has the key DATE.
+One can modify the returned cons cell destructively."
   (cond
    ((or (null date) (null contents)) nil)
    (t (loop for i in contents
@@ -884,18 +913,22 @@ regions-stackから描画用の内容に変換する。"
             return i
             finally return nil))))
 
-(defmacro cfw:contents-add (date content contents)
-  "contentsに内容を追加する。マクロ注意。"
-  (let (($prv (gensym)) ($lst (gensym))
-        ($d (gensym)) ($c (gensym)))
-    `(let* ((,$d ,date) (,$c ,content)
-            (,$prv (cfw:contents-get-internal ,$d ,contents))
-            (,$lst (if (listp ,$c) (copy-list ,$c) (list ,$c))))
-       (if ,$prv (nconc ,$prv ,$lst)
-         (push (cons ,$d ,$lst) ,contents)))))
+(eval-when-compile
+  (defmacro cfw:contents-add (date content contents)
+    "[internal] Add a record, DATE as a key and CONTENT as a
+body, to CONTENTS. If CONTENTS has a record for DATE, this macro
+appends CONTENT to the record."
+    (let (($prv (gensym)) ($lst (gensym))
+          ($d (gensym)) ($c (gensym)))
+      `(let* ((,$d ,date) (,$c ,content)
+              (,$prv (cfw:contents-get-internal ,$d ,contents))
+              (,$lst (if (listp ,$c) (cfw:copy-list ,$c) (list ,$c))))
+         (if ,$prv (nconc ,$prv ,$lst)
+           (push (cons ,$d ,$lst) ,contents))))))
 
 (defun cfw:contents-merge (begin end)
-  "指定した範囲の内容のリストを取ってくる。"
+  "[internal] Return an contents alist between begin date and end one,
+calling functions `cfw:contents-functions'."
   (cond 
    ((null cfw:contents-functions) nil)
    ((= 1 (length cfw:contents-functions))
@@ -911,7 +944,8 @@ regions-stackから描画用の内容に変換する。"
           finally return contents))))
 
 (defun cfw:annotations-merge (begin end)
-  "指定した範囲の内容のリストを取ってくる。"
+  "[internal] Return an annotation alist between begin date and end one,
+calling functions `cfw:annotations-functions'."
   (cond 
    ((null cfw:annotations-functions) nil)
    ((= 1 (length cfw:annotations-functions))
@@ -924,7 +958,7 @@ regions-stackから描画用の内容に変換する。"
           if prv
           do (set-cdr prv (concat (cdr prv) "/" (cdr cnt)))
           else
-          do (push (copy-list cnt) annotations)
+          do (push (cfw:copy-list cnt) annotations)
           finally return annotations))))
 
 (defun cfw:contents-debug-data ()
@@ -934,24 +968,24 @@ regions-stackから描画用の内容に変換する。"
            '(((1  1 2011) "TEST1") 
              ((1 10 2011) "TEST2" "TEST3")
              (regions 
-              ((1 8 2011) (1 9 2011) "REGION1")
-              ((1 11 2011) (1 12 2011) "Region2")
+              ((1 8 2011) (1 9 2011) "PERIOD1")
+              ((1 11 2011) (1 12 2011) "Period2")
               ((1 12 2011) (1 14 2011) "long long title3"))
              ))
          (lambda (b e) 
            '(((1  2 2011) "PTEST1") 
              ((1 10 2011) "PTEST2" "PTEST3")
              (regions 
-              ((1 14 2011) (1 15 2011) "重ね合わせ")
-              ((1 29 2011) (1 31 2011) "REGION W"))
+              ((1 14 2011) (1 15 2011) "Stack")
+              ((1 29 2011) (1 31 2011) "PERIOD W"))
              ))))
   (setq cfw:annotations-functions
         (list
          (lambda (b e)
-           '(((1  4 2011) . "新月") 
-             ((1 12 2011) . "上弦")
-             ((1 20 2011) . "満月")
-             ((1 26 2011) . "下弦")
+           '(((1  4 2011) . "New Moon") 
+             ((1 12 2011) . "Young Moon")
+             ((1 20 2011) . "Full Moon")
+             ((1 26 2011) . "Waning Moon")
              )))))
 
 
@@ -1014,7 +1048,7 @@ found in the current view, return nil."
     ret))
 
 (defun cfw:find-all-by-date (date func)
-  "[internal] Call the function FUNC in each reagions where the
+  "[internal] Call the function FUNC in each regions where the
 text-property `cfw:date' is equal to DATE. The function FUNC
 receives two arguments, begin date and end one. This function is
 mainly used at functions for putting overlays."
