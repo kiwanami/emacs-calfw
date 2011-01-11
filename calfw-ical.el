@@ -25,10 +25,10 @@
 
 ;;; Installation:
 
+;; Here is a minimum sample code:
 ;; (require 'calfw-ical)
 ;; (cfw:install-ical-schedules)
 ;; (setq cfw:ical-calendar-contents-sources '("http://www.google.com/calendar/ical/.../basic.ics"))
-;; (setq cfw:ical-calendar-annotations-sources '("http://www.google.com/calendar/ical/.../basic.ics")) ; option
 
 ;; Executing the following command, this program clears caches to refresh the ICS data.
 ;; (cfw:ical-calendar-clear-cache)

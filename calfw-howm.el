@@ -20,9 +20,11 @@
 
 ;;; Commentary:
 
-;; (require 'calfw-howm)
-;; (cfw:install-howm-schedules)
-;; (define-key howm-mode-map (kbd "M-C") 'cfw:open-howm-calendar)
+;; (eval-after-load "howm-menu" '(progn
+;;   (require 'calfw-howm)
+;;   (cfw:install-howm-schedules)
+;;   (define-key howm-mode-map (kbd "M-C") 'cfw:open-howm-calendar)
+;; ))
 
 ;; If you are using Elscreen, here is useful.
 ;; (define-key howm-mode-map (kbd "M-C") 'cfw:elscreen-open-howm-calendar)
@@ -32,6 +34,7 @@
 
 ;;; Code:
 
+(require 'howm-menu)
 (require 'calfw)
 
 (defvar cfw:howm-schedule-cache nil "howmのスケジュールデータのキャッシュ")
