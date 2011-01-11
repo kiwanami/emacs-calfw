@@ -28,7 +28,7 @@
 ;; (require 'calfw-ical)
 ;; (cfw:install-ical-schedules)
 ;; (setq cfw:ical-calendar-contents-sources '("http://www.google.com/calendar/ical/.../basic.ics"))
-;; (setq cfw:ical-calendar-annotations-sources '("http://www.google.com/calendar/ical/.../basic.ics"))
+;; (setq cfw:ical-calendar-annotations-sources '("http://www.google.com/calendar/ical/.../basic.ics")) ; option
 
 ;; Executing the following command, this program clears caches to refresh the ICS data.
 ;; (cfw:ical-calendar-clear-cache)
@@ -45,7 +45,7 @@
 
 (defun cfw:ical-event-get-dates (event)
   "Return date-time information from iCalendar event object:
-period event (list 'region start-date end-date), time span
+period event (list 'period start-date end-date), time span
 event (list 'time date start-time end-time).  The period includes
 end-date.  This function is copied from
 `icalendar--convert-ical-to-diary' and modified.  Recursive
@@ -107,13 +107,13 @@ events have not been supported yet."
      ((equal start-d end-1-d)
       (list 'time start-d "" ""))
      (t
-      (list 'region start-d nil end-1-d)))))
+      (list 'period start-d nil end-1-d)))))
 
 (defun cfw:ical-convert-ical-to-calfw (ical-list)
   (let* ((event-list (icalendar--all-events ical-list))
          (error-string "") (event-ok t) (found-error nil)
          (zone-map (icalendar--convert-all-timezones ical-list))
-         regions contents)
+         periods contents)
 
     (loop for e in event-list 
           for (dtag date start end) = (cfw:ical-event-get-dates e)
@@ -126,9 +126,9 @@ events have not been supported yet."
                  ;; TODO...
                  
                  ;; non-recurring event
-                 ;; region event
-                 ((eq dtag 'region)
-                  (push (list date end (icalendar--format-ical-event e)) regions)
+                 ;; period event
+                 ((eq dtag 'period)
+                  (push (list date end (icalendar--format-ical-event e)) periods)
                   (setq event-ok t))
                  ;; time event
                  ((eq dtag 'time)
@@ -150,7 +150,7 @@ events have not been supported yet."
              (setq error-string (format "%s\n%s\nCannot handle this event: %s"
                                         error-val error-string e))
              (message "%s" error-string))))
-    (append contents (list (cons 'regions regions)))))
+    (append contents (list (cons 'periods periods)))))
 
 (defun cfw:ical-debug (f)
   (interactive)
@@ -220,9 +220,9 @@ events have not been supported yet."
                       (cfw:contents-add date lst contents))
                 finally return contents)))
   (loop for (date . lst) in cfw:ical-calendar-contents-sources-cache
-        if (eq 'regions date)
+        if (eq 'periods date)
         collect
-        (cons 'regions 
+        (cons 'periods 
               (loop for (rstart rend title) in lst
                     if (and (cfw:date-less-equal-p begin rend)
                             (cfw:date-less-equal-p rstart end))
@@ -245,9 +245,9 @@ events have not been supported yet."
                       (cfw:contents-add date lst annotations))
                 finally return annotations)))
   (loop for (date . lst) in cfw:ical-calendar-annotations-sources-cache
-        if (eq 'regions date)
+        if (eq 'periods date)
         collect
-        (cons 'regions 
+        (cons 'periods 
               (loop for (rstart rend title) in lst
                     if (and (cfw:date-less-equal-p begin rend)
                             (cfw:date-less-equal-p rstart end))

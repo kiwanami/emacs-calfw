@@ -117,12 +117,12 @@
   "Face for default contents"
   :group 'calfw)
 
-(defface cfw:face-regions
+(defface cfw:face-periods
   '((((class color) (background light))
      :background "#668cd9" :foreground "White" :slant italic)
     (((class color) (background dark))
      :background "#d4e5ff" :foreground "RoyalBlue" :slant italic))
-  "Face for region" :group 'calfw)
+  "Face for period" :group 'calfw)
 
 (defface cfw:face-day-title
   '((((class color) (background light))
@@ -288,7 +288,7 @@ ones of DATE2. Otherwise is `nil'."
   "Enumerate date objects between BEGIN and END."
   (when (> (calendar-absolute-from-gregorian begin)
            (calendar-absolute-from-gregorian end))
-    (error "Invalid region period : %S - %S" begin end))
+    (error "Invalid period : %S - %S" begin end))
   (let ((d begin) ret (cont t))
     (while cont
       (push (cfw:copy-list d) ret)
@@ -355,13 +355,13 @@ ones of DATE2. Otherwise is `nil'."
 ;; in the view.
 
 ;; The contents function can return periods of schedules. Then, the
-;; alist has the record that consists of symbol `regions' and a list
+;; alist has the record that consists of symbol `periods' and a list
 ;; of period lists. A period list has begin date, end date and content
 ;; text.
 
 ;; Input  : begin[DATE] end[DATE]
 ;; Output : '((DATE CONTENT1 CONTENT2 ...) (DATE CONTENT ... )
-;;            (regions (DATE DATE CONTENT) (DATE DATE CONTENT) ... ))
+;;            (periods (DATE DATE CONTENT) (DATE DATE CONTENT) ... ))
 
 (defvar cfw:contents-functions nil "A list of contents functions.")
 
@@ -695,7 +695,7 @@ data. PARAM is an alist of the rendering parameters."
           with holidays    = (cfw:k 'holidays model)
           with contents    = (cfw:k 'contents model)
           with annotations = (cfw:k 'annotations model)
-          with regions     = (cfw:render-layout-regions model)
+          with periods     = (cfw:render-layout-periods model)
           do
           (cfw:render-month-week
            (loop for day in week ; week columns loop 
@@ -704,15 +704,15 @@ data. PARAM is an alist of the rendering parameters."
                  for date = (cfw:date month day year)
                  for hday = (car (cfw:contents-get date holidays))
                  for ant = (cfw:rt (cfw:contents-get date annotations) 'cfw:face-annotation)
-                 for raw-regions = (cfw:contents-get date regions)
+                 for raw-periods = (cfw:contents-get date periods)
                  for raw-contents = (cfw:contents-get date contents)
                  for prs-contents = (append
-                                     (cfw:render-regions date week-day raw-regions)
+                                     (cfw:render-periods date week-day raw-periods)
                                      (mapcar 'cfw:render-default-content-face raw-contents))
                  for num-label = (if prs-contents
                                      (format "(%s)" 
                                              (+ (length raw-contents)
-                                                (length raw-regions))) "")
+                                                (length raw-periods))) "")
                  for tday = (concat
                              " "
                              (cfw:rt (format "%s" (or day ""))
@@ -784,12 +784,12 @@ faces, the faces are remained."
         str)
     org))
 
-(defun cfw:render-regions (date week-day regions-stack)
+(defun cfw:render-periods (date week-day periods-stack)
   "[internal] This function is an internal function of `cfw:render-month', then,
 uses some local variables in `cfw:render-month' as readonly ones.
-This function translates REGION-STACK to display content on the DATE."
-  (when regions-stack
-    (let ((stack (sort regions-stack (lambda (a b) (< (car a) (car b))))))
+This function translates PERIOD-STACK to display content on the DATE."
+  (when periods-stack
+    (let ((stack (sort periods-stack (lambda (a b) (< (car a) (car b))))))
       (loop for i from 0 below (car (car stack))
             do (push ; insert blank lines
                 (list i (list nil nil nil))
@@ -810,45 +810,45 @@ This function translates REGION-STACK to display content on the DATE."
                   (if beginp "(" "")
                   (cfw:render-left width title ?-)
                   (if endp ")" ""))
-                 'cfw:face-regions)
+                 'cfw:face-periods)
               "")))))
 
-(defun cfw:render-layout-regions-get-min (regions-each-days begin end)
+(defun cfw:render-layout-periods-get-min (periods-each-days begin end)
   "[internal] Find the minimum empty row number of the days between
-BEGIN and END from the REGIONS-EACH-DAYS."
+BEGIN and END from the PERIODS-EACH-DAYS."
   (loop for row-num from 0 below 10 ; assuming the number of stacked periods is less than 10
         unless
         (loop for d in (cfw:enumerate-days begin end)
-              for regions-stack = (cfw:contents-get d regions-each-days)
-              if (and regions-stack (assq row-num regions-stack))
+              for periods-stack = (cfw:contents-get d periods-each-days)
+              if (and periods-stack (assq row-num periods-stack))
               return t)
         return row-num))
 
-(defun cfw:render-layout-regions-place (regions-each-days row region)
-  "[internal] Assign REGION content to the ROW-th row on the days of the period,
-and append the result to regions-each-days."
-  (loop for d in (cfw:enumerate-days (car region) (cadr region))
-        for regions-stack = (cfw:contents-get d regions-each-days)
-        if regions-stack
-        do (nconc regions-stack (list (list row region)))
+(defun cfw:render-layout-periods-place (periods-each-days row period)
+  "[internal] Assign PERIOD content to the ROW-th row on the days of the period,
+and append the result to periods-each-days."
+  (loop for d in (cfw:enumerate-days (car period) (cadr period))
+        for periods-stack = (cfw:contents-get d periods-each-days)
+        if periods-stack
+        do (nconc periods-stack (list (list row period)))
         else
-        do (push (cons d (list (list row region))) regions-each-days))
-  regions-each-days)
+        do (push (cons d (list (list row period))) periods-each-days))
+  periods-each-days)
 
-(defun cfw:render-layout-regions (model)
-  "[internal] Arrange the `regions' records of the model and
+(defun cfw:render-layout-periods (model)
+  "[internal] Arrange the `periods' records of the model and
 create period-stacks on the each days. 
-period-stack -> ((row-num . region) ... )"
-  (let* (regions-each-days)
-    (loop for region in (cfw:k 'regions model)
-          for (begin end content) = region
-          for row = (cfw:render-layout-regions-get-min
-                     regions-each-days begin end)
+period-stack -> ((row-num . period) ... )"
+  (let* (periods-each-days)
+    (loop for period in (cfw:k 'periods model)
+          for (begin end content) = period
+          for row = (cfw:render-layout-periods-get-min
+                     periods-each-days begin end)
           do 
-          (setq regions-each-days
-                (cfw:render-layout-regions-place
-                 regions-each-days row region)))
-    regions-each-days))
+          (setq periods-each-days
+                (cfw:render-layout-periods-place
+                 periods-each-days row period)))
+    periods-each-days))
 
 
 
@@ -870,7 +870,7 @@ not know how to display the contents in the destinations."
          (end-date (cfw:date month last-month-day year))
          (contents-all (cfw:contents-merge begin-date end-date))
          (contents (loop for i in contents-all 
-                         unless (eq 'regions (car i)) 
+                         unless (eq 'periods (car i)) 
                          collect i))
          weeks)
     ;; making 'weeks'
@@ -895,7 +895,7 @@ not know how to display the contents in the destinations."
       (holidays . ,holidays) ; an alist of holidays, (DATE HOLIDAY-NAME)
       (annotations . ,(cfw:annotations-merge begin-date end-date)) ; an alist of annotations, (DATE ANNOTATION)
       (contents . ,contents) ; an alist of contents, (DATE LIST-OF-CONTENTS)
-      (regions . ,(cfw:k 'regions contents-all)) ; a list of periods, (BEGIN-DATE END-DATE SUMMARY)
+      (periods . ,(cfw:k 'periods contents-all)) ; a list of periods, (BEGIN-DATE END-DATE SUMMARY)
       (weeks . ,(nreverse weeks)) ; a matrix of day-of-month, which corresponds to the index of `headers'
       )))
 
@@ -967,7 +967,7 @@ calling functions `cfw:annotations-functions'."
          (lambda (b e)
            '(((1  1 2011) "TEST1") 
              ((1 10 2011) "TEST2" "TEST3")
-             (regions 
+             (periods 
               ((1 8 2011) (1 9 2011) "PERIOD1")
               ((1 11 2011) (1 12 2011) "Period2")
               ((1 12 2011) (1 14 2011) "long long title3"))
@@ -975,7 +975,7 @@ calling functions `cfw:annotations-functions'."
          (lambda (b e) 
            '(((1  2 2011) "PTEST1") 
              ((1 10 2011) "PTEST2" "PTEST3")
-             (regions 
+             (periods 
               ((1 14 2011) (1 15 2011) "Stack")
               ((1 29 2011) (1 31 2011) "PERIOD W"))
              ))))

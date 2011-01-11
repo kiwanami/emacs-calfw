@@ -59,7 +59,7 @@
                        (calendar-extract-month date)
                        (calendar-extract-year date)))))
 
-(defun cfw:howm-schedule-region (begin end)
+(defun cfw:howm-schedule-period (begin end)
   (let* ((from (cfw:to-howm-date begin))
          (to (cfw:to-howm-date end))
          (filtered (howm-cl-remove-if
@@ -74,8 +74,8 @@
   (lambda (line) (replace-regexp-in-string "^[^@!]+[@!] " "" line))
   "howmのサマリー表示からカレンダー用に変換する関数。リストで返せば複数行で表示する。")
 
-(defun cfw:howm-schedule-region-to-calendar (begin end)
-  (loop for i in (cfw:howm-schedule-region begin end)
+(defun cfw:howm-schedule-period-to-calendar (begin end)
+  (loop for i in (cfw:howm-schedule-period begin end)
         for date = (cfw:emacs-to-calendar
                     (seconds-to-time (+ 10 (* (howm-schedule-date i) 24 3600))))
         for line = (funcall cfw:howm-schedule-summary-transformer
@@ -125,7 +125,7 @@
 (defun cfw:install-howm-schedules ()
   (interactive)
   "howmスケジュールからデータを取って表示する。"
-  (add-to-list 'cfw:contents-functions 'cfw:howm-schedule-region-to-calendar)
+  (add-to-list 'cfw:contents-functions 'cfw:howm-schedule-period-to-calendar)
   (add-hook 'howm-after-save-hook 'cfw:howm-schedule-cache-clear)
   (add-to-list 'howm-menu-allow 'cfw:howm-schedule-inline)
   )
