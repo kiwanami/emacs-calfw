@@ -43,12 +43,11 @@
 ;; `calendar-holiday-list'. See the document for the holidays.el and
 ;; the Info text.
 
-;;; Add-ons
+;;; Add-ons:
 
 ;; Following programs are also useful:
 ;; - calfw-howm.el : Display howm schedules
 ;; - calfw-ical.el : Display schedules of the iCalendar format.
-
 
 ;;; Code:
 
@@ -305,6 +304,7 @@ ones of DATE2. Otherwise is `nil'."
 
 ;; [cfw:dest]
 ;; type        : identify symbol for destination type. (buffer, region, text)
+;; model       : a model object to be displayed
 ;; buffer      : a buffer object of rendering destination.
 ;; min-func    : a function that returns upper limit of rendering destination.
 ;; max-func    : a function that returns lower limit of rendering destination.
@@ -313,7 +313,7 @@ ones of DATE2. Otherwise is `nil'."
 ;; clear-func  : a function that clears the rendering destination.
 ;; update-func : a function that is called at the end of rendering routine.
 
-(defstruct cfw:dest type buffer min-func max-func width height clear-func update-func)
+(defstruct cfw:dest type model buffer min-func max-func width height clear-func update-func)
 
 ;; shortcut functions
 
@@ -391,14 +391,16 @@ initially.  This function uses the function
 
 (defun cfw:get-calendar-buffer-custom (&optional date buffer custom-map)
   "Return a calendar buffer with some customize parameters.
+
 This function binds the rendering destination object at the
-buffer local variable `cfw:dest'.  The size of calendar is
-calculated from the window that shows BUFFER or the selected
-window.  DATE is initial focus date. If it is nil, today is
-selected initially.  BUFFER is the buffer to be rendered. If
-BUFFER is nil, this function creates a new buffer named
-`cfw:calendar-buffer-name'.  CUSTOM-MAP is the additional keymap
-that is added to default keymap `cfw:calendar-mode-map'."
+buffer local variable `cfw:dest'.
+
+The size of calendar is calculated from the window that shows
+BUFFER or the selected window.  DATE is initial focus date. If it
+is nil, today is selected initially.  BUFFER is the buffer to be
+rendered. If BUFFER is nil, this function creates a new buffer
+named `cfw:calendar-buffer-name'.  CUSTOM-MAP is the additional
+keymap that is added to default keymap `cfw:calendar-mode-map'."
   (let* ((dest (cfw:dest-init-buffer buffer nil nil custom-map))
          (buf (cfw:dest-buffer dest)))
     (cfw:calendar-update dest)
@@ -409,13 +411,15 @@ that is added to default keymap `cfw:calendar-mode-map'."
 ;; region
 
 (defun cfw:insert-calendar-region (&optional date width height custom-map)
-  "Insert markers for the rendering destination and display the calendar view.
-This function returns the destination object and stores at the
-buffer local variable `cfw:dest'.  DATE is initial focus date. If
-it is nil, today is selected initially.  WIDTH and HEIGHT are
-reference size of the calendar view.  If those are nil, the size
-is calculated from the selected window. CUSTOM-MAP is the keymap
-that is put to the text property `keymap'."
+  "Insert markers of the rendering destination at current point and display the calendar view.
+
+This function returns the destination object and stores it at the text property `cfw:dest'.
+
+DATE is initial focus date. If it is nil, today is selected
+initially.  WIDTH and HEIGHT are reference size of the calendar
+view.  If those are nil, the size is calculated from the selected
+window. CUSTOM-MAP is the keymap that is put to the text property
+`keymap'."
   (let (mark-begin mark-end dest)
     (setq mark-begin (point-marker))
     (insert " ")
@@ -427,9 +431,8 @@ that is put to the text property `keymap'."
               (lambda () 
                 (cfw:dest-with-region dest
                   (let (buffer-read-only)
-                    (put-text-property (point-min) (point-max)
-                                       'keymap custom-map))))))
-      (set (make-local-variable 'cfw:dest) dest)
+                    (put-text-property (point-min) (point-max) 'cfw:dest dest)
+                    (put-text-property (point-min) (point-max) 'keymap custom-map))))))
       (cfw:calendar-update dest)
       (cfw:navi-goto-date (or date (calendar-current-date))))
     dest))
@@ -438,6 +441,7 @@ that is put to the text property `keymap'."
 
 (defun cfw:get-schedule-text (width height &optional date)
   "Return a text that is drew the calendar view.
+
 In this case, the rendering destination object is disposable.
 
 WIDTH and HEIGHT are reference size of the calendar view.  If the
@@ -553,7 +557,17 @@ the calfw is responsible to manage the buffer and key maps."
     dest))
 
 
-;;; Buffer and layout
+;;; View
+
+(defun cfw:calendar-get-dest ()
+  "Return the rendering destination object on the current cursor position.
+Firstly, getting a text property `cfw:dest' on the current
+position. Secondly, getting a buffer local variable
+`cfw:dest'. If no object is found, return nil."
+  (let ((dest (get-text-property (point) 'cfw:dest)))
+    (unless dest
+      (setq dest (buffer-local-value 'cfw:dest (current-buffer))))
+    dest))
 
 (defvar cfw:calendar-update-after-hook nil "List of functions called whenever updating the calendar.")
 
@@ -562,16 +576,16 @@ the calfw is responsible to manage the buffer and key maps."
   (let* ((today (calendar-current-date))
          (month (or month (calendar-extract-month today)))
          (year (or year (calendar-extract-year today)))
-         (buf (cfw:dest-buffer dest)))
+         (buf (cfw:dest-buffer dest)) model)
     (with-current-buffer buf
       (let ((buffer-read-only nil))
         (cfw:dest-with-region dest 
           (cfw:navi-selection-clear)
           (cfw:dest-clear dest)
           (cfw:render-overlays-clear)
-          (cfw:render-month 
-           (cfw:model-month-create month year)
-           (cfw:render-month-calc-param dest))
+          (setq model (cfw:model-month-create month year))
+          (setf (cfw:dest-model dest) model)
+          (cfw:render-month model (cfw:render-month-calc-param dest))
           (cfw:render-overlays-put)))
       (run-hooks 'cfw:calendar-update-after-hook)
       (cfw:dest-update dest))))
@@ -854,6 +868,29 @@ period-stack -> ((row-num . period) ... )"
 
 ;;; Models
 
+;; public functions
+
+(defun cfw:model-get-holiday-by-date (date model)
+  "Return a holiday title on the DATE."
+  (cfw:contents-get date (cfw:k 'holidays model)))
+
+(defun cfw:model-get-contents-by-date (date model)
+  "Return a list of contents on the DATE."
+  (cfw:contents-get date (cfw:k 'contents model)))
+
+(defun cfw:model-get-annotation-by-date (date model)
+  "Return an annotation on the DATE."
+  (cfw:contents-get date (cfw:k 'annotations model)))
+
+(defun cfw:model-get-periods-by-date (date model)
+  "Return a list of periods on the DATE."
+  (loop for period in (cfw:k 'periods model)
+        for (begin end content) = period
+        if (cfw:date-between begin end date)
+        collect period))
+
+;; private functions
+
 (defun cfw:model-month-create (month year)
   "[internal] Create a logical view model of monthly calendar.
 This function collects and arranges contents.  This function does
@@ -1067,7 +1104,10 @@ mainly used at functions for putting overlays."
 (defun cfw:navi-goto-date-internal (date)
   "[internal] Move the cursor to DATE on the current calendar
 view and put selection."
-  (goto-char (cfw:find-by-date date))
+  (let ((pos (cfw:find-by-date date)))
+    (goto-char pos)
+    (unless (eql (selected-window) (get-buffer-window (current-buffer)))
+      (set-window-point (get-buffer-window (current-buffer)) pos)))
   (cfw:navi-selection-clear)
   (cfw:navi-selection-set date)
   (run-hook-with-args 'cfw:move-hook date))
@@ -1101,7 +1141,7 @@ view and put selection."
 included on the current calendar, this function changes the
 calendar view."
   (unless (cfw:find-by-date date)
-    (cfw:calendar-update cfw:dest
+    (cfw:calendar-update (cfw:calendar-get-dest)
                          (calendar-extract-month date)
                          (calendar-extract-year date)))
   (cfw:navi-goto-date-internal date))
@@ -1140,6 +1180,7 @@ calendar view."
      ("<end>"  . cfw:navi-goto-last-date-command)
 
      ("r" . cfw:refresh-calendar-buffer)
+     ("SPC" . cfw:show-details-command)
 
      ("g" . cfw:navi-goto-date-command)
      ("t" . cfw:navi-goto-today-command)))
@@ -1266,6 +1307,119 @@ Movement is forward if NUM is negative."
   (interactive)
   (cfw:navi-next-month-command (- (or num 1))))
 
+;;; Detail popup
+
+(defun cfw:show-details-command ()
+  "Show details on the selected date."
+  (interactive)
+  (let* ((cursor-date (cfw:cursor-to-nearest-date))
+         (dest  (cfw:calendar-get-dest))
+         (model (and dest (cfw:dest-model dest))))
+    (when model
+      (cfw:details-popup
+       (cfw:details-layout cursor-date model)))))
+
+(defvar cfw:details-buffer-name "*cfw:details*" "[internal]")
+(defvar cfw:details-window-size 20 "Default detail buffer window size.")
+
+(defun cfw:details-popup (text)
+  "Popup the buffer to show details.
+TEXT is a content to show."
+  (let ((buf (get-buffer cfw:details-buffer-name))
+        (before-win-num (length (window-list)))
+        (main-buf (current-buffer)))
+    (unless (and buf (eq (buffer-local-value 'major-mode buf)
+                         'cfw:details-mode))
+      (setq buf (get-buffer-create cfw:details-buffer-name))
+      (with-current-buffer buf
+        (cfw:details-mode)
+        (set (make-local-variable 'cfw:before-win-num) before-win-num)))
+    (with-current-buffer buf
+      (let (buffer-read-only)
+        (set (make-local-variable 'cfw:main-buf) main-buf)
+        (erase-buffer)
+        (insert text)
+        (goto-char (point-min))))
+    (pop-to-buffer buf)
+    (fit-window-to-buffer (get-buffer-window buf) cfw:details-window-size)))
+
+(defun cfw:details-layout (date model)
+  "Layout details and return the text.
+DATE is a date to show. MODEL is model object."
+  (let* ((EOL "\n") 
+         (HLINE (cfw:rt (concat (make-string (window-width) ?-) EOL) 'cfw:face-grid))
+         (holiday (cfw:model-get-holiday-by-date date model))
+         (annotation (cfw:model-get-annotation-by-date date model))
+         (periods (cfw:model-get-periods-by-date date model))
+         (contents (cfw:model-get-contents-by-date date model)))
+  (concat 
+   (cfw:rt (concat "Schedule on " (cfw:strtime date) " (") 'cfw:face-header)
+   (cfw:rt (calendar-day-name date) 
+           (cfw:render-get-week-face (calendar-day-of-week date) 'cfw:face-header))
+   (cfw:rt (concat ")" EOL) 'cfw:face-header)
+   (when (or holiday annotation) 
+     (concat 
+      (and holiday (cfw:rt holiday 'cfw:face-holiday))
+      (and holiday annotation " / ")
+      (and annotation (cfw:rt annotation 'cfw:face-annotation))
+      EOL))
+   HLINE
+   (loop for (begin end summary) in periods concat
+         (concat
+          (cfw:rt (concat 
+                   (cfw:strtime begin) " - " (cfw:strtime end) " : ") 
+                  'cfw:face-periods)
+          " " summary EOL))
+   (loop for i in contents concat
+         (concat "- " i EOL)))))
+
+(defvar cfw:details-mode-map
+  (cfw:define-keymap
+   '(("q" . cfw:details-kill-buffer-command)
+     ("n" . cfw:details-navi-next-command)
+     ("p" . cfw:details-navi-prev-command)
+     ))
+  "Default key map for the details buffer.")
+
+(defvar cfw:details-mode-hook nil "")
+
+(defun cfw:details-mode ()
+  "Set up major mode `cfw:details-mode'."
+  (kill-all-local-variables)
+  (setq truncate-lines t)
+  (use-local-map cfw:details-mode-map)
+  (setq major-mode 'cfw:details-mode
+        mode-name "Calendar Details Mode")
+  (setq buffer-undo-list t
+        buffer-read-only t)
+  (run-hooks 'cfw:details-mode-hook))
+
+(defun cfw:details-kill-buffer-command ()
+  "Kill buffer and delete window."
+  (interactive)
+  (let ((win-num (length (window-list)))
+        (next-win (get-buffer-window cfw:main-buf)))
+    (when (and (not (one-window-p))
+               (> win-num cfw:before-win-num))
+      (delete-window))
+    (kill-buffer cfw:details-buffer-name)
+    (when next-win (select-window next-win))))
+
+(defun cfw:details-navi-next-command (&optional num)
+  "details-navi-next"
+  (interactive)
+  (when cfw:main-buf
+    (with-current-buffer cfw:main-buf
+      (cfw:navi-next-day-command num)
+      (cfw:show-details-command))))
+
+(defun cfw:details-navi-prev-command (&optional num)
+  "details-navi-prev"
+  (interactive)
+  (when cfw:main-buf
+    (with-current-buffer cfw:main-buf
+      (cfw:navi-previous-day-command num)
+      (cfw:show-details-command))))
 
 (provide 'calfw)
 ;;; calfw.el ends here
