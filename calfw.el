@@ -74,33 +74,36 @@
   '((((class color) (background light))
      :foreground "DarkGrey" :weight bold :height 2.0 :inherit variable-pitch)
     (((class color) (background dark))
-     :foreground "yellow" :weight bold :height 2.0 :inherit variable-pitch)
+     :foreground "darkgoldenrod3" :weight bold :height 2.0 :inherit variable-pitch)
     (t :height 1.5 :weight bold :inherit variable-pitch))
   "Face for title" :group 'calfw)
 
 (defface cfw:face-header
-  '((((class color)) :foreground "Slategray4" :background "Gray90" :weight bold))
+  '((((class color) (background light))
+     :foreground "Slategray4" :background "Gray90" :weight bold)
+    (((class color) (background dark))
+     :foreground "maroon2" :weight bold))
   "Face for headers" :group 'calfw)
 
 (defface cfw:face-sunday
   '((((class color) (background light))
      :foreground "red2" :background "#ffd5e5" :weight bold)
     (((class color) (background dark))
-     :foreground "red" :background "chocolate4" :weight bold))
+     :foreground "red" :weight bold))
   "Face for Sunday" :group 'calfw)
 
 (defface cfw:face-saturday
   '((((class color) (background light))
      :foreground "Blue" :background "#d4e5ff" :weight bold)
     (((class color) (background light))
-     :foreground "Darkslategray3" :background "Steelblue4" :weight bold))
+     :foreground "Blue" :weight bold))
   "Face for Saturday" :group 'calfw)
 
 (defface cfw:face-holiday
   '((((class color) (background light))
      :background "#ffd5e5")
     (((class color) (background dark))
-     :background "chocolate4"))
+     :background "grey10" :foreground "purple" :weight bold))
   "Face for holidays" :group 'calfw)
 
 (defface cfw:face-grid
@@ -112,7 +115,10 @@
   :group 'calfw)
 
 (defface cfw:face-default-content
-  '((((class color)) :foreground "#2952a3"))
+  '((((class color) (background light))
+     :foreground "#2952a3")
+    (((class color) (background dark))
+     :foreground "green2"))
   "Face for default contents"
   :group 'calfw)
 
@@ -120,14 +126,14 @@
   '((((class color) (background light))
      :background "#668cd9" :foreground "White" :slant italic)
     (((class color) (background dark))
-     :background "#d4e5ff" :foreground "RoyalBlue" :slant italic))
+     :foreground "cyan"))
   "Face for period" :group 'calfw)
 
 (defface cfw:face-day-title
   '((((class color) (background light))
      :background "#f8f9ff")
     (((class color) (background dark))
-     :background "DarkGrey"))
+     :background "grey10"))
   "Face for day title"
   :group 'calfw)
 
@@ -147,21 +153,21 @@
   '((((class color) (background light))
      :background "#fad163")
     (((class color) (background dark))
-     :background "DarkCyan"))
+     :background "red4" :weight bold))
   "Face for today" :group 'calfw)
 
 (defface cfw:face-today
   '((((class color) (background light))
      :background "#fff7d7")
     (((class color) (background dark))
-     :background "Cyan"))
+     :foreground "Cyan" :weight bold))
   "Face for today" :group 'calfw)
 
 (defface cfw:face-select
   '((((class color) (background light))
      :background "#c3c9f8")
     (((class color) (background dark))
-     :background "Blue"))
+     :background "Blue4"))
   "Face for selection" :group 'calfw)
 
 
