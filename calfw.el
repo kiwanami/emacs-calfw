@@ -1218,11 +1218,12 @@ calendar view."
 (defun cfw:refresh-calendar-buffer ()
   "Clear the calendar and render again."
   (interactive)
-  (when cfw:dest
-    (let ((date (or (cfw:cursor-to-nearest-date) 
-                            (calendar-current-date))))
-      (cfw:calendar-update cfw:dest)
-      (cfw:navi-goto-date date))))
+  (let ((dest (cfw:calendar-get-dest)))
+    (when dest
+      (let ((date (or (cfw:cursor-to-nearest-date) 
+                      (calendar-current-date))))
+        (cfw:calendar-update dest)
+        (cfw:navi-goto-date date)))))
 
 (defun cfw:navi-goto-week-begin-command ()
   "Move the cursor to the first day of the current week."
@@ -1381,9 +1382,10 @@ DATE is a date to show. MODEL is model object."
 
 (defvar cfw:details-mode-map
   (cfw:define-keymap
-   '(("q" . cfw:details-kill-buffer-command)
-     ("n" . cfw:details-navi-next-command)
-     ("p" . cfw:details-navi-prev-command)
+   '(("q"   . cfw:details-kill-buffer-command)
+     ("SPC" . cfw:details-kill-buffer-command)
+     ("n"   . cfw:details-navi-next-command)
+     ("p"   . cfw:details-navi-prev-command)
      ))
   "Default key map for the details buffer.")
 
