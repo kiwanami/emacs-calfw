@@ -302,6 +302,7 @@ ones of DATE2. Otherwise is `nil'."
                (1+ (calendar-absolute-from-gregorian d)))))
     (nreverse ret)))
 
+
 
 ;;; Rendering destination
 
@@ -725,7 +726,7 @@ data. PARAM is an alist of the rendering parameters."
                  for hday = (car (cfw:contents-get date holidays))
                  for ant = (cfw:rt (cfw:contents-get date annotations) 'cfw:face-annotation)
                  for raw-periods = (cfw:contents-get date periods)
-                 for raw-contents = (cfw:contents-get date contents)
+                 for raw-contents = (cfw:render-sort-contents (cfw:contents-get date contents))
                  for prs-contents = (append
                                      (cfw:render-periods date week-day raw-periods)
                                      (mapcar 'cfw:render-default-content-face raw-contents))
@@ -743,6 +744,10 @@ data. PARAM is an alist of the rendering parameters."
                              (if hday (concat " " (cfw:rt (substring hday 0) 'cfw:face-holiday))))
                  collect
                  (cons date (cons (cons tday ant) prs-contents)))))))
+
+(defun cfw:render-sort-contents (lst)
+  "[internal] Sort the string list LST. Maybe need to improve the sorting rule..."
+  (sort lst 'string-lessp))
 
 (defun cfw:render-month-week (week-days)
   "[internal] This function is an internal function of `cfw:render-month',
@@ -796,6 +801,7 @@ faces, the faces are remained."
 
 (defun cfw:render-truncate (org limit-width &optional ellipsis)
   "[internal] Truncate a string ORG with LIMIT-WIDTH, like `truncate-string-to-width'."
+  (setq org (replace-regexp-in-string "\n" " " org))
   (if (< limit-width (string-width org))
       (let ((str (truncate-string-to-width 
                   (substring org 0) limit-width 0 nil ellipsis)))
@@ -1347,8 +1353,7 @@ TEXT is a content to show."
         (erase-buffer)
         (insert text)
         (goto-char (point-min))))
-    (pop-to-buffer buf)
-    (fit-window-to-buffer (get-buffer-window buf) cfw:details-window-size)))
+    (pop-to-buffer buf)))
 
 (defun cfw:details-layout (date model)
   "Layout details and return the text.

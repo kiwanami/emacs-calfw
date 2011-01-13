@@ -158,6 +158,7 @@ events have not been supported yet."
     (unwind-protect
         (pp-display-expression
          (with-current-buffer buf
+           (icalendar--normalize-buffer)
            (cfw:ical-convert-ical-to-calfw
             (icalendar--read-element nil nil)))
          "*ical-debug*")
@@ -195,7 +196,9 @@ events have not been supported yet."
           (kill-buffer buf))
         dbuf))
      (t ; assume local file
-      (find-file-noselect (expand-file-name url))))))
+      (let ((buf (find-file-noselect (expand-file-name url) t)))
+        (with-current-buffer buf (set-visited-file-name nil))
+        buf)))))
 
 (defmacro cfw:ical-with-buffer (url &rest body)
   (let (($buf (gensym)))
@@ -205,12 +208,20 @@ events have not been supported yet."
          (kill-buffer ,$buf)))))
 (put 'cfw:ical-with-buffer 'lisp-indent-function 1)
 
+(defun cfw:ical-normalize-buffer ()
+  (save-excursion
+    (goto-char (point-min))
+     (while (re-search-forward "\n " nil t)
+       (replace-match "")))
+  (set-buffer-modified-p nil))
+
 (defun cfw:ical-to-calendar (begin end)
   (unless cfw:ical-calendar-contents-sources-cache
     (setq cfw:ical-calendar-contents-sources-cache
           (loop for s in cfw:ical-calendar-contents-sources
                 for cal-list = 
                 (cfw:ical-with-buffer s
+                  (cfw:ical-normalize-buffer)
                   (cfw:ical-convert-ical-to-calfw
                    (icalendar--read-element nil nil)))
                 with contents = nil
