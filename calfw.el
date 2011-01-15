@@ -535,7 +535,7 @@ SELECTED-DATE"
   (let ((cp (make-cfw:component
              :dest  dest
              :model model
-             :view  view
+             :view  (or view 'month)
              :selected (or selected-date (calendar-current-date)))))
     (cfw:cp-update cp)
     cp))
