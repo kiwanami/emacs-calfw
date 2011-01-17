@@ -651,19 +651,19 @@ HEIGHT"
   "cp-add-update-hook
 COMPONENT 
 HOOK"
-  (push (cfw:component-update-hooks component) hook))
+  (push hook (cfw:component-update-hooks component)))
 
 (defun cfw:cp-add-selection-change-hook (component hook)
   "cp-add-selection-change-hook
 COMPONENT 
 HOOK"
-  (push (cfw:component-selection-change-hooks component) hook))
+  (push hook (cfw:component-selection-change-hooks component)))
 
 (defun cfw:cp-add-click-hook (component hook)
   "cp-add-click-hook
 COMPONENT 
 HOOK"
-  (push (cfw:component-click-hooks component) hook))
+  (push hook (cfw:component-click-hooks component)))
 
 
 
@@ -706,13 +706,13 @@ COMPONENT"
       (cfw:cp-set-selected-date component (cfw:component-selected component))
       (cfw:cp-fire-update-hooks component))))
 
-(defun cfw:cp-fire-click-hooks (component date)
+(defun cfw:cp-fire-click-hooks (component)
   "cp-fire-click-hooks
 COMPONENT 
 DATE"
   (loop for f in (cfw:component-click-hooks component)
         do (condition-case err
-               (funcall f date)
+               (funcall f)
              (nil (message "Calfw: Click / Hook error %S [%s]" f err)))))
 
 (defun cfw:cp-fire-selection-change-hooks (component)
@@ -790,7 +790,7 @@ MODEL"
   (let ((cell (assq 'contents-sources model)))
     (cond
      (cell (setcdr cell sources))
-     (t (push (cons 'contents-sources sources)))))
+     (t (push (cons 'contents-sources sources) model))))
   sources)
 
 (defun cfw:model-set-annotation-sources (sources model)
@@ -800,7 +800,7 @@ MODEL"
   (let ((cell (assq 'annotation-sources model)))
     (cond
      (cell (setcdr cell sources))
-     (t (push (cons 'annotation-sources sources)))))
+     (t (push (cons 'annotation-sources sources) model))))
   sources)
 
 (defun cfw:contents-get (date contents)
@@ -1354,6 +1354,7 @@ calendar view."
 
      ("r" . cfw:refresh-calendar-buffer)
      ("SPC" . cfw:show-details-command)
+     ([mouse-1] . cfw:navi-on-click)
 
      ("g" . cfw:navi-goto-date-command)
      ("t" . cfw:navi-goto-today-command)))
@@ -1382,15 +1383,19 @@ calendar view."
 
 ;;; Actions
 
+(defun cfw:navi-on-click ()
+  "click"
+  (interactive)
+  (let ((cp (cfw:cp-get-component)))
+    (when cp
+      (cfw:cp-set-selected-date cp (cfw:cursor-to-nearest-date))
+      (cfw:cp-fire-click-hooks cp))))
+
 (defun cfw:refresh-calendar-buffer ()
   "Clear the calendar and render again."
   (interactive)
-  (let ((dest (cfw:calendar-get-dest)))
-    (when dest
-      (let ((date (or (cfw:cursor-to-nearest-date) 
-                      (calendar-current-date))))
-        (cfw:calendar-update dest)
-        (cfw:navi-goto-date date)))))
+  (let ((cp (cfw:cp-get-component)))
+    (when cp (cfw:cp-update cp))))
 
 (defun cfw:navi-goto-week-begin-command ()
   "Move the cursor to the first day of the current week."
@@ -1487,8 +1492,8 @@ Movement is forward if NUM is negative."
   "Show details on the selected date."
   (interactive)
   (let* ((cursor-date (cfw:cursor-to-nearest-date))
-         (dest  (cfw:calendar-get-dest))
-         (model (and dest (cfw:dest-model dest))))
+         (cp  (cfw:cp-get-component))
+         (model (and cp (cfw:component-model cp))))
     (when model
       (cfw:details-popup
        (cfw:details-layout cursor-date model)))))
@@ -1605,14 +1610,14 @@ DATE is a date to show. MODEL is model object."
   "Open a calendar buffer simply.
 DATE is initial focus date. If it is nil, today is selected
 initially.  This function uses the function
-`cfw:get-calendar-buffer-custom' internally."
+`cfw:create-calendar-buffer' internally."
   (interactive)
-  (let ((cp (cfw:get-calendar-buffer-custom 
+  (let ((cp (cfw:create-calendar-buffer
              :date date :contents-sources contents-sources 
              :annotation-sources annotation-sources :view view)))
     (switch-to-buffer (cfw:cp-get-buffer cp))))
 
-(defun* cfw:get-calendar-buffer-custom
+(defun* cfw:create-calendar-component-buffer
     (&key date buffer custom-map contents-sources annotation-sources view)
   "Return a calendar buffer with some customize parameters.
 
@@ -1633,7 +1638,7 @@ CUSTOM-MAP is the additional keymap that is added to default keymap `cfw:calenda
 
 ;; region
 
-(defun* cfw:insert-calendar-region
+(defun* cfw:create-calendar-component-region
     (&key date width height keymap contents-sources annotation-sources view)
   "Insert markers of the rendering destination at current point and display the calendar view.
 
@@ -1660,7 +1665,7 @@ KEYMAP is the keymap that is put to the text property `keymap'. If KEYMAP is nil
 
 ;; inline
 
-(defun* cfw:get-schedule-text
+(defun* cfw:get-calendar-text
     (width height &key date keymap contents-sources annotation-sources view)
   "Return a text that is drew the calendar view.
 
@@ -1687,43 +1692,49 @@ DATE is initial focus date. If it is nil, today is selected initially."
 ;;; debug
 
 (defun cfw:open-debug-calendar ()
-  (cfw:open-calendar-buffer
-   :view 'month
-   :contents-sources
-   (list
-    (make-cfw:source
-     :name "test1"
-     :color "Red"
-     :data 
-     (lambda (b e)
-       '(((1  1 2011) "TEST1") 
-         ((1 10 2011) "TEST2" "TEST3")
-         (periods 
-          ((1 8 2011) (1 9 2011) "PERIOD1")
-          ((1 11 2011) (1 12 2011) "Period2")
-          ((1 12 2011) (1 14 2011) "long long title3"))
-         )))
-    (make-cfw:source
-     :name "test2"
-     :data
-     (lambda (b e) 
-       '(((1  2 2011) "PTEST1") 
-         ((1 10 2011) "PTEST2" "PTEST3")
-         (periods 
-          ((1 14 2011) (1 15 2011) "Stack")
-          ((1 29 2011) (1 31 2011) "PERIOD W"))
-         ))))
-   :annotation-sources
-   (list
-    (make-cfw:source
-     :name "Moon"
-     :data 
-     (lambda (b e)
-       '(((1  4 2011) . "New Moon") 
-         ((1 12 2011) . "Young Moon")
-         ((1 20 2011) . "Full Moon")
-         ((1 26 2011) . "Waning Moon")
-         ))))))
+  (let* ((source1
+          (make-cfw:source
+           :name "test1"
+           :color "Red"
+           :data 
+           (lambda (b e)
+             '(((1  1 2011) "TEST1") 
+               ((1 10 2011) "TEST2" "TEST3")
+               (periods 
+                ((1 8 2011) (1 9 2011) "PERIOD1")
+                ((1 11 2011) (1 12 2011) "Period2")
+                ((1 12 2011) (1 14 2011) "long long title3"))
+               ))))
+         (source2 
+          (make-cfw:source
+           :name "test2"
+           :data
+           (lambda (b e) 
+             '(((1  2 2011) "PTEST1") 
+               ((1 10 2011) "PTEST2" "PTEST3")
+               (periods 
+                ((1 14 2011) (1 15 2011) "Stack")
+                ((1 29 2011) (1 31 2011) "PERIOD W"))
+               ))))
+         (asource
+          (make-cfw:source
+           :name "Moon"
+           :data 
+           (lambda (b e)
+             '(((1  4 2011) . "New Moon") 
+               ((1 12 2011) . "Young Moon")
+               ((1 20 2011) . "Full Moon")
+               ((1 26 2011) . "Waning Moon")
+               ))))
+         (cp (cfw:create-calendar-component-buffer
+              :view 'month
+              :contents-sources (list source1 source2)
+              :annotation-sources (list asource))))
+    (cfw:cp-add-update-hook cp (lambda () (message "CFW: UPDATE HOOK")))
+    (cfw:cp-add-click-hook cp (lambda () (message "CFW: CLICK HOOK %S" (cfw:cursor-to-nearest-date))))
+    (cfw:cp-add-selection-change-hook cp (lambda () (message "CFW: SELECT %S" (cfw:cursor-to-nearest-date))))
+    (switch-to-buffer (cfw:cp-get-buffer cp))
+    ))
 
 
 (provide 'calfw)
