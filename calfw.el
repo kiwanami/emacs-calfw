@@ -836,17 +836,41 @@ calling functions `cfw:contents-functions'."
   (cond 
    ((null sources) nil)
    ((= 1 (length sources))
-    (funcall (cfw:source-data (car sources)) begin end))
+    (cfw:contents-put-source
+     (funcall (cfw:source-data (car sources)) begin end)
+     (car sources)))
    (t
     (loop for s in sources
           for f = (cfw:source-data s)
-          for cnts = (funcall f begin end)
+          for cnts = (cfw:contents-put-source
+                      (funcall f begin end) s)
           with contents = nil
           do
           (loop for c in cnts
                 for (d . line) = c
                 do (cfw:contents-add d line contents))
           finally return contents))))
+
+(defun cfw:contents-put-source (contents source)
+  "[internal] Put the source object to the text property
+`cfw:source' in the contents list. During rendering, the source
+object is used to put some face property."
+  (cond
+   ((null source) contents)
+   (t
+    (loop for (k . lst) in contents
+          if (eq k 'periods)
+          collect ; periods
+          (cons k 
+                (loop for (begin end summary) in lst
+                      collect (list 
+                               begin end 
+                               (cfw:tp summary 'cfw:source source))))
+          else
+          collect ; contents
+          (cons k
+                (loop for i in lst
+                      collect (cfw:tp i 'cfw:source source)))))))
 
 (defun cfw:annotations-merge (begin end sources)
   "[internal] Return an annotation alist between begin date and end one,
@@ -924,13 +948,34 @@ sides with the character PADDING."
   "[internal] Sort the string list LST. Maybe need to improve the sorting rule..."
   (sort lst 'string-lessp))
 
+(defun cfw:render-get-face-period (text default-face)
+  "[internal] render-get-face-period
+TEXT 
+DEFAULT-FACE"
+  (let* ((src (get-text-property 0 'cfw:source text))
+         (bg-color (and src (cfw:source-color src))))
+    (cond
+     ((or (null src) (null bg-color)) default-face)
+     (t (list ':background bg-color ':foreground "White")))))
+
+(defun cfw:render-get-face-content (text default-face)
+  "[internal] render-get-face-content
+TEXT 
+DEFAULT-FACE"
+  (let* ((src (get-text-property 0 'cfw:source text))
+         (fg-color (and src (cfw:source-color src))))
+    (cond
+     ((or (null src) (null fg-color)) default-face)
+     (t (list ':foreground fg-color)))))
 
 (defun cfw:render-default-content-face (str &optional default-face)
   "[internal] Put the default content face. If STR has some
 faces, the faces are remained."
   (loop for i from 0 below (length str)
         with ret = (substring str 0)
-        with face = (or default-face 'cfw:face-default-content)
+        with face = (or default-face 
+                        (cfw:render-get-face-content 
+                         str 'cfw:face-default-content))
         unless (get-text-property i 'face ret)
         do 
         (put-text-property i (1+ i) 'face face ret)
@@ -1153,7 +1198,7 @@ This function translates PERIOD-STACK to display content on the DATE."
                   (if beginp "(" "")
                   (cfw:render-left width title ?-)
                   (if endp ")" ""))
-                 'cfw:face-periods)
+                 (cfw:render-get-face-period content 'cfw:face-periods))
               "")))))
 
 (defun cfw:view-month-periods-get-min (periods-each-days begin end)
