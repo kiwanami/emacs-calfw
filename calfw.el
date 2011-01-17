@@ -352,11 +352,15 @@ ones of DATE2. Otherwise is `nil'."
 
 ;; shortcut functions
 
-(defmacro cfw:dest-with-region (dest &rest body)
-  `(save-restriction
-     (narrow-to-region 
-      (cfw:dest-point-min dest) (cfw:dest-point-max dest))
-     ,@body))
+(eval-when-compile
+  (defmacro cfw:dest-with-region (dest &rest body)
+    (let (($dest (gensym)))
+      `(let ((,$dest ,dest))
+         (with-current-buffer (cfw:dest-buffer ,$dest)
+           (save-restriction
+             (narrow-to-region 
+              (cfw:dest-point-min ,$dest) (cfw:dest-point-max ,$dest))
+             ,@body))))))
 (put 'cfw:dest-with-region 'lisp-indent-function 1)
 
 (defun cfw:dest-point-min (c)
@@ -1394,20 +1398,22 @@ calendar view."
 (defun cfw:navi-goto-week-begin-command ()
   "Move the cursor to the first day of the current week."
   (interactive)
-  (let* ((cursor-date (cfw:cursor-to-nearest-date))
-         (back-num (% (- (calendar-day-of-week cursor-date) 
-                         calendar-week-start-day)
-                      cfw:week-days)))
-    (cfw:navi-previous-day-command back-num)))
+  (when (cfw:cp-get-component)
+    (let* ((cursor-date (cfw:cursor-to-nearest-date))
+           (back-num (% (- (calendar-day-of-week cursor-date) 
+                           calendar-week-start-day)
+                        cfw:week-days)))
+      (cfw:navi-previous-day-command back-num))))
 
 (defun cfw:navi-goto-week-end-command ()
   "Move the cursor to the last day of the current week."
   (interactive)
-  (let* ((cursor-date (cfw:cursor-to-nearest-date))
-         (forward-num (% (- cfw:week-saturday (calendar-day-of-week cursor-date)
-                            calendar-week-start-day)
-                         cfw:week-days)))
-    (cfw:navi-next-day-command forward-num)))
+  (when (cfw:cp-get-component)
+    (let* ((cursor-date (cfw:cursor-to-nearest-date))
+           (forward-num (% (- cfw:week-saturday (calendar-day-of-week cursor-date)
+                              calendar-week-start-day)
+                           cfw:week-days)))
+      (cfw:navi-next-day-command forward-num))))
 
 (defun cfw:navi-goto-date-command (string-date)
   "Move the cursor to the specified date."
@@ -1423,12 +1429,13 @@ calendar view."
   "Move the cursor forward NUM days. If NUM is nil, 1 is used.
 Moves backward if NUM is negative."
   (interactive)
-  (unless num (setq num 1))
-  (let* ((cursor-date (cfw:cursor-to-nearest-date))
-         (new-cursor-date
-          (calendar-gregorian-from-absolute
-           (+ (calendar-absolute-from-gregorian cursor-date) num))))
-    (cfw:navi-goto-date new-cursor-date)))
+  (when (cfw:cp-get-component)
+    (unless num (setq num 1))
+    (let* ((cursor-date (cfw:cursor-to-nearest-date))
+           (new-cursor-date
+            (calendar-gregorian-from-absolute
+             (+ (calendar-absolute-from-gregorian cursor-date) num))))
+      (cfw:navi-goto-date new-cursor-date))))
 
 (defun cfw:navi-previous-day-command (&optional num)
   "Move the cursor back NUM days. If NUM is nil, 1 is used.
@@ -1462,17 +1469,18 @@ Moves forward if NUM is negative."
   "Move the cursor forward NUM months. If NUM is nil, 1 is used.
 Movement is backward if NUM is negative."
   (interactive)
-  (unless num (setq num 1))
-  (let* ((cursor-date (cfw:cursor-to-nearest-date))
-         (month (calendar-extract-month cursor-date))
-         (day   (calendar-extract-day   cursor-date))
-         (year  (calendar-extract-year  cursor-date))
-         (last (progn
-                 (calendar-increment-month month year num)
-                 (calendar-last-day-of-month month year)))
-         (day (min last day))
-         (new-cursor-date (cfw:date month day year)))
-    (cfw:navi-goto-date new-cursor-date)))
+  (when (cfw:cp-get-component)
+    (unless num (setq num 1))
+    (let* ((cursor-date (cfw:cursor-to-nearest-date))
+           (month (calendar-extract-month cursor-date))
+           (day   (calendar-extract-day   cursor-date))
+           (year  (calendar-extract-year  cursor-date))
+           (last (progn
+                   (calendar-increment-month month year num)
+                   (calendar-last-day-of-month month year)))
+           (day (min last day))
+           (new-cursor-date (cfw:date month day year)))
+      (cfw:navi-goto-date new-cursor-date))))
 
 (defun cfw:navi-previous-month-command (&optional num)
   "Move the cursor back NUM months. If NUM is nil, 1 is used.
@@ -1646,15 +1654,19 @@ KEYMAP is the keymap that is put to the text property `keymap'. If KEYMAP is nil
     (insert " ")
     (setq mark-end (point-marker))
     (save-excursion
-      (let ((dest (cfw:dest-init-region (current-buffer) mark-begin mark-end width height))
-            (model (cfw:model-abstract-new date contents-sources annotation-sources))
-            (cp (cfw:cp-new dest model view date)))
-        (lexical-let ((keymap keymap) (cp cp))
-          (lambda () 
-            (cfw:dest-with-region (cfw:component-dest cp)
-              (let (buffer-read-only)
-                (put-text-property (point-min) (point-max) 'cfw:component cp)
-                (put-text-property (point-min) (point-max) 'keymap (or keymap cfw:calendar-mode-map))))))
+      (let* ((dest (cfw:dest-init-region (current-buffer) mark-begin mark-end width height))
+             (model (cfw:model-abstract-new date contents-sources annotation-sources))
+             (cp (cfw:cp-new dest model view date))
+             (update-func
+              (lexical-let ((keymap keymap) (cp cp))
+                (lambda ()
+                  (message "UPDATE?")
+                  (cfw:dest-with-region (cfw:component-dest cp)
+                    (let (buffer-read-only)
+                      (put-text-property (point-min) (point-max) 'cfw:component cp)
+                      (put-text-property (point-min) (point-max) 'keymap (or keymap cfw:calendar-mode-map))))))))
+        (setf (cfw:dest-update-func dest) update-func)
+        (funcall update-func)
         cp))))
 
 ;; inline
