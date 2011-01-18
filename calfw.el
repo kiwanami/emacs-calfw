@@ -268,6 +268,11 @@ ones of DATE2. Otherwise is `nil'."
    (= month (calendar-extract-month date2))
    (= year (calendar-extract-year date2))))
 
+(defun cfw:date-after (date num)
+  "Return the date after NUM days from DATE."
+  (calendar-gregorian-from-absolute
+   (+ (calendar-absolute-from-gregorian date) num)))
+
 (defun cfw:strtime-emacs (time)
   "Format emacs time value TIME to the string form YYYY/MM/DD."
   (format-time-string "%Y/%m/%d" time))
@@ -298,8 +303,7 @@ ones of DATE2. Otherwise is `nil'."
     (while cont
       (push (cfw:copy-list d) ret)
       (setq cont (not (equal d end)))
-      (setq d (calendar-gregorian-from-absolute
-               (1+ (calendar-absolute-from-gregorian d)))))
+      (setq d (cfw:date-after d 1)))
     (nreverse ret)))
 
 
@@ -615,8 +619,7 @@ DATE"
       (unless (equal last date)
         (cfw:cp-fire-selection-change-hooks component)))
      (t
-      (setf (cfw:component-model component)
-            (cfw:model-abstract-derived date model))
+      (cfw:model-set-init-date date model)
       (setf (cfw:component-selected component) date)
       (cfw:cp-update component)
       (cfw:cp-fire-selection-change-hooks component)
@@ -685,6 +688,9 @@ HOOK"
 VIEW"
   (cond
    ((eq 'month view) 'cfw:view-month)
+   ((eq 'week view) 'cfw:view-week)
+   ((eq 'two-weeks view) 'cfw:view-two-weeks)
+   ((eq 'day view) 'cfw:view-day)
    (t (error "Not found such view : %s" view))))
 
 (defun cfw:cp-get-component ()
@@ -766,6 +772,15 @@ ORG-MODEL"
    (cfw:model-get-contents-sources org-model)
    (cfw:model-get-annotation-sources org-model)))
 
+(defun cfw:model-create-updated-view-data (model view-data)
+  "model-update-view-data
+MODEL 
+VIEW-DATA"
+  (append
+   (cfw:model-abstract-derived 
+    (cfw:k 'init-date model) model)
+   view-data))
+
 ;; public functions
 
 (defun cfw:model-get-holiday-by-date (date model)
@@ -794,6 +809,16 @@ ORG-MODEL"
 
 (defun cfw:model-get-annotation-sources (model)
   (cfw:k 'annotation-sources model))
+
+(defun cfw:model-set-init-date (date model)
+  "model-set-init-date
+DATE 
+MODEL"
+  (let ((cell (assq 'init-date model)))
+    (cond
+     (cell (setcdr cell date))
+     (t (push (cons 'init-date date) model))))
+  date)
 
 (defun cfw:model-set-contents-sources (sources model)
   "model-set-contents-sources
@@ -1117,7 +1142,7 @@ not know how to display the contents in the destinations."
           (setq day (% (1+ day) cfw:week-days))
           (incf i))
     ;; model
-    (append 
+    (cfw:model-create-updated-view-data
      model
      `(; common data
        (begin-date . ,begin-date) (end-date . ,end-date)
@@ -1313,6 +1338,332 @@ period-stack -> ((row-num . period) ... )"
 
 
 
+;;; view-week
+
+(defun cfw:view-week-model (model)
+  "[internal] Create a logical view model of weekly calendar.
+This function collects and arranges contents.  This function does
+not know how to display the contents in the destinations."
+  (let* ((init-date (cfw:k 'init-date model))
+         (back-num (% (- (calendar-day-of-week init-date)
+                         calendar-week-start-day) cfw:week-days))
+         (begin-date (cfw:date-after init-date (- back-num)))
+         (end-date (cfw:date-after begin-date (1- cfw:week-days)))
+         (day-names 
+          (loop for i from 0 below cfw:week-days 
+                collect (% (+ calendar-week-start-day i) cfw:week-days)))
+         (holidays (let ((displayed-month (calendar-extract-month begin-date))
+                         (displayed-year (calendar-extract-year begin-date)))
+                     (calendar-holiday-list)))
+         (contents-all (cfw:contents-merge 
+                        begin-date end-date
+                        (cfw:model-get-contents-sources model)))
+         (contents (loop for i in contents-all
+                         unless (eq 'periods (car i))
+                         collect i))
+         weeks)
+    ;; making 'weeks'
+    (loop with i = begin-date
+          with day = calendar-week-start-day
+          with week = nil
+          do
+          ;; flush a week
+          (when (and (= day calendar-week-start-day) week)
+            (push (nreverse week) weeks)
+            (setq week nil)
+            (when (cfw:date-less-equal-p end-date i) (return)))
+          ;; add a day
+          (push i week)
+          ;; increment
+          (setq day (% (1+ day) cfw:week-days))
+          (setq i (cfw:date-after i 1)))
+    ;; model
+    (cfw:model-create-updated-view-data
+     model
+     `(; common data
+       (begin-date . ,begin-date) (end-date . ,end-date)
+       (holidays . ,holidays) ; an alist of holidays, (DATE HOLIDAY-NAME)
+       (annotations . ,(cfw:annotations-merge ; an alist of annotations, (DATE ANNOTATION)
+                        begin-date end-date 
+                        (cfw:model-get-annotation-sources model)))
+       (contents . ,contents) ; an alist of contents, (DATE LIST-OF-CONTENTS)
+       (periods . ,(cfw:k 'periods contents-all)) ; a list of periods, (BEGIN-DATE END-DATE SUMMARY)
+       ; month view data
+       (headers . ,day-names) ; a list of the index of day-of-week
+       (weeks . ,(nreverse weeks)) ; a matrix of day-of-month, which corresponds to the index of `headers'
+       ))))
+
+;; (cfw:view-week-model (cfw:model-abstract-new (cfw:date 1 1 2011) nil nil))
+
+(defun cfw:view-week-calc-param (dest)
+  "[internal] Calculate cell size from the reference size and
+return an alist of rendering parameters."
+  (let*
+      ((win-width (cfw:dest-width dest))
+       (win-height (max 15 (- (cfw:dest-height dest) 10)))
+       (cell-width  (max 5 (/ (- win-width 8) 7)))
+       (cell-height (max 2 (- win-height 6)))
+       (total-width (+ (* cell-width cfw:week-days) 8)))
+    `((cell-width . ,cell-width)
+      (cell-height . ,cell-height)
+      (total-width . ,total-width))))
+
+(defun cfw:view-week (component)
+  "[internal] Render monthly calendar view."
+  (let* ((dest (cfw:component-dest component))
+         (param (cfw:view-week-calc-param dest))
+         (cell-width  (cfw:k 'cell-width  param))
+         (cell-height (cfw:k 'cell-height param))
+         (total-width (cfw:k 'total-width param))
+         (EOL "\n") (VL (cfw:rt "|" 'cfw:face-grid))
+         (hline (cfw:rt (concat (make-string total-width ?-) EOL) 'cfw:face-grid))
+         (cline (cfw:rt (concat 
+                         (loop for i from 0 below cfw:week-days
+                               concat (concat "+" (make-string cell-width ?-)))
+                         "+" EOL) 'cfw:face-grid))
+         (model (cfw:view-week-model (cfw:component-model component)))
+         (begin-date (cfw:k 'begin-date model))
+         (end-date (cfw:k 'end-date model)))
+    ;; update model
+    (setf (cfw:component-model component) model)
+    ;; header
+    (insert
+     (cfw:rt 
+      (cond
+       ((eql (calendar-extract-month begin-date) (calendar-extract-month end-date))
+        (format "%4s / %s . %s - %s"
+                (calendar-extract-year begin-date)
+                (aref calendar-month-name-array (1- (calendar-extract-month begin-date)))
+                (calendar-extract-day begin-date)
+                (calendar-extract-day end-date)))
+       (t
+        (format "%4s/%s/%s - %s4/%s/%s"
+                (calendar-extract-year begin-date)
+                (aref calendar-month-name-array (1- (calendar-extract-month begin-date)))
+                (calendar-extract-day begin-date)
+                (calendar-extract-year end-date)
+                (aref calendar-month-name-array (1- (calendar-extract-month end-date)))
+                (calendar-extract-day end-date))))
+      'cfw:face-title)
+     EOL (cfw:render-toolbar total-width 'week
+                             'cfw:navi-previous-week-command
+                             'cfw:navi-next-week-command)
+     EOL hline)
+    ;; day names
+    (loop for i in (cfw:k 'headers model)
+          for name = (aref calendar-day-name-array i) do
+          (insert VL (cfw:rt (cfw:render-center cell-width name) 
+                              (cfw:render-get-week-face i 'cfw:face-header))))
+    (insert VL EOL cline)
+    ;; contents
+    (loop for week in (cfw:k 'weeks model) ; week rows loop 
+          with headers     = (cfw:k 'headers  model) 
+          with holidays    = (cfw:k 'holidays model)
+          with contents    = (cfw:k 'contents model)
+          with annotations = (cfw:k 'annotations model)
+          with periods     = (cfw:view-month-periods-stacks model)
+          do
+          (cfw:view-month-week
+           (loop for date in week ; week columns loop 
+                 for count from 0 below (length week)
+                 for week-day = (nth count headers)
+                 for hday = (car (cfw:contents-get date holidays))
+                 for ant = (cfw:rt (cfw:contents-get date annotations) 'cfw:face-annotation)
+                 for raw-periods = (cfw:contents-get date periods)
+                 for raw-contents = (cfw:render-sort-contents (cfw:contents-get date contents))
+                 for prs-contents = (append
+                                     (cfw:view-month-periods date week-day raw-periods)
+                                     (mapcar 'cfw:render-default-content-face raw-contents))
+                 for num-label = (if prs-contents
+                                     (format "(%s)" 
+                                             (+ (length raw-contents)
+                                                (length raw-periods))) "")
+                 for tday = (concat
+                             " "
+                             (cfw:rt (format "%s" (calendar-extract-day date))
+                                     (if hday 'cfw:face-sunday 
+                                       (cfw:render-get-week-face 
+                                        week-day 'cfw:face-default-day)))
+                             (if num-label (concat " " num-label))
+                             (if hday (concat " " (cfw:rt (substring hday 0) 'cfw:face-holiday))))
+                 collect
+                 (cons date (cons (cons tday ant) prs-contents)))))))
+
+
+
+;;; view-two-weeks
+
+(defun cfw:view-two-weeks-model-begin (model)
+  "view-two-weeks-model-begin
+MODEL"
+  (let ((in-date (cfw:k 'init-date model)))
+    (cond
+     ((eq 'two-weeks (cfw:k 'type model))
+      (let ((old-begin-date (cfw:k 'begin-date model))
+            (old-end-date (cfw:k 'end-date model)))
+        (cond
+         ((cfw:date-between old-begin-date old-end-date in-date)
+          in-date)
+         ((cfw:date-between old-end-date (cfw:date-after old-end-date cfw:week-days) in-date)
+          old-end-date)
+         ((cfw:date-between (cfw:date-after old-begin-date (- cfw:week-days)) old-begin-date in-date)
+          (cfw:date-after old-begin-date (- cfw:week-days)))
+         (t in-date))))
+     (t in-date))))
+
+(defun cfw:view-two-weeks-model (model)
+  "[internal] Create a logical view model of two-weeks calendar.
+This function collects and arranges contents.  This function does
+not know how to display the contents in the destinations."
+  (let* ((init-date (cfw:view-two-weeks-model-begin model))
+         (back-num (% (- (calendar-day-of-week init-date)
+                         calendar-week-start-day) cfw:week-days))
+         (begin-date (cfw:date-after init-date (- back-num)))
+         (end-date (cfw:date-after begin-date (1- (* 2 cfw:week-days))))
+         (day-names 
+          (loop for i from 0 below cfw:week-days 
+                collect (% (+ calendar-week-start-day i) cfw:week-days)))
+         (holidays (let ((displayed-month (calendar-extract-month begin-date))
+                         (displayed-year (calendar-extract-year begin-date)))
+                     (calendar-holiday-list)))
+         (contents-all (cfw:contents-merge 
+                        begin-date end-date
+                        (cfw:model-get-contents-sources model)))
+         (contents (loop for i in contents-all
+                         unless (eq 'periods (car i))
+                         collect i))
+         weeks)
+    ;; making 'weeks'
+    (loop with i = begin-date
+          with day = calendar-week-start-day
+          with week = nil
+          do
+          ;; flush a week
+          (when (and (= day calendar-week-start-day) week)
+            (push (nreverse week) weeks)
+            (setq week nil)
+            (when (cfw:date-less-equal-p end-date i) (return)))
+          ;; add a day
+          (push i week)
+          ;; increment
+          (setq day (% (1+ day) cfw:week-days))
+          (setq i (cfw:date-after i 1)))
+    ;; model
+    (cfw:model-create-updated-view-data
+     model
+     `(; common data
+       (begin-date . ,begin-date) (end-date . ,end-date)
+       (holidays . ,holidays) ; an alist of holidays, (DATE HOLIDAY-NAME)
+       (annotations . ,(cfw:annotations-merge ; an alist of annotations, (DATE ANNOTATION)
+                        begin-date end-date 
+                        (cfw:model-get-annotation-sources model)))
+       (contents . ,contents) ; an alist of contents, (DATE LIST-OF-CONTENTS)
+       (periods . ,(cfw:k 'periods contents-all)) ; a list of periods, (BEGIN-DATE END-DATE SUMMARY)
+       ; month view data
+       (headers . ,day-names) ; a list of the index of day-of-week
+       (weeks . ,(nreverse weeks)) ; a matrix of day-of-month, which corresponds to the index of `headers'
+       (type . two-weeks) ; tag
+       ))))
+
+;; (cfw:view-two-weeks-model (cfw:model-abstract-new (cfw:date 1 1 2011) nil nil))
+
+(defun cfw:view-two-weeks-calc-param (dest)
+  "[internal] Calculate cell size from the reference size and
+return an alist of rendering parameters."
+  (let*
+      ((win-width (cfw:dest-width dest))
+       (win-height (max 15 (- (cfw:dest-height dest) 12)))
+       (cell-width  (max 5 (/ (- win-width 8) 7)))
+       (cell-height (max 2 (/ (- win-height 6) 2)))
+       (total-width (+ (* cell-width cfw:week-days) 8)))
+    `((cell-width . ,cell-width)
+      (cell-height . ,cell-height)
+      (total-width . ,total-width))))
+
+(defun cfw:view-two-weeks (component)
+  "[internal] Render monthly calendar view."
+  (let* ((dest (cfw:component-dest component))
+         (param (cfw:view-two-weeks-calc-param dest))
+         (cell-width  (cfw:k 'cell-width  param))
+         (cell-height (cfw:k 'cell-height param))
+         (total-width (cfw:k 'total-width param))
+         (EOL "\n") (VL (cfw:rt "|" 'cfw:face-grid))
+         (hline (cfw:rt (concat (make-string total-width ?-) EOL) 'cfw:face-grid))
+         (cline (cfw:rt (concat 
+                         (loop for i from 0 below cfw:week-days
+                               concat (concat "+" (make-string cell-width ?-)))
+                         "+" EOL) 'cfw:face-grid))
+         (model (cfw:view-two-weeks-model (cfw:component-model component)))
+         (begin-date (cfw:k 'begin-date model))
+         (end-date (cfw:k 'end-date model)))
+    ;; update model
+    (setf (cfw:component-model component) model)
+    ;; header
+    (insert
+     (cfw:rt 
+      (cond
+       ((eql (calendar-extract-month begin-date) (calendar-extract-month end-date))
+        (format "%4s / %s . %s - %s"
+                (calendar-extract-year begin-date)
+                (aref calendar-month-name-array (1- (calendar-extract-month begin-date)))
+                (calendar-extract-day begin-date)
+                (calendar-extract-day end-date)))
+       (t
+        (format "%4s/%s/%s - %4s/%s/%s"
+                (calendar-extract-year begin-date)
+                (aref calendar-month-name-array (1- (calendar-extract-month begin-date)))
+                (calendar-extract-day begin-date)
+                (calendar-extract-year end-date)
+                (aref calendar-month-name-array (1- (calendar-extract-month end-date)))
+                (calendar-extract-day end-date))))
+      'cfw:face-title)
+     EOL (cfw:render-toolbar total-width 'two-weeks
+                             'cfw:navi-previous-week-command
+                             'cfw:navi-next-week-command)
+     EOL hline)
+    ;; day names
+    (loop for i in (cfw:k 'headers model)
+          for name = (aref calendar-day-name-array i) do
+          (insert VL (cfw:rt (cfw:render-center cell-width name) 
+                              (cfw:render-get-week-face i 'cfw:face-header))))
+    (insert VL EOL cline)
+    ;; contents
+    (loop for week in (cfw:k 'weeks model) ; week rows loop 
+          with headers     = (cfw:k 'headers  model) 
+          with holidays    = (cfw:k 'holidays model)
+          with contents    = (cfw:k 'contents model)
+          with annotations = (cfw:k 'annotations model)
+          with periods     = (cfw:view-month-periods-stacks model)
+          do
+          (cfw:view-month-week
+           (loop for date in week ; week columns loop 
+                 for count from 0 below (length week)
+                 for week-day = (nth count headers)
+                 for hday = (car (cfw:contents-get date holidays))
+                 for ant = (cfw:rt (cfw:contents-get date annotations) 'cfw:face-annotation)
+                 for raw-periods = (cfw:contents-get date periods)
+                 for raw-contents = (cfw:render-sort-contents (cfw:contents-get date contents))
+                 for prs-contents = (append
+                                     (cfw:view-month-periods date week-day raw-periods)
+                                     (mapcar 'cfw:render-default-content-face raw-contents))
+                 for num-label = (if prs-contents
+                                     (format "(%s)" 
+                                             (+ (length raw-contents)
+                                                (length raw-periods))) "")
+                 for tday = (concat
+                             " "
+                             (cfw:rt (format "%s" (calendar-extract-day date))
+                                     (if hday 'cfw:face-sunday 
+                                       (cfw:render-get-week-face 
+                                        week-day 'cfw:face-default-day)))
+                             (if num-label (concat " " num-label))
+                             (if hday (concat " " (cfw:rt (substring hday 0) 'cfw:face-holiday))))
+                 collect
+                 (cons date (cons (cons tday ant) prs-contents)))))))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Navigation
 
 ;; Following functions assume that the current buffer is a calendar view.
@@ -1422,16 +1773,22 @@ calendar view."
      (">" . cfw:navi-next-month-command)
      ("<prior>" . cfw:navi-previous-month-command)
      ("<next>"  . cfw:navi-next-month-command)
-     ("<home>" . cfw:navi-goto-first-date-command)
-     ("<end>"  . cfw:navi-goto-last-date-command)
+     ("<home>"  . cfw:navi-goto-first-date-command)
+     ("<end>"   . cfw:navi-goto-last-date-command)
+
+     ("g" . cfw:navi-goto-date-command)
+     ("t" . cfw:navi-goto-today-command)
 
      ("r" . cfw:refresh-calendar-buffer)
      ("SPC" . cfw:show-details-command)
-     ([mouse-1] . cfw:navi-on-click)
+     
+     ("D" . cfw:change-view-day)
+     ("W" . cfw:change-view-week)
+     ("T" . cfw:change-view-two-weeks)
+     ("M" . cfw:change-view-month)
 
-     ("g" . cfw:navi-goto-date-command)
-     ("t" . cfw:navi-goto-today-command)))
-  "Default key map of calendar views.")
+     ([mouse-1] . cfw:navi-on-click)
+     )) "Default key map of calendar views.")
 
 (defun cfw:calendar-mode-map (&optional custom-map)
   (cond
@@ -1457,18 +1814,22 @@ calendar view."
 ;;; Actions
 
 (defun cfw:change-view-month ()
-  "change-view-month
-"
+  "change-view-month"
   (interactive)
   (when (cfw:cp-get-component)
     (cfw:cp-set-view (cfw:cp-get-component) 'month)))
 
 (defun cfw:change-view-week ()
-  "change-view-week
-"
+  "change-view-week"
   (interactive)
   (when (cfw:cp-get-component)
     (cfw:cp-set-view (cfw:cp-get-component) 'week)))
+
+(defun cfw:change-view-two-weeks ()
+  "change-view-two-weeks"
+  (interactive)
+  (when (cfw:cp-get-component)
+    (cfw:cp-set-view (cfw:cp-get-component) 'two-weeks)))
 
 (defun cfw:navi-on-click ()
   "click"
@@ -1521,9 +1882,7 @@ Moves backward if NUM is negative."
   (when (cfw:cp-get-component)
     (unless num (setq num 1))
     (let* ((cursor-date (cfw:cursor-to-nearest-date))
-           (new-cursor-date
-            (calendar-gregorian-from-absolute
-             (+ (calendar-absolute-from-gregorian cursor-date) num))))
+           (new-cursor-date (cfw:date-after cursor-date num)))
       (cfw:navi-goto-date new-cursor-date))))
 
 (defun cfw:navi-previous-day-command (&optional num)
