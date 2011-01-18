@@ -933,6 +933,32 @@ calling functions `cfw:annotations-functions'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Rendering Utilities
 
+(defun cfw:render-title-month (date)
+  "render-title-month
+DATE"
+  (format "%4s / %s"
+          (cfw:k 'year model)
+          (aref calendar-month-name-array (1- (cfw:k 'month model)))))
+
+(defun cfw:render-title-period (begin-date end-date)
+  "render-title
+BEGIN-DATE 
+END-DATE"
+  (cond
+   ((eql (calendar-extract-month begin-date) (calendar-extract-month end-date))
+    (format "%4s / %s %s - %s"
+            (calendar-extract-year begin-date)
+            (aref calendar-month-name-array (1- (calendar-extract-month begin-date)))
+            (calendar-extract-day begin-date)
+            (calendar-extract-day end-date)))
+   (t
+    (format "%4s / %s %s - %s %s"
+            (calendar-extract-year begin-date)
+            (aref calendar-month-name-array (1- (calendar-extract-month begin-date)))
+            (calendar-extract-day begin-date)
+            (aref calendar-month-name-array (1- (calendar-extract-month end-date)))
+            (calendar-extract-day end-date)))))
+
 (defun cfw:render-center (width string &optional padding)
   "[internal] Format STRING in the center, padding on the both
 sides with the character PADDING."
@@ -1097,6 +1123,8 @@ WIDTH"
            (concat day sp week sp tweek sp month sp))))
     (cfw:render-default-content-face toolbar-text 'cfw:face-toolbar)))
 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Views
 
@@ -1190,9 +1218,7 @@ return an alist of rendering parameters."
     (setf (cfw:component-model component) model)
     ;; header
     (insert
-     (cfw:rt (format "%4s / %s" 
-                     (cfw:k 'year model)
-                     (aref calendar-month-name-array (1- (cfw:k 'month model))))
+     (cfw:rt (cfw:render-title-month (cfw:k 'init-date model))
              'cfw:face-title)
      EOL (cfw:render-toolbar total-width 'month 
                              'cfw:navi-previous-month-command
@@ -1429,21 +1455,7 @@ return an alist of rendering parameters."
     ;; header
     (insert
      (cfw:rt 
-      (cond
-       ((eql (calendar-extract-month begin-date) (calendar-extract-month end-date))
-        (format "%4s / %s . %s - %s"
-                (calendar-extract-year begin-date)
-                (aref calendar-month-name-array (1- (calendar-extract-month begin-date)))
-                (calendar-extract-day begin-date)
-                (calendar-extract-day end-date)))
-       (t
-        (format "%4s/%s/%s - %s4/%s/%s"
-                (calendar-extract-year begin-date)
-                (aref calendar-month-name-array (1- (calendar-extract-month begin-date)))
-                (calendar-extract-day begin-date)
-                (calendar-extract-year end-date)
-                (aref calendar-month-name-array (1- (calendar-extract-month end-date)))
-                (calendar-extract-day end-date))))
+      (cfw:render-title-period begin-date end-date)
       'cfw:face-title)
      EOL (cfw:render-toolbar total-width 'week
                              'cfw:navi-previous-week-command
@@ -1452,7 +1464,7 @@ return an alist of rendering parameters."
     ;; day names
     (loop for i in (cfw:k 'headers model)
           for name = (aref calendar-day-name-array i) do
-          (insert VL (cfw:rt (cfw:render-center cell-width name) 
+          (insert VL (cfw:rt (cfw:render-center cell-width name)
                               (cfw:render-get-week-face i 'cfw:face-header))))
     (insert VL EOL cline)
     ;; contents
@@ -1601,21 +1613,7 @@ return an alist of rendering parameters."
     ;; header
     (insert
      (cfw:rt 
-      (cond
-       ((eql (calendar-extract-month begin-date) (calendar-extract-month end-date))
-        (format "%4s / %s . %s - %s"
-                (calendar-extract-year begin-date)
-                (aref calendar-month-name-array (1- (calendar-extract-month begin-date)))
-                (calendar-extract-day begin-date)
-                (calendar-extract-day end-date)))
-       (t
-        (format "%4s/%s/%s - %4s/%s/%s"
-                (calendar-extract-year begin-date)
-                (aref calendar-month-name-array (1- (calendar-extract-month begin-date)))
-                (calendar-extract-day begin-date)
-                (calendar-extract-year end-date)
-                (aref calendar-month-name-array (1- (calendar-extract-month end-date)))
-                (calendar-extract-day end-date))))
+      (cfw:render-title-period begin-date end-date)
       'cfw:face-title)
      EOL (cfw:render-toolbar total-width 'two-weeks
                              'cfw:navi-previous-week-command
@@ -2150,7 +2148,7 @@ DATE is initial focus date. If it is nil, today is selected initially."
   (let* ((source1
           (make-cfw:source
            :name "test1"
-           :color "Red"
+           :color "Lightpink3"
            :data 
            (lambda (b e)
              '(((1  1 2011) "TEST1") 
