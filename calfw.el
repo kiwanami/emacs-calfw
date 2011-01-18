@@ -315,7 +315,7 @@ ones of DATE2. Otherwise is `nil'."
 ;; dest                   : an object of `cfw:dest'
 ;; model                  : an object of the calendar model
 ;; selected               : selected date
-;; view                   : a symbol of view type (month, week, two-week, ...)
+;; view                   : a symbol of view type (month, week, two-weeks, ...)
 ;; update-hooks           : a list of hook functions for update event
 ;; selectoin-change-hooks : a list of hook functions for selection change event
 ;; click-hooks            : a list of hook functions for click event
@@ -349,13 +349,14 @@ ones of DATE2. Otherwise is `nil'."
 ;; width       : width of the reference size.
 ;; height      : height of the reference size.
 ;; clear-func  : a function that clears the rendering destination.
-;; update-func : a function that is called at the end of rendering routine.
+;; before-update-func : a function that is called at the beginning of rendering routine.
+;; after-update-func  : a function that is called at the end of rendering routine.
 ;; select-ol   : a list of overlays for selection
 ;; today-ol    : a list of overlays for today
 
 (defstruct cfw:dest
   type buffer min-func max-func width height
-  clear-func update-func select-ol today-ol)
+  clear-func before-update-func after-update-func select-ol today-ol)
 
 ;; shortcut functions
 
@@ -379,9 +380,13 @@ ones of DATE2. Otherwise is `nil'."
 (defun cfw:dest-clear (c)
   (funcall (cfw:dest-clear-func c)))
 
-(defun cfw:dest-update (c)
-  (when (cfw:dest-update-func c)
-    (funcall (cfw:dest-update-func c))))
+(defun cfw:dest-before-update (c)
+  (when (cfw:dest-before-update-func c)
+    (funcall (cfw:dest-before-update-func c))))
+
+(defun cfw:dest-after-update (c)
+  (when (cfw:dest-after-update-func c)
+    (funcall (cfw:dest-after-update-func c))))
 
 ;; private functions
 
@@ -602,8 +607,10 @@ DATE"
     (cond
      ((cfw:cp-displayed-date-p component date)
       (setf (cfw:component-selected component) date)
+      (cfw:dest-before-update dest)
       (cfw:dest-ol-selection-clear dest)
       (cfw:dest-ol-selection-set dest date)
+      (cfw:dest-after-update dest)
       (cfw:cp-move-cursor date)
       (unless (equal last date)
         (cfw:cp-fire-selection-change-hooks component)))
@@ -698,6 +705,7 @@ COMPONENT"
   (let* ((buf (cfw:cp-get-buffer component))
          (dest (cfw:component-dest component)))
     (with-current-buffer buf
+      (cfw:dest-before-update dest)
       (cfw:dest-ol-selection-clear dest)
       (cfw:dest-ol-today-clear dest)
       (let ((buffer-read-only nil))
@@ -706,8 +714,8 @@ COMPONENT"
           (funcall (cfw:cp-dispatch-view-impl (cfw:component-view component)) 
                    component)))
       (cfw:dest-ol-today-set dest)
-      (cfw:dest-update dest)
       (cfw:cp-set-selected-date component (cfw:component-selected component))
+      (cfw:dest-after-update dest)
       (cfw:cp-fire-update-hooks component))))
 
 (defun cfw:cp-fire-click-hooks (component)
@@ -1006,6 +1014,64 @@ faces, the faces are remained."
         str)
     org))
 
+(defface cfw:face-toolbar
+  '((((class color) (background light))
+     :foreground "Gray90" :background "Gray90")
+    (((class color) (background dark))
+     :foreground "Steelblue4" :background "Steelblue4"))
+  "Face for toolbar" :group 'calfw)
+
+(defface cfw:face-toolbar-button-off
+  '((((class color) (background light))
+     :foreground "Lightskyblue4" :background "White")
+    (((class color) (background dark))
+     :foreground "Gray10" :weight bold))
+  "Face for button on toolbar" :group 'calfw)
+
+(defface cfw:face-toolbar-button-on
+  '((((class color) (background light))
+     :foreground "Lightpink3" :background "Gray94" )
+    (((class color) (background dark))
+     :foreground "Gray50" :weight bold))
+  "Face for button on toolbar" :group 'calfw)
+
+;; (progn (eval-current-buffer) (cfw:open-debug-calendar))
+
+(defun cfw:render-button (title command &optional state)
+  "render-button
+TITLE 
+COMMAND
+STATE"
+  (let ((text (concat "[" title "]"))
+        (keymap (make-sparse-keymap)))
+    (cfw:rt text (if state 'cfw:face-toolbar-button-on
+                   'cfw:face-toolbar-button-off))
+    (define-key keymap [mouse-1] command)
+    (cfw:tp text 'keymap keymap)
+    (cfw:tp text 'mouse-face 'highlight)
+    text))
+
+(defun cfw:render-toolbar (width current-view prev-cmd next-cmd)
+  "render-toolbar
+WIDTH"
+  (let* ((prev (cfw:render-button " < " prev-cmd))
+         (today (cfw:render-button "Today" 'cfw:navi-goto-today-command))
+         (next (cfw:render-button " > " next-cmd))
+         (month (cfw:render-button "Month" 'cfw:change-view-month
+                                   (eq current-view 'month)))
+         (tweek (cfw:render-button "Two Weeks" 'cfw:change-view-two-weeks
+                                  (eq current-view 'two-weeks)))
+         (week (cfw:render-button "Week" 'cfw:change-view-week
+                                  (eq current-view 'week)))
+         (day (cfw:render-button "Day" 'cfw:change-view-day
+                                  (eq current-view 'day)))
+         (sp  " ")
+         (toolbar-text 
+          (cfw:render-add-right 
+           width (concat sp prev sp next sp today sp)
+           (concat day sp week sp tweek sp month sp))))
+    (cfw:render-default-content-face toolbar-text 'cfw:face-toolbar)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Views
 
@@ -1103,6 +1169,9 @@ return an alist of rendering parameters."
                      (cfw:k 'year model)
                      (aref calendar-month-name-array (1- (cfw:k 'month model))))
              'cfw:face-title)
+     EOL (cfw:render-toolbar total-width 'month 
+                             'cfw:navi-previous-month-command
+                             'cfw:navi-next-month-command)
      EOL hline)
     ;; day names
     (loop for i in (cfw:k 'headers model)
@@ -1387,6 +1456,20 @@ calendar view."
 
 ;;; Actions
 
+(defun cfw:change-view-month ()
+  "change-view-month
+"
+  (interactive)
+  (when (cfw:cp-get-component)
+    (cfw:cp-set-view (cfw:cp-get-component) 'month)))
+
+(defun cfw:change-view-week ()
+  "change-view-week
+"
+  (interactive)
+  (when (cfw:cp-get-component)
+    (cfw:cp-set-view (cfw:cp-get-component) 'week)))
+
 (defun cfw:navi-on-click ()
   "click"
   (interactive)
@@ -1663,16 +1746,17 @@ KEYMAP is the keymap that is put to the text property `keymap'. If KEYMAP is nil
       (let* ((dest (cfw:dest-init-region (current-buffer) mark-begin mark-end width height))
              (model (cfw:model-abstract-new date contents-sources annotation-sources))
              (cp (cfw:cp-new dest model view date))
-             (update-func
+             (after-update-func
               (lexical-let ((keymap keymap) (cp cp))
                 (lambda ()
-                  (message "UPDATE?")
                   (cfw:dest-with-region (cfw:component-dest cp)
                     (let (buffer-read-only)
-                      (put-text-property (point-min) (point-max) 'cfw:component cp)
-                      (put-text-property (point-min) (point-max) 'keymap (or keymap cfw:calendar-mode-map))))))))
-        (setf (cfw:dest-update-func dest) update-func)
-        (funcall update-func)
+                      (put-text-property (point-min) (1- (point-max)) 
+                                         'cfw:component cp)
+                      (put-text-property (point-min) (1- (point-max))
+                                         'keymap (or keymap cfw:calendar-mode-map))))))))
+        (setf (cfw:dest-after-update-func dest) after-update-func)
+        (funcall after-update-func)
         cp))))
 
 ;; inline
