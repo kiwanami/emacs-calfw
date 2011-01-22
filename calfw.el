@@ -1247,7 +1247,7 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
 (defun cfw:render-day-of-week-names (model param)
   "render-week-names"
   (loop for i in (cfw:k 'headers model)
-        with VL = (cfw:k 'vl param)
+        with VL = (cfw:k 'vl param) with cell-width = (cfw:k 'cell-width param)
         for name = (aref calendar-day-name-array i) do
         (insert VL (cfw:rt (cfw:render-center cell-width name)
                            (cfw:render-get-week-face i 'cfw:face-header)))))
@@ -1255,7 +1255,7 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
 (defun cfw:render-calendar-cells-std (model param title-func)
   "render-cells-std"
   (loop for week in (cfw:k 'weeks model) ; week rows loop 
-        do
+        with cell-width = (cfw:k 'cell-width param) do
         (cfw:render-columns
          (loop for date in week ; week columns loop 
                for count from 0 below (length week)
@@ -1382,8 +1382,6 @@ return an alist of rendering parameters."
   "[internal] Render monthly calendar view."
   (let* ((dest (cfw:component-dest component))
          (param (cfw:render-append-parts (cfw:view-month-calc-param dest)))
-         (cell-width  (cfw:k 'cell-width  param))
-         (cell-height (cfw:k 'cell-height param))
          (total-width (cfw:k 'total-width param))
          (EOL (cfw:k 'eol param)) (VL (cfw:k 'vl param))
          (hline (cfw:k 'hline param)) (cline (cfw:k 'cline param))
@@ -1447,8 +1445,6 @@ return an alist of rendering parameters."
   "[internal] Render monthly calendar view."
   (let* ((dest (cfw:component-dest component))
          (param (cfw:render-append-parts (cfw:view-week-calc-param dest)))
-         (cell-width  (cfw:k 'cell-width  param))
-         (cell-height (cfw:k 'cell-height param))
          (total-width (cfw:k 'total-width param))
          (EOL (cfw:k 'eol param)) (VL (cfw:k 'vl param))
          (hline (cfw:k 'hline param)) (cline (cfw:k 'cline param))
@@ -1532,8 +1528,6 @@ return an alist of rendering parameters."
   "[internal] Render monthly calendar view."
   (let* ((dest (cfw:component-dest component))
          (param (cfw:render-append-parts (cfw:view-two-weeks-calc-param dest)))
-         (cell-width  (cfw:k 'cell-width  param))
-         (cell-height (cfw:k 'cell-height param))
          (total-width (cfw:k 'total-width param))
          (EOL (cfw:k 'eol param)) (VL (cfw:k 'vl param))
          (hline (cfw:k 'hline param)) (cline (cfw:k 'cline param))
