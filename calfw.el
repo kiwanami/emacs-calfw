@@ -1130,6 +1130,163 @@ WIDTH"
            (concat day sp week sp tweek sp month sp))))
     (cfw:render-default-content-face toolbar-text 'cfw:face-toolbar)))
 
+(defun cfw:render-periods (date week-day periods-stack cell-width)
+  "[internal] This function translates PERIOD-STACK to display content on the DATE."
+  (when periods-stack
+    (let ((stack (sort periods-stack (lambda (a b) (< (car a) (car b))))))
+      (loop for i from 0 below (car (car stack))
+            do (push ; insert blank lines
+                (list i (list nil nil nil))
+                stack))
+      (loop for (row (begin end content)) in stack
+            for beginp = (equal date begin)
+            for endp = (equal date end)
+            for width = (- cell-width (if beginp 1 0) (if endp 1 0))
+            for title = (if (and content 
+                                 (or (equal date begin)
+                                     (eql 1 (calendar-extract-day date))
+                                     (eql week-day calendar-week-start-day)))
+                            (cfw:render-truncate content width t) "")
+            collect
+            (if content
+                (cfw:rt
+                 (concat 
+                  (if beginp "(" "")
+                  (cfw:render-left width title ?-)
+                  (if endp ")" ""))
+                 (cfw:render-get-face-period content 'cfw:face-periods))
+              "")))))
+
+(defun cfw:render-periods-get-min (periods-each-days begin end)
+  "[internal] Find the minimum empty row number of the days between
+BEGIN and END from the PERIODS-EACH-DAYS."
+  (loop for row-num from 0 below 10 ; assuming the number of stacked periods is less than 10
+        unless
+        (loop for d in (cfw:enumerate-days begin end)
+              for periods-stack = (cfw:contents-get d periods-each-days)
+              if (and periods-stack (assq row-num periods-stack))
+              return t)
+        return row-num))
+
+(defun cfw:render-periods-place (periods-each-days row period)
+  "[internal] Assign PERIOD content to the ROW-th row on the days of the period,
+and append the result to periods-each-days."
+  (loop for d in (cfw:enumerate-days (car period) (cadr period))
+        for periods-stack = (cfw:contents-get d periods-each-days)
+        if periods-stack
+        do (nconc periods-stack (list (list row period)))
+        else
+        do (push (cons d (list (list row period))) periods-each-days))
+  periods-each-days)
+
+(defun cfw:render-periods-stacks (model)
+  "[internal] Arrange the `periods' records of the model and
+create period-stacks on the each days. 
+period-stack -> ((row-num . period) ... )"
+  (let* (periods-each-days)
+    (loop for period in (cfw:k 'periods model)
+          for (begin end content) = period
+          for row = (cfw:render-periods-get-min
+                     periods-each-days begin end)
+          do 
+          (setq periods-each-days
+                (cfw:render-periods-place
+                 periods-each-days row period)))
+    periods-each-days))
+
+(defun cfw:render-columns (day-columns param)
+  "[internal] This function concatenates each rows on the days into a string of a physical line.
+DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (DAY-TITLE . ANNOTATION-TITLE) STRING STRING...)."
+  (let ((cell-width  (cfw:k 'cell-width  param))
+        (cell-height (cfw:k 'cell-height param))
+        (EOL (cfw:k 'eol param)) (VL (cfw:k 'vl param))
+        (hline (cfw:k 'hline param)) (cline (cfw:k 'cline param)))
+    (loop for day-rows in day-columns
+          for date = (car day-rows)
+          for (tday . ant) = (cadr day-rows)
+          do
+          (insert
+           VL (if date
+                  (cfw:tp 
+                   (cfw:render-default-content-face
+                    (cfw:render-add-right cell-width tday ant)
+                    'cfw:face-day-title)
+                   'cfw:date date)
+                (cfw:render-left cell-width ""))))
+    (insert VL EOL)
+    (loop for i from 2 upto cell-height do
+          (loop for day-rows in day-columns
+                for date = (car day-rows)
+                for row = (nth i day-rows)
+                do
+                (insert
+                 VL (cfw:tp 
+                     (cfw:render-left cell-width (and row (format "%s" row)))
+                     'cfw:date date)))
+          (insert VL EOL))
+    (insert cline)))
+
+(defun cfw:render-append-parts (param)
+  "[internal] Append rendering parts to PARAM and return a new list."
+  (let ((EOL "\n")
+        (cell-width (cfw:k 'cell-width param))
+        (columns (cfw:k 'columns param)))
+    (append 
+     param
+     `((eol . ,EOL) (vl . ,(cfw:rt "|" 'cfw:face-grid))
+       (hline . ,(cfw:rt (concat 
+                          (make-string (cfw:k 'total-width param) ?-)
+                          EOL)
+                         'cfw:face-grid))
+       (cline . ,(cfw:rt (concat 
+                         (loop for i from 0 below columns
+                               concat (concat 
+                                       "+" (make-string cell-width ?-)))
+                         "+" EOL) 'cfw:face-grid))))))
+
+(defun cfw:render-day-of-week-names (model param)
+  "render-week-names"
+  (loop for i in (cfw:k 'headers model)
+        with VL = (cfw:k 'vl param)
+        for name = (aref calendar-day-name-array i) do
+        (insert VL (cfw:rt (cfw:render-center cell-width name)
+                           (cfw:render-get-week-face i 'cfw:face-header)))))
+
+(defun cfw:render-calendar-cells-std (model param title-func)
+  "render-cells-std"
+  (loop for week in (cfw:k 'weeks model) ; week rows loop 
+        do
+        (cfw:render-columns
+         (loop for date in week ; week columns loop 
+               for count from 0 below (length week)
+               for hday = (car (cfw:contents-get date (cfw:k 'holidays model)))
+               for week-day = (nth count (cfw:k 'headers  model))
+               for ant = (cfw:rt (cfw:contents-get 
+                                  date (cfw:k 'annotations model))
+                                 'cfw:face-annotation)
+               for raw-periods = (cfw:contents-get 
+                                  date (cfw:render-periods-stacks model))
+               for raw-contents = (cfw:render-sort-contents
+                                   (cfw:contents-get
+                                    date (cfw:k 'contents model)))
+               for prs-contents = (append
+                                   (cfw:render-periods 
+                                    date week-day raw-periods cell-width)
+                                   (mapcar 'cfw:render-default-content-face raw-contents))
+               for num-label = (if prs-contents
+                                   (format "(%s)" 
+                                           (+ (length raw-contents)
+                                              (length raw-periods))) "")
+               for tday = (concat
+                           " " ; margin
+                           (funcall title-func date week-day hday)
+                           (if num-label (concat " " num-label))
+                           (if hday (concat " " (cfw:rt (substring hday 0)
+                                                        'cfw:face-holiday))))
+               collect
+               (cons date (cons (cons tday ant) prs-contents)))
+         param)))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1218,21 +1375,18 @@ return an alist of rendering parameters."
        (total-width (+ (* cell-width cfw:week-days) 8)))
     `((cell-width . ,cell-width)
       (cell-height . ,cell-height)
-      (total-width . ,total-width))))
+      (total-width . ,total-width)
+      (columns . ,cfw:week-days))))
 
 (defun cfw:view-month (component)
   "[internal] Render monthly calendar view."
   (let* ((dest (cfw:component-dest component))
-         (param (cfw:view-month-calc-param dest))
+         (param (cfw:render-append-parts (cfw:view-month-calc-param dest)))
          (cell-width  (cfw:k 'cell-width  param))
          (cell-height (cfw:k 'cell-height param))
          (total-width (cfw:k 'total-width param))
-         (EOL "\n") (VL (cfw:rt "|" 'cfw:face-grid))
-         (hline (cfw:rt (concat (make-string total-width ?-) EOL) 'cfw:face-grid))
-         (cline (cfw:rt (concat 
-                         (loop for i from 0 below cfw:week-days
-                               concat (concat "+" (make-string cell-width ?-)))
-                         "+" EOL) 'cfw:face-grid))
+         (EOL (cfw:k 'eol param)) (VL (cfw:k 'vl param))
+         (hline (cfw:k 'hline param)) (cline (cfw:k 'cline param))
          (model (cfw:view-month-model (cfw:component-model component))))
     ;; update model
     (setf (cfw:component-model component) model)
@@ -1245,144 +1399,20 @@ return an alist of rendering parameters."
                              'cfw:navi-next-month-command)
      EOL hline)
     ;; day names
-    (loop for i in (cfw:k 'headers model)
-          for name = (aref calendar-day-name-array i) do
-          (insert VL (cfw:rt (cfw:render-center cell-width name) 
-                              (cfw:render-get-week-face i 'cfw:face-header))))
+    (cfw:render-day-of-week-names model param)
     (insert VL EOL cline)
     ;; contents
-    (loop for week in (cfw:k 'weeks model) ; week rows loop 
-          with month       = (cfw:k 'month    model) 
-          with year        = (cfw:k 'year     model)
-          with headers     = (cfw:k 'headers  model) 
-          with holidays    = (cfw:k 'holidays model)
-          with contents    = (cfw:k 'contents model)
-          with annotations = (cfw:k 'annotations model)
-          with periods     = (cfw:view-month-periods-stacks model)
-          do
-          (cfw:view-month-week
-           (loop for date in week ; week columns loop 
-                 for count from 0 below (length week)
-                 for week-day = (nth count headers)
-                 for day = (calendar-extract-day date)
-                 for hday = (car (cfw:contents-get date holidays))
-                 for ant = (cfw:rt (cfw:contents-get date annotations) 'cfw:face-annotation)
-                 for raw-periods = (cfw:contents-get date periods)
-                 for raw-contents = (cfw:render-sort-contents (cfw:contents-get date contents))
-                 for prs-contents = (append
-                                     (cfw:view-month-periods date week-day raw-periods)
-                                     (mapcar 'cfw:render-default-content-face raw-contents))
-                 for num-label = (if prs-contents
-                                     (format "(%s)" 
-                                             (+ (length raw-contents)
-                                                (length raw-periods))) "")
-                 for tday = (concat
-                             " "
-                             (cfw:rt (format "%s" (or day ""))
-                                     (cond
-                                      (hday 'cfw:face-sunday)
-                                      ((not (cfw:month-year-contain-p month year date)) 'cfw:face-disable)
-                                      (t (cfw:render-get-week-face week-day 'cfw:face-default-day))))
-                             (if num-label (concat " " num-label))
-                             (if hday (concat " " (cfw:rt (substring hday 0) 'cfw:face-holiday))))
-                 collect
-                 (cons date (cons (cons tday ant) prs-contents)))))))
-
-(defun cfw:view-month-week (week-days)
-  "[internal] This function is an internal function of `cfw:view-month',
-then, uses some local variables in `cfw:view-month' as readonly ones.
-This function concatenates each rows on the days into a string of a physical line."
-  (loop for day-rows in week-days
-        for date = (car day-rows)
-        for (tday . ant) = (cadr day-rows)
-        do
-        (insert
-         VL (if date
-                (cfw:tp 
-                 (cfw:render-default-content-face
-                  (cfw:render-add-right cell-width tday ant)
-                  'cfw:face-day-title)
-                 'cfw:date date)
-              (cfw:render-left cell-width ""))))
-  (insert VL EOL)
-  (loop for i from 2 upto cell-height do
-        (loop for day-rows in week-days
-              for date = (car day-rows)
-              for row = (nth i day-rows)
-              do
-              (insert
-               VL (cfw:tp 
-                    (cfw:render-left cell-width (and row (format "%s" row)))
-                    'cfw:date date)))
-        (insert VL EOL))
-  (insert cline))
-
-(defun cfw:view-month-periods (date week-day periods-stack)
-  "[internal] This function is an internal function of `cfw:view-month', then,
-uses some local variables in `cfw:view-month' as readonly ones.
-This function translates PERIOD-STACK to display content on the DATE."
-  (when periods-stack
-    (let ((stack (sort periods-stack (lambda (a b) (< (car a) (car b))))))
-      (loop for i from 0 below (car (car stack))
-            do (push ; insert blank lines
-                (list i (list nil nil nil))
-                stack))
-      (loop for (row (begin end content)) in stack
-            for beginp = (equal date begin)
-            for endp = (equal date end)
-            for width = (- cell-width (if beginp 1 0) (if endp 1 0))
-            for title = (if (and content 
-                                 (or (equal date begin)
-                                     (eql 1 (calendar-extract-day date))
-                                     (eql week-day calendar-week-start-day)))
-                            (cfw:render-truncate content width t) "")
-            collect
-            (if content
-                (cfw:rt
-                 (concat 
-                  (if beginp "(" "")
-                  (cfw:render-left width title ?-)
-                  (if endp ")" ""))
-                 (cfw:render-get-face-period content 'cfw:face-periods))
-              "")))))
-
-(defun cfw:view-month-periods-get-min (periods-each-days begin end)
-  "[internal] Find the minimum empty row number of the days between
-BEGIN and END from the PERIODS-EACH-DAYS."
-  (loop for row-num from 0 below 10 ; assuming the number of stacked periods is less than 10
-        unless
-        (loop for d in (cfw:enumerate-days begin end)
-              for periods-stack = (cfw:contents-get d periods-each-days)
-              if (and periods-stack (assq row-num periods-stack))
-              return t)
-        return row-num))
-
-(defun cfw:view-month-periods-place (periods-each-days row period)
-  "[internal] Assign PERIOD content to the ROW-th row on the days of the period,
-and append the result to periods-each-days."
-  (loop for d in (cfw:enumerate-days (car period) (cadr period))
-        for periods-stack = (cfw:contents-get-internal d periods-each-days)
-        if periods-stack
-        do (setcdr periods-stack (append (cdr periods-stack) 
-                                         (list (list row period))))
-        else
-        do (push (cons d (list (list row period))) periods-each-days))
-  periods-each-days)
-
-(defun cfw:view-month-periods-stacks (model)
-  "[internal] Arrange the `periods' records of the model and
-create period-stacks on the each days. 
-period-stack -> ((row-num . period) ... )"
-  (let* (periods-each-days)
-    (loop for period in (cfw:k 'periods model)
-          for (begin end content) = period
-          for row = (cfw:view-month-periods-get-min
-                     periods-each-days begin end)
-          do 
-          (setq periods-each-days
-                (cfw:view-month-periods-place
-                 periods-each-days row period)))
-    periods-each-days))
+    (let ((year (cfw:k 'year model))
+          (month (cfw:k 'month model)))
+      (cfw:render-calendar-cells-std 
+       model param 
+       (lambda (date week-day hday) 
+         (cfw:rt
+          (format "%s" (calendar-extract-day date))
+          (cond
+           (hday 'cfw:face-sunday)
+           ((not (cfw:month-year-contain-p month year date)) 'cfw:face-disable)
+           (t (cfw:render-get-week-face week-day 'cfw:face-default-day)))))))))
 
 
 
@@ -1410,21 +1440,18 @@ return an alist of rendering parameters."
        (total-width (+ (* cell-width cfw:week-days) 8)))
     `((cell-width . ,cell-width)
       (cell-height . ,cell-height)
-      (total-width . ,total-width))))
+      (total-width . ,total-width)
+      (columns . ,cfw:week-days))))
 
 (defun cfw:view-week (component)
   "[internal] Render monthly calendar view."
   (let* ((dest (cfw:component-dest component))
-         (param (cfw:view-week-calc-param dest))
+         (param (cfw:render-append-parts (cfw:view-week-calc-param dest)))
          (cell-width  (cfw:k 'cell-width  param))
          (cell-height (cfw:k 'cell-height param))
          (total-width (cfw:k 'total-width param))
-         (EOL "\n") (VL (cfw:rt "|" 'cfw:face-grid))
-         (hline (cfw:rt (concat (make-string total-width ?-) EOL) 'cfw:face-grid))
-         (cline (cfw:rt (concat 
-                         (loop for i from 0 below cfw:week-days
-                               concat (concat "+" (make-string cell-width ?-)))
-                         "+" EOL) 'cfw:face-grid))
+         (EOL (cfw:k 'eol param)) (VL (cfw:k 'vl param))
+         (hline (cfw:k 'hline param)) (cline (cfw:k 'cline param))
          (model (cfw:view-week-model (cfw:component-model component)))
          (begin-date (cfw:k 'begin-date model))
          (end-date (cfw:k 'end-date model)))
@@ -1440,44 +1467,16 @@ return an alist of rendering parameters."
                              'cfw:navi-next-week-command)
      EOL hline)
     ;; day names
-    (loop for i in (cfw:k 'headers model)
-          for name = (aref calendar-day-name-array i) do
-          (insert VL (cfw:rt (cfw:render-center cell-width name)
-                              (cfw:render-get-week-face i 'cfw:face-header))))
+    (cfw:render-day-of-week-names model param)
     (insert VL EOL cline)
     ;; contents
-    (loop for week in (cfw:k 'weeks model) ; week rows loop 
-          with headers     = (cfw:k 'headers  model) 
-          with holidays    = (cfw:k 'holidays model)
-          with contents    = (cfw:k 'contents model)
-          with annotations = (cfw:k 'annotations model)
-          with periods     = (cfw:view-month-periods-stacks model)
-          do
-          (cfw:view-month-week
-           (loop for date in week ; week columns loop 
-                 for count from 0 below (length week)
-                 for week-day = (nth count headers)
-                 for hday = (car (cfw:contents-get date holidays))
-                 for ant = (cfw:rt (cfw:contents-get date annotations) 'cfw:face-annotation)
-                 for raw-periods = (cfw:contents-get date periods)
-                 for raw-contents = (cfw:render-sort-contents (cfw:contents-get date contents))
-                 for prs-contents = (append
-                                     (cfw:view-month-periods date week-day raw-periods)
-                                     (mapcar 'cfw:render-default-content-face raw-contents))
-                 for num-label = (if prs-contents
-                                     (format "(%s)" 
-                                             (+ (length raw-contents)
-                                                (length raw-periods))) "")
-                 for tday = (concat
-                             " "
-                             (cfw:rt (format "%s" (calendar-extract-day date))
-                                     (if hday 'cfw:face-sunday 
-                                       (cfw:render-get-week-face 
-                                        week-day 'cfw:face-default-day)))
-                             (if num-label (concat " " num-label))
-                             (if hday (concat " " (cfw:rt (substring hday 0) 'cfw:face-holiday))))
-                 collect
-                 (cons date (cons (cons tday ant) prs-contents)))))))
+    (cfw:render-calendar-cells-std 
+     model param 
+     (lambda (date week-day hday) 
+       (cfw:rt (format "%s" (calendar-extract-day date))
+               (if hday 'cfw:face-sunday 
+                 (cfw:render-get-week-face 
+                  week-day 'cfw:face-default-day)))))))
 
 
 
@@ -1526,21 +1525,18 @@ return an alist of rendering parameters."
        (total-width (+ (* cell-width cfw:week-days) 8)))
     `((cell-width . ,cell-width)
       (cell-height . ,cell-height)
-      (total-width . ,total-width))))
+      (total-width . ,total-width)
+      (columns . ,cfw:week-days))))
 
 (defun cfw:view-two-weeks (component)
   "[internal] Render monthly calendar view."
   (let* ((dest (cfw:component-dest component))
-         (param (cfw:view-two-weeks-calc-param dest))
+         (param (cfw:render-append-parts (cfw:view-two-weeks-calc-param dest)))
          (cell-width  (cfw:k 'cell-width  param))
          (cell-height (cfw:k 'cell-height param))
          (total-width (cfw:k 'total-width param))
-         (EOL "\n") (VL (cfw:rt "|" 'cfw:face-grid))
-         (hline (cfw:rt (concat (make-string total-width ?-) EOL) 'cfw:face-grid))
-         (cline (cfw:rt (concat 
-                         (loop for i from 0 below cfw:week-days
-                               concat (concat "+" (make-string cell-width ?-)))
-                         "+" EOL) 'cfw:face-grid))
+         (EOL (cfw:k 'eol param)) (VL (cfw:k 'vl param))
+         (hline (cfw:k 'hline param)) (cline (cfw:k 'cline param))
          (model (cfw:view-two-weeks-model (cfw:component-model component)))
          (begin-date (cfw:k 'begin-date model))
          (end-date (cfw:k 'end-date model)))
@@ -1556,44 +1552,16 @@ return an alist of rendering parameters."
                              'cfw:navi-next-week-command)
      EOL hline)
     ;; day names
-    (loop for i in (cfw:k 'headers model)
-          for name = (aref calendar-day-name-array i) do
-          (insert VL (cfw:rt (cfw:render-center cell-width name) 
-                              (cfw:render-get-week-face i 'cfw:face-header))))
+    (cfw:render-day-of-week-names model param)
     (insert VL EOL cline)
     ;; contents
-    (loop for week in (cfw:k 'weeks model) ; week rows loop 
-          with headers     = (cfw:k 'headers  model) 
-          with holidays    = (cfw:k 'holidays model)
-          with contents    = (cfw:k 'contents model)
-          with annotations = (cfw:k 'annotations model)
-          with periods     = (cfw:view-month-periods-stacks model)
-          do
-          (cfw:view-month-week
-           (loop for date in week ; week columns loop 
-                 for count from 0 below (length week)
-                 for week-day = (nth count headers)
-                 for hday = (car (cfw:contents-get date holidays))
-                 for ant = (cfw:rt (cfw:contents-get date annotations) 'cfw:face-annotation)
-                 for raw-periods = (cfw:contents-get date periods)
-                 for raw-contents = (cfw:render-sort-contents (cfw:contents-get date contents))
-                 for prs-contents = (append
-                                     (cfw:view-month-periods date week-day raw-periods)
-                                     (mapcar 'cfw:render-default-content-face raw-contents))
-                 for num-label = (if prs-contents
-                                     (format "(%s)" 
-                                             (+ (length raw-contents)
-                                                (length raw-periods))) "")
-                 for tday = (concat
-                             " "
-                             (cfw:rt (format "%s" (calendar-extract-day date))
-                                     (if hday 'cfw:face-sunday 
-                                       (cfw:render-get-week-face 
-                                        week-day 'cfw:face-default-day)))
-                             (if num-label (concat " " num-label))
-                             (if hday (concat " " (cfw:rt (substring hday 0) 'cfw:face-holiday))))
-                 collect
-                 (cons date (cons (cons tday ant) prs-contents)))))))
+    (cfw:render-calendar-cells-std 
+     model param 
+     (lambda (date week-day hday) 
+       (cfw:rt (format "%s" (calendar-extract-day date))
+               (if hday 'cfw:face-sunday 
+                 (cfw:render-get-week-face 
+                  week-day 'cfw:face-default-day)))))))
 
 
 
