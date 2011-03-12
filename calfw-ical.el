@@ -213,6 +213,10 @@ events have not been supported yet."
     (goto-char (point-min))
      (while (re-search-forward "\n " nil t)
        (replace-match "")))
+  (save-excursion
+    (goto-char (point-min))
+     (while (re-search-forward "DT\\(START\\|END\\);VALUE=DATE:" nil t)
+       (replace-match "DT\\1:")))
   (set-buffer-modified-p nil))
 
 (defun cfw:ical-to-calendar (begin end)
