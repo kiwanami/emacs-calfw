@@ -111,6 +111,27 @@
                (encode-time 0 0 0 d m y))))
     (howm-keyword-search key)))
 
+(defun cfw:howm-from-calendar-fast ()
+  (interactive)
+  (let* ((mdy (cfw:cursor-to-nearest-date))
+         (m (calendar-extract-month mdy))
+         (d (calendar-extract-day   mdy))
+         (y (calendar-extract-year  mdy))
+         (key (format-time-string
+               howm-date-format
+               (encode-time 0 0 0 d m y)))
+         (items (cfw:howm-schedule-period mdy mdy)))
+    (cond
+     ((= 1 (length items))
+      (howm-view-open-item (car items)))
+     (t
+      (howm-view-summary (format "Schedules : %s" (cfw:strtime mdy))
+                         items (list key))
+      (howm-view-summary-check t)))))
+
+;; (define-key cfw:howm-schedule-map (kbd "RET") 'cfw:howm-from-calendar-fast)
+;; (define-key cfw:howm-schedule-inline-keymap (kbd "RET") 'cfw:howm-from-calendar-fast)
+
 ;;; Region
 
 (defvar cfw:howm-schedule-inline-keymap
