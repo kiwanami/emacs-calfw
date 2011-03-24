@@ -1001,13 +1001,16 @@ calling functions `cfw:annotations-functions'."
     (funcall (car cfw:annotations-functions) begin end))
    (t
     (loop for f in cfw:annotations-functions
-          for cnt = (funcall f begin end)
+          for cnts = (funcall f begin end)
           with annotations = nil
-          for prv = (cfw:contents-get-internal d annotations)
-          if prv
-          do (set-cdr prv (concat (cdr prv) "/" (cdr cnt)))
-          else
-          do (push (cfw:copy-list cnt) annotations)
+          do
+          (loop for c in cnts
+                for (d . line) = c
+                for prv = (cfw:contents-get-internal d annotations)
+                if prv
+                do (setcdr prv (concat (cdr prv) "/" line))
+                else
+                do (push (cfw:copy-list c) annotations))
           finally return annotations))))
 
 (defun cfw:contents-debug-data ()
@@ -1035,6 +1038,12 @@ calling functions `cfw:annotations-functions'."
              ((1 12 2011) . "Young Moon")
              ((1 20 2011) . "Full Moon")
              ((1 26 2011) . "Waning Moon")
+             ))
+         (lambda (b e)
+           '(((1 1 2011) . "##") 
+             ((1 2 2011) . "!!")
+             ((1 3 2011) . "@@")
+             ((1 4 2011) . "$$")
              )))))
 
 
