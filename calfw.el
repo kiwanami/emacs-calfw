@@ -210,16 +210,6 @@ KEYMAP-LIST is a source list like ((key . command) ... )."
       (match-string 1 str)
     str))
 
-(defun cfw:copy-list (list)
-  "[internal] [imported from cl.el] Return a copy of LIST, which may be a dotted list.
-The elements of LIST are not copied, just the list structure
-itself."
-  (if (consp list)
-      (let ((res nil))
-	(while (consp list) (push (pop list) res))
-	(prog1 (nreverse res) (setcdr res list)))
-    (car list)))
-
 
 
 ;;; Date Time Transformation
@@ -296,7 +286,7 @@ ones of DATE2. Otherwise is `nil'."
     (error "Invalid period : %S - %S" begin end))
   (let ((d begin) ret (cont t))
     (while cont
-      (push (cfw:copy-list d) ret)
+      (push (copy-sequence d) ret)
       (setq cont (not (equal d end)))
       (setq d (calendar-gregorian-from-absolute
                (1+ (calendar-absolute-from-gregorian d)))))
@@ -747,7 +737,7 @@ data. PARAM is an alist of the rendering parameters."
 
 (defun cfw:render-sort-contents (lst)
   "[internal] Sort the string list LST. Maybe need to improve the sorting rule..."
-  (sort lst 'string-lessp))
+  (sort (copy-sequence lst) 'string-lessp))
 
 (defun cfw:render-month-week (week-days)
   "[internal] This function is an internal function of `cfw:render-month',
@@ -854,9 +844,10 @@ BEGIN and END from the PERIODS-EACH-DAYS."
   "[internal] Assign PERIOD content to the ROW-th row on the days of the period,
 and append the result to periods-each-days."
   (loop for d in (cfw:enumerate-days (car period) (cadr period))
-        for periods-stack = (cfw:contents-get d periods-each-days)
+        for periods-stack = (cfw:contents-get-internal d periods-each-days)
         if periods-stack
-        do (nconc periods-stack (list (list row period)))
+        do (setcdr periods-stack (append (cdr periods-stack) 
+                                         (list (list row period))))
         else
         do (push (cons d (list (list row period))) periods-each-days))
   periods-each-days)
@@ -929,7 +920,7 @@ not know how to display the contents in the destinations."
           do
           ;; flush a week
           (when (and (= day calendar-week-start-day) week)
-            (push (nreverse week) weeks)
+            (push (reverse week) weeks)
             (setq week nil)
             (when (< last-month-day i) (return)))
           ;; add a day
@@ -945,7 +936,7 @@ not know how to display the contents in the destinations."
       (annotations . ,(cfw:annotations-merge begin-date end-date)) ; an alist of annotations, (DATE ANNOTATION)
       (contents . ,contents) ; an alist of contents, (DATE LIST-OF-CONTENTS)
       (periods . ,(cfw:k 'periods contents-all)) ; a list of periods, (BEGIN-DATE END-DATE SUMMARY)
-      (weeks . ,(nreverse weeks)) ; a matrix of day-of-month, which corresponds to the index of `headers'
+      (weeks . ,(reverse weeks)) ; a matrix of day-of-month, which corresponds to the index of `headers'
       )))
 
 (defun cfw:contents-get (date contents)
@@ -962,18 +953,17 @@ One can modify the returned cons cell destructively."
             return i
             finally return nil))))
 
-(eval-when-compile
-  (defmacro cfw:contents-add (date content contents)
-    "[internal] Add a record, DATE as a key and CONTENT as a
-body, to CONTENTS. If CONTENTS has a record for DATE, this macro
-appends CONTENT to the record."
-    (let (($prv (gensym)) ($lst (gensym))
-          ($d (gensym)) ($c (gensym)))
-      `(let* ((,$d ,date) (,$c ,content)
-              (,$prv (cfw:contents-get-internal ,$d ,contents))
-              (,$lst (if (listp ,$c) (cfw:copy-list ,$c) (list ,$c))))
-         (if ,$prv (nconc ,$prv ,$lst)
-           (push (cons ,$d ,$lst) ,contents))))))
+(defun cfw:contents-add (date content contents)
+  "[internal] Add a record, DATE as a key and CONTENT as a body,
+to CONTENTS destructively. If CONTENTS has a record for DATE,
+this function appends CONTENT to the record. Return the modified
+contents list."
+  (let* ((prv (cfw:contents-get-internal date contents))
+         (lst (if (listp content) (copy-sequence content) (list content))))
+    (if prv
+        (setcdr prv (append (cdr prv) lst))
+      (push (cons date lst) contents)))
+  contents)
 
 (defun cfw:contents-merge (begin end)
   "[internal] Return an contents alist between begin date and end one,
@@ -983,13 +973,12 @@ calling functions `cfw:contents-functions'."
    ((= 1 (length cfw:contents-functions))
     (funcall (car cfw:contents-functions) begin end))
    (t
-    (loop for f in cfw:contents-functions
+    (loop with contents = nil
+          for f in cfw:contents-functions
           for cnts = (funcall f begin end)
-          with contents = nil
           do
-          (loop for c in cnts
-                for (d . line) = c
-                do (cfw:contents-add d line contents))
+          (loop for (d . line) in cnts
+                do (setq contents (cfw:contents-add d line contents)))
           finally return contents))))
 
 (defun cfw:annotations-merge (begin end)
@@ -1010,7 +999,7 @@ calling functions `cfw:annotations-functions'."
                 if prv
                 do (setcdr prv (concat (cdr prv) "/" line))
                 else
-                do (push (cfw:copy-list c) annotations))
+                do (push (copy-sequence c) annotations))
           finally return annotations))))
 
 (defun cfw:contents-debug-data ()
@@ -1096,7 +1085,7 @@ function may return nil."
   "[internal] Return a point where the text property `cfw:date'
 is equal to DATE in the current calender view. If DATE is not
 found in the current view, return nil."
-  (let ((pos (point-min)) begin ret)
+  (let ((pos (point-min)) begin ret text-date)
     (while (setq begin (next-single-property-change pos 'cfw:date))
       (setq pos begin
             text-date (cfw:cursor-to-date begin))

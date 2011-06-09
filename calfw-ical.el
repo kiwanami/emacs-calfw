@@ -32,6 +32,9 @@
 
 ;; Executing the following command, this program clears caches to refresh the ICS data.
 ;; (cfw:ical-calendar-clear-cache)
+;; Or add the following advice:
+;; (defadvice cfw:refresh-calendar-buffer (before activate)
+;;   (cfw:ical-calendar-clear-cache))
 
 ;;; Code:
 
@@ -232,7 +235,7 @@ events have not been supported yet."
                 do
                 (loop for (date . lst) in cal-list
                       do
-                      (cfw:contents-add date lst contents))
+                      (setq contents (cfw:contents-add date lst contents)))
                 finally return contents)))
   (loop for (date . lst) in cfw:ical-calendar-contents-sources-cache
         if (eq 'periods date)
@@ -257,7 +260,7 @@ events have not been supported yet."
                 do
                 (loop for (date . lst) in cal-list
                       do
-                      (cfw:contents-add date lst annotations))
+                      (setq annotations (cfw:contents-add date lst annotations)))
                 finally return annotations)))
   (loop for (date . lst) in cfw:ical-calendar-annotations-sources-cache
         if (eq 'periods date)
