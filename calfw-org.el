@@ -40,13 +40,12 @@
 ARGS is passed to `org-agenda-get-day-entries'."
   (let ((org-agenda-prefix-format "")) ; ?
     (org-compile-prefix-format nil)
-    (loop for date in (cfw:enumerate-days begin end) 
-          append
-          (loop for file in org-agenda-files 
-                append
+    (loop for date in (cfw:enumerate-days begin end) append
+          (loop for file in (org-agenda-files nil 'ifmode) append
                 (progn
                   (org-check-agenda-file file)
-                  (apply 'org-agenda-get-day-entries file date args))))))
+                  (apply 'org-agenda-get-day-entries 
+                         file date args))))))
 
 (defun cfw:org-onclick ()
   "Jump to the clicked org item."
