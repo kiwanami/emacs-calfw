@@ -179,25 +179,43 @@ events have not been supported yet."
   (setq cfw:ical-calendar-contents-sources-cache nil
         cfw:ical-calendar-annotations-sources-cache nil))
 
+(defvar cfw:ical-calendar-external-shell-command "wget -q -O - ")
+(defvar cfw:ical-calendar-tmpbuf " *calfw-tmp*")
+(defvar cfw:ical-url-to-buffer-get 'cfw:ical-url-to-buffer-internal)
+
+(defun cfw:ical-url-to-buffer-external (url)
+  "Retrieve ICS file with an external command."
+  (let ((buf (get-buffer-create cfw:ical-calendar-tmpbuf)))
+    (buffer-disable-undo buf)
+    (with-current-buffer buf
+      (erase-buffer))
+    (call-process-shell-command 
+     cfw:ical-calendar-external-shell-command nil buf nil url)
+    buf))
+
+(defun cfw:ical-url-to-buffer-internal (url)
+  "Retrieve ICS file with the url package."
+  (let ((buf (url-retrieve-synchronously url))
+        (dbuf (get-buffer-create cfw:ical-calendar-tmpbuf))
+        pos)
+    (unwind-protect
+        (when (setq pos (url-http-symbol-value-in-buffer
+                         'url-http-end-of-headers buf))
+          (with-current-buffer dbuf
+            (erase-buffer)
+            (decode-coding-string
+             (with-current-buffer buf 
+               (buffer-substring (1+ pos) (point-max)))
+             'utf-8 nil dbuf)))
+      (kill-buffer buf))
+    dbuf))
+
 (defun cfw:ical-url-to-buffer (url)
   (let* ((url-code (url-generic-parse-url url))
          (type (url-type url-code)))
     (cond
      (type
-      (let ((buf (url-retrieve-synchronously url))
-            (dbuf (get-buffer-create "*calfw-tmp*"))
-            pos)
-        (unwind-protect
-            (when (setq pos (url-http-symbol-value-in-buffer
-                             'url-http-end-of-headers buf))
-              (with-current-buffer dbuf
-                (erase-buffer)
-                (decode-coding-string
-                 (with-current-buffer buf 
-                   (buffer-substring (1+ pos) (point-max)))
-                 'utf-8 nil dbuf)))
-          (kill-buffer buf))
-        dbuf))
+      (funcall cfw:ical-url-to-buffer-get url))
      (t ; assume local file
       (let ((buf (find-file-noselect (expand-file-name url) t)))
         (with-current-buffer buf (set-visited-file-name nil))
@@ -207,7 +225,9 @@ events have not been supported yet."
   (let (($buf (gensym)))
     `(let ((,$buf (cfw:ical-url-to-buffer ,url)))
        (unwind-protect
-           (with-current-buffer ,$buf ,@body)
+           (with-current-buffer ,$buf
+             (goto-char (point-min))
+             ,@body)
          (kill-buffer ,$buf)))))
 (put 'cfw:ical-with-buffer 'lisp-indent-function 1)
 
