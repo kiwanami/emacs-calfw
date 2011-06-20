@@ -35,7 +35,7 @@
 (require 'org)
 (require 'org-agenda)
 
-(defun cfw:org-collect-schedules-period (begin end &rest args)
+(defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END. 
 ARGS is passed to `org-agenda-get-day-entries'."
   (let ((org-agenda-prefix-format "")) ; ?
@@ -44,8 +44,7 @@ ARGS is passed to `org-agenda-get-day-entries'."
           (loop for file in (org-agenda-files nil 'ifmode) append
                 (progn
                   (org-check-agenda-file file)
-                  (apply 'org-agenda-get-day-entries 
-                         file date args))))))
+                  (org-agenda-get-day-entries file date))))))
 
 (defun cfw:org-onclick ()
   "Jump to the clicked org item."
@@ -77,6 +76,13 @@ ARGS is passed to `org-agenda-get-day-entries'."
   "Transformation function which transforms the org item string to calendar title.
 If this function splits into a list of string, the calfw displays those string in multi-lines.")
 
+(defun cfw:org-normalize-date (date)
+  "Return a normalized date. (MM DD YYYY)."
+  (cond
+   ((numberp date)
+    (calendar-gregorian-from-absolute date))
+   (t date)))
+
 (defun cfw:org-schedule-period-to-calendar (begin end)
   "[internal] Return calfw calendar items between BEGIN and END
 from the org schedule data."
@@ -85,7 +91,9 @@ from the org schedule data."
         for date = (get-text-property 0 'date i)
         for line = (funcall cfw:org-schedule-summary-transformer i)
         with contents = nil
-        do (setq contents (cfw:contents-add date line contents))
+        do 
+        (setq contents (cfw:contents-add (cfw:org-normalize-date date)
+                                         line contents))
         finally return contents))
 
 (defvar cfw:org-schedule-map
