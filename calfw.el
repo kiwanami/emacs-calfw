@@ -215,9 +215,6 @@ KEYMAP-LIST is a source list like ((key . command) ... )."
       (match-string 1 str)
     str))
 
-(defun cfw:copy-list (lst)
-  (copy-sequence lst))
-
 
 
 ;;; Date Time Transformation
@@ -861,18 +858,17 @@ One can modify the returned cons cell destructively."
             return i
             finally return nil))))
 
-(eval-when-compile
-  (defmacro cfw:contents-add (date content contents)
-    "[internal] Add a record, DATE as a key and CONTENT as a
-body, to CONTENTS. If CONTENTS has a record for DATE, this macro
-appends CONTENT to the record."
-    (let (($prv (gensym)) ($lst (gensym))
-          ($d (gensym)) ($c (gensym)))
-      `(let* ((,$d ,date) (,$c ,content)
-              (,$prv (cfw:contents-get-internal ,$d ,contents))
-              (,$lst (if (listp ,$c) (cfw:copy-list ,$c) (list ,$c))))
-         (if ,$prv (nconc ,$prv ,$lst)
-           (push (cons ,$d ,$lst) ,contents))))))
+(defun cfw:contents-add (date content contents)
+  "[internal] Add a record, DATE as a key and CONTENT as a body,
+to CONTENTS destructively. If CONTENTS has a record for DATE,
+this function appends CONTENT to the record. Return the modified
+contents list."
+  (let* ((prv (cfw:contents-get-internal date contents))
+         (lst (if (listp content) (copy-sequence content) (list content))))
+    (if prv
+        (setcdr prv (append (cdr prv) lst))
+      (push (cons date lst) contents)))
+  contents)
 
 (defun cfw:contents-merge (begin end sources)
   "[internal] Return an contents alist between begin date and end one,
@@ -892,7 +888,7 @@ calling functions `cfw:contents-functions'."
           do
           (loop for c in cnts
                 for (d . line) = c
-                do (cfw:contents-add d line contents))
+                do (setq contents (cfw:contents-add d line contents)))
           finally return contents))))
 
 (defun cfw:contents-put-source (contents source)
@@ -932,7 +928,7 @@ calling functions `cfw:annotations-functions'."
           if prv
           do (set-cdr prv (concat (cdr prv) "/" (cdr cnt)))
           else
-          do (push (cfw:copy-list cnt) annotations)
+          do (push (copy-sequence cnt) annotations)
           finally return annotations))))
 
 
@@ -1016,7 +1012,7 @@ sides with the character PADDING."
 
 (defun cfw:render-sort-contents (lst)
   "[internal] Sort the string list LST. Maybe need to improve the sorting rule..."
-  (sort lst 'string-lessp))
+  (sort (copy-sequence lst) 'string-lessp))
 
 (defun cfw:render-get-face-period (text default-face)
   "[internal] render-get-face-period
@@ -1172,9 +1168,10 @@ BEGIN and END from the PERIODS-EACH-DAYS."
   "[internal] Assign PERIOD content to the ROW-th row on the days of the period,
 and append the result to periods-each-days."
   (loop for d in (cfw:enumerate-days (car period) (cadr period))
-        for periods-stack = (cfw:contents-get d periods-each-days)
+        for periods-stack = (cfw:contents-get-internal d periods-each-days)
         if periods-stack
-        do (nconc periods-stack (list (list row period)))
+        do (setcdr periods-stack (append (cdr periods-stack) 
+                                         (list (list row period))))
         else
         do (push (cons d (list (list row period))) periods-each-days))
   periods-each-days)
