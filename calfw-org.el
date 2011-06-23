@@ -25,7 +25,6 @@
 ;; I hope someone continue integration with the org.)
 
 ;; (require 'calfw-org)
-;; (cfw:install-org-schedules) 
 ;; 
 ;; M-x cfw:open-org-calendar
 
