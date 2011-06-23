@@ -49,7 +49,7 @@ You can display a calendar in your howm menu file.
 
     %here%(cfw:howm-schedule-inline)
 
-![howm menu embedding](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-E63EA.png)
+![howm menu embedding](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-1F941.png)
 
 ### For org users:
 
@@ -69,7 +69,7 @@ Here is a minimum sample code:
     (cfw:install-ical-schedules)
     (setq cfw:ical-calendar-contents-sources '("http://www.google.com/calendar/ical/.../basic.ics"))
 
-![Google Calendar and calfw-ical](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-D63DE.png)
+![Google Calendar and calfw-ical](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-5E808.png)
 
 Executing the following command, this program clears caches to refresh the ICS data.
 
