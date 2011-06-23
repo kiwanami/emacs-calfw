@@ -36,8 +36,7 @@
 (require 'org-agenda)
 
 (defun cfw:org-collect-schedules-period (begin end)
-  "[internal] Return org schedule items between BEGIN and END. 
-ARGS is passed to `org-agenda-get-day-entries'."
+  "[internal] Return org schedule items between BEGIN and END."
   (let ((org-agenda-prefix-format "")) ; ?
     (org-compile-prefix-format nil)
     (loop for date in (cfw:enumerate-days begin end) append
@@ -106,9 +105,15 @@ from the org schedule data."
 (defun cfw:open-org-calendar ()
   "Open an org schedule calendar in the new buffer."
   (interactive)
-  (switch-to-buffer
-   (cfw:get-calendar-buffer-custom
-    nil nil cfw:org-schedule-map)))
+  (let* ((source1
+          (make-cfw:source
+           :name "org-agenda"
+           :color "Seagreen4"
+           :data 'cfw:org-schedule-period-to-calendar))
+         (cp (cfw:create-calendar-component-buffer
+              :view 'month
+              :contents-sources (list source1))))
+    (switch-to-buffer (cfw:cp-get-buffer cp))))
 
 (defun cfw:org-from-calendar ()
   "Do something. This command should be executed on the calfw calendar."
@@ -120,14 +125,9 @@ from the org schedule data."
     ;; exec org-remember here?
     ))
 
-(defun cfw:install-org-schedules ()
-  "Add a schedule collection function to the calfw for the org."
-  (interactive)
-  (add-to-list 'cfw:contents-functions 'cfw:org-schedule-period-to-calendar))
+;; (progn (eval-current-buffer) (cfw:open-org-calendar))
+;; (setq org-agenda-files '("a.org"))
 
-;; (cfw:install-org-schedules)
-;; (progn (eval-current-buffer) (cfw:open-calendar-buffer))
-;; (cfw:open-org-calendar)
 
 (provide 'calfw-org)
 ;;; calfw-org.el ends here
