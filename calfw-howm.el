@@ -94,6 +94,13 @@ from the howm schedule data."
         do (setq contents (cfw:contents-add date line contents))
         finally return contents))
 
+(defun cfw:howm-create-source (&optional color)
+  "Create a howm source."
+  (make-cfw:source
+   :name "howm schedule"
+   :color (or color "SteelBlue")
+   :data 'cfw:howm-schedule-period-to-calendar))
+
 (defvar cfw:howm-schedule-map
   (cfw:define-keymap
    '(
@@ -105,9 +112,11 @@ from the howm schedule data."
 (defun cfw:open-howm-calendar ()
   "Open a howm schedule calendar in the new buffer."
   (interactive)
-  (switch-to-buffer
-   (cfw:get-calendar-buffer-custom
-    nil nil cfw:howm-schedule-map)))
+  (let ((cp (cfw:create-calendar-component-buffer
+             :custom-map cfw:howm-schedule-map
+             :view 'month
+             :contents-sources (list (cfw:howm-create-source)))))
+  (switch-to-buffer (cfw:cp-get-buffer cp))))
 
 (defun cfw:howm-from-calendar ()
   "Display a howm schedule summary of the date on the cursor,
@@ -156,9 +165,13 @@ This command should be executed on the calfw calendar."
 
 (defun cfw:howm-schedule-inline (&optional width height)
   "Inline function for the howm menu. See the comment text on the top of this file for the usage."
-  (let ((custom-map (copy-keymap cfw:howm-schedule-inline-keymap)))
+  (let ((custom-map (copy-keymap cfw:howm-schedule-inline-keymap)) cp)
     (set-keymap-parent custom-map cfw:calendar-mode-map)
-    (cfw:insert-calendar-region nil width (or height 10) custom-map))
+    (setq cp (cfw:create-calendar-component-region
+              :width width :height (or height 10)
+              :keymap custom-map 
+              :contents-sources (cfw:howm-create-source)
+              :view 'month)))
   "") ; for null output
 
 ;;; Installation
@@ -167,7 +180,6 @@ This command should be executed on the calfw calendar."
   "Add a schedule collection function to the calfw for the howm
 schedule data and set up inline calendar function for the howm menu."
   (interactive)
-  (add-to-list 'cfw:contents-functions 'cfw:howm-schedule-period-to-calendar)
   (add-hook 'howm-after-save-hook 'cfw:howm-schedule-cache-clear)
   (add-to-list 'howm-menu-allow 'cfw:howm-schedule-inline))
 
@@ -194,3 +206,5 @@ schedule data and set up inline calendar function for the howm menu."
 
 (provide 'calfw-howm)
 ;;; calfw-howm.el ends here
+
+; LocalWords:  SteelBlue
