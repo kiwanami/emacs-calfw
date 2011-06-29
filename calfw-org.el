@@ -101,14 +101,17 @@ from the org schedule data."
      ))
   "Key map for the calendar buffer.")
 
+(defun cfw:org-create-source (&optional color)
+  "Create org-agenda source."
+  (make-cfw:source
+   :name "org-agenda"
+   :color (or color "Seagreen4")
+   :data 'cfw:org-schedule-period-to-calendar))
+
 (defun cfw:open-org-calendar ()
   "Open an org schedule calendar in the new buffer."
   (interactive)
-  (let* ((source1
-          (make-cfw:source
-           :name "org-agenda"
-           :color "Seagreen4"
-           :data 'cfw:org-schedule-period-to-calendar))
+  (let* ((source1 (cfw:org-create-source))
          (cp (cfw:create-calendar-component-buffer
               :view 'month
               :contents-sources (list source1))))
