@@ -27,14 +27,11 @@
 
 ;; Here is a minimum sample code:
 ;; (require 'calfw-ical)
-;; (cfw:install-ical-schedules)
-;; (setq cfw:ical-calendar-contents-sources '("http://www.google.com/calendar/ical/.../basic.ics"))
+;; To open a calendar buffer, execute the following function.
+;; (cfw:open-ical-calendar "http://www.google.com/calendar/ical/.../basic.ics")
 
 ;; Executing the following command, this program clears caches to refresh the ICS data.
-;; (cfw:ical-calendar-clear-cache)
-;; Or add the following advice:
-;; (defadvice cfw:refresh-calendar-buffer (before activate)
-;;   (cfw:ical-calendar-clear-cache))
+;; (cfw:ical-data-cache-clear-all)
 
 ;;; Code:
 
@@ -167,18 +164,6 @@ events have not been supported yet."
          "*ical-debug*")
       (kill-buffer buf))))
 
-(defvar cfw:ical-calendar-contents-sources  nil "a list of URL of iCalendar (contents)")
-
-(defvar cfw:ical-calendar-annotations-sources  nil "a list of URL of iCalendar (annotations)")
-
-(defvar cfw:ical-calendar-contents-sources-cache nil "[internal]")
-(defvar cfw:ical-calendar-annotations-sources-cache nil "[internal]")
-
-(defun cfw:ical-calendar-clear-cache ()
-  (interactive)
-  (setq cfw:ical-calendar-contents-sources-cache nil
-        cfw:ical-calendar-annotations-sources-cache nil))
-
 (defvar cfw:ical-calendar-external-shell-command "wget -q -O - ")
 (defvar cfw:ical-calendar-tmpbuf " *calfw-tmp*")
 (defvar cfw:ical-url-to-buffer-get 'cfw:ical-url-to-buffer-internal)
@@ -242,22 +227,37 @@ events have not been supported yet."
        (replace-match "DT\\1:")))
   (set-buffer-modified-p nil))
 
-(defun cfw:ical-to-calendar (begin end)
-  (unless cfw:ical-calendar-contents-sources-cache
-    (setq cfw:ical-calendar-contents-sources-cache
-          (loop for s in cfw:ical-calendar-contents-sources
-                for cal-list = 
-                (cfw:ical-with-buffer s
-                  (cfw:ical-normalize-buffer)
-                  (cfw:ical-convert-ical-to-calfw
-                   (icalendar--read-element nil nil)))
-                with contents = nil
-                do
-                (loop for (date . lst) in cal-list
-                      do
-                      (setq contents (cfw:contents-add date lst contents)))
-                finally return contents)))
-  (loop for (date . lst) in cfw:ical-calendar-contents-sources-cache
+(defvar cfw:ical-data-cache nil "a list of (url . ics-data)")
+
+(defun cfw:ical-data-cache-clear (url)
+  (setq cfw:ical-data-cache
+        (loop for i in cfw:ical-data-cache
+              for (u . d) = i
+              unless (equal u url)
+              collect i)))
+
+(defun cfw:ical-data-cache-clear-all ()
+  (interactive)
+  (setq cfw:ical-data-cache nil))
+
+(defun cfw:ical-get-data (url)
+  (let ((data (assoc url cfw:ical-data-cache)))
+    (unless data
+      (setq data 
+            (let ((cal-list 
+                   (cfw:ical-with-buffer url 
+                     (cfw:ical-normalize-buffer)
+                     (cfw:ical-convert-ical-to-calfw
+                      (icalendar--read-element nil nil))))
+                   contents)
+              (loop for (date . lst) in cal-list do
+                    (setq contents (cfw:contents-add date lst contents)))
+              (cons url contents)))
+      (push data cfw:ical-data-cache))
+    (cdr data)))
+
+(defun cfw:ical-to-calendar (url begin end)
+  (loop for (date . lst) in (cfw:ical-get-data url)
         if (eq 'periods date)
         collect
         (cons 'periods 
@@ -268,35 +268,25 @@ events have not been supported yet."
         else if (cfw:date-between begin end date)
         collect (cons date lst)))
 
-(defun cfw:ical-to-annotation (begin end)
-  (unless cfw:ical-calendar-annotations-sources-cache
-    (setq cfw:ical-calendar-annotations-sources-cache
-          (loop for s in cfw:ical-calendar-annotations-sources
-                for cal-list = 
-                (cfw:ical-with-buffer s
-                  (cfw:ical-convert-ical-to-calfw
-                   (icalendar--read-element nil nil)))
-                with annotations = nil
-                do
-                (loop for (date . lst) in cal-list
-                      do
-                      (setq annotations (cfw:contents-add date lst annotations)))
-                finally return annotations)))
-  (loop for (date . lst) in cfw:ical-calendar-annotations-sources-cache
-        if (eq 'periods date)
-        collect
-        (cons 'periods 
-              (loop for (rstart rend title) in lst
-                    if (and (cfw:date-less-equal-p begin rend)
-                            (cfw:date-less-equal-p rstart end))
-                    collect (list rstart rend title)))
-        else if (cfw:date-between begin end date)
-        collect (cons date lst)))
+(defun cfw:ical-create-source (name url color)
+  (lexical-let ((url url))
+    (make-cfw:source
+     :name (concat "iCal:" name)
+     :color color
+     :data (lambda (begin end) 
+             (cfw:ical-to-calendar url begin end)))))
 
-(defun cfw:install-ical-schedules ()
-  (add-to-list 'cfw:contents-functions 'cfw:ical-to-calendar)
-  (add-to-list 'cfw:annotations-functions 'cfw:ical-to-annotation))
+(defun cfw:open-ical-calendar (url)
+  "Simple calendar interface. This command displays just one
+calendar source."
+  (interactive)
+  (let ((cp (cfw:create-calendar-component-buffer
+             :view 'month
+             :contents-sources
+             (list (cfw:ical-create-source "ical" url "#2952a3")))))
+    (switch-to-buffer (cfw:cp-get-buffer cp))))
 
+;; (progn (eval-current-buffer) (cfw:open-ical-calendar "./ics/test.ics"))
 
 (provide 'calfw-ical)
 ;;; calfw-ical.el ends here
