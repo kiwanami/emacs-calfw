@@ -940,8 +940,9 @@ calling functions `cfw:annotations-functions'."
   "render-title-month
 DATE"
   (format "%4s / %s"
-          (cfw:k 'year model)
-          (aref calendar-month-name-array (1- (cfw:k 'month model)))))
+          (calendar-extract-year date)
+          (aref calendar-month-name-array 
+                (1- (calendar-extract-month date)))))
 
 (defun cfw:render-title-period (begin-date end-date)
   "render-title
@@ -1129,7 +1130,8 @@ WIDTH"
 (defun cfw:render-periods (date week-day periods-stack cell-width)
   "[internal] This function translates PERIOD-STACK to display content on the DATE."
   (when periods-stack
-    (let ((stack (sort periods-stack (lambda (a b) (< (car a) (car b))))))
+    (let ((stack (sort (copy-sequence periods-stack)
+                       (lambda (a b) (< (car a) (car b))))))
       (loop for i from 0 below (car (car stack))
             do (push ; insert blank lines
                 (list i (list nil nil nil))
@@ -1439,7 +1441,7 @@ return an alist of rendering parameters."
       (columns . ,cfw:week-days))))
 
 (defun cfw:view-week (component)
-  "[internal] Render monthly calendar view."
+  "[internal] Render weekly calendar view."
   (let* ((dest (cfw:component-dest component))
          (param (cfw:render-append-parts (cfw:view-week-calc-param dest)))
          (total-width (cfw:k 'total-width param))
@@ -1522,7 +1524,7 @@ return an alist of rendering parameters."
       (columns . ,cfw:week-days))))
 
 (defun cfw:view-two-weeks (component)
-  "[internal] Render monthly calendar view."
+  "[internal] Render two-weeks calendar view."
   (let* ((dest (cfw:component-dest component))
          (param (cfw:render-append-parts (cfw:view-two-weeks-calc-param dest)))
          (total-width (cfw:k 'total-width param))
