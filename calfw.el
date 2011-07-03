@@ -517,6 +517,7 @@ the calfw is responsible to manage the buffer and key maps."
      )))
 
 (defun cfw:dest-region-clear (begin end)
+  "[internal] Clear the content text."
   (when (< 2 (- end begin))
     (delete-region begin (1- end)))
   (goto-char begin))
@@ -550,11 +551,14 @@ the calfw is responsible to manage the buffer and key maps."
 ;; Create
 
 (defun cfw:cp-new (dest model view &optional selected-date)
-  "cp-new
-DEST 
-MODEL 
-VIEW
-SELECTED-DATE"
+  "[internal] Create a new component object.
+DEST is a cfw:dest object.  MODEL is a model object.  VIEW is a
+symbol of the view type: month, two-week, week and day.
+SELECTED-DATE is a selected date initially.  This function is
+called by the initialization functions,
+`cfw:create-calendar-component-buffer',
+`cfw:create-calendar-component-region' and
+`cfw:get-calendar-text'."
   (let ((cp (make-cfw:component
              :dest  dest
              :model model
@@ -872,7 +876,7 @@ contents list."
 
 (defun cfw:contents-merge (begin end sources)
   "[internal] Return an contents alist between begin date and end one,
-calling functions `cfw:contents-functions'."
+calling functions `:data' function."
   (cond 
    ((null sources) nil)
    ((= 1 (length sources))
