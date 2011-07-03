@@ -36,18 +36,18 @@
 ;; You can navigate the date like calendar.el.
 
 ;; Schedule data which are shown in the calendar view, are collected
-;; by the variables `cfw:contents-functions' and
-;; `cfw:annotations-functions'. The former variable defines schedule
-;; contents. The later one does date annotations like the moon phases.
+;; by the `cfw:source' objects. See the function `cfw:open-debug-calendar' for example.
+
 ;; This program gets the holidays using the function
-;; `calendar-holiday-list'. See the document for the holidays.el and
-;; the Info text.
+;; `calendar-holiday-list'. See the document of the holidays.el and
+;; the Info text for customizing the holidays.
 
 ;;; Add-ons:
 
 ;; Following programs are also useful:
-;; - calfw-howm.el : Display howm schedules
+;; - calfw-howm.el : Display howm schedules.
 ;; - calfw-ical.el : Display schedules of the iCalendar format.
+;; - calfw-org.el  : Display orgmode schedules.
 
 ;;; Code:
 
