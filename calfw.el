@@ -1928,9 +1928,10 @@ calendar view."
 (defun cfw:navi-on-click ()
   "click"
   (interactive)
-  (let ((cp (cfw:cp-get-component)))
-    (when cp
-      (cfw:cp-set-selected-date cp (cfw:cursor-to-nearest-date))
+  (let ((cp (cfw:cp-get-component))
+        (date (cfw:cursor-to-date)))
+    (when (and cp date)
+      (cfw:cp-set-selected-date cp date)
       (cfw:cp-fire-click-hooks cp))))
 
 (defun cfw:refresh-calendar-buffer ()
@@ -1943,13 +1944,17 @@ calendar view."
   "Move the cursor to the first day of the current week."
   (interactive)
   (when (cfw:cp-get-component)
-    (cfw:navi-goto-date (cfw:week-begin-date (cfw:cursor-to-nearest-date)))))
+    (cfw:navi-goto-date 
+     (cfw:week-begin-date
+      (cfw:cp-get-selected-date (cfw:cp-get-component))))))
 
 (defun cfw:navi-goto-week-end-command ()
   "Move the cursor to the last day of the current week."
   (interactive)
   (when (cfw:cp-get-component)
-    (cfw:navi-goto-date (cfw:week-end-date (cfw:cursor-to-nearest-date)))))
+    (cfw:navi-goto-date
+     (cfw:week-end-date
+      (cfw:cp-get-selected-date (cfw:cp-get-component))))))
 
 (defun cfw:navi-goto-date-command (string-date)
   "Move the cursor to the specified date."
@@ -1967,7 +1972,7 @@ Moves backward if NUM is negative."
   (interactive)
   (when (cfw:cp-get-component)
     (unless num (setq num 1))
-    (let* ((cursor-date (cfw:cursor-to-nearest-date))
+    (let* ((cursor-date (cfw:cp-get-selected-date (cfw:cp-get-component)))
            (new-cursor-date (cfw:date-after cursor-date num)))
       (cfw:navi-goto-date new-cursor-date))))
 
@@ -2005,7 +2010,7 @@ Movement is backward if NUM is negative."
   (interactive)
   (when (cfw:cp-get-component)
     (unless num (setq num 1))
-    (let* ((cursor-date (cfw:cursor-to-nearest-date))
+    (let* ((cursor-date (cfw:cp-get-selected-date (cfw:cp-get-component)))
            (month (calendar-extract-month cursor-date))
            (day   (calendar-extract-day   cursor-date))
            (year  (calendar-extract-year  cursor-date))
