@@ -2105,7 +2105,11 @@ DATE is a date to show. MODEL is model object."
    '(("q"   . cfw:details-kill-buffer-command)
      ("SPC" . cfw:details-kill-buffer-command)
      ("n"   . cfw:details-navi-next-command)
+     ("f"   . cfw:details-navi-next-command)
+     ("<right>"  . cfw:details-navi-next-command)
      ("p"   . cfw:details-navi-prev-command)
+     ("b"   . cfw:details-navi-prev-command)
+     ("<left>"   . cfw:details-navi-prev-command)
      ))
   "Default key map for the details buffer.")
 
