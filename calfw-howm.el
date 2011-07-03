@@ -78,21 +78,34 @@ to the number of howm encoded days."
     (howm-schedule-sort-items filtered)))
 
 (defvar cfw:howm-schedule-summary-transformer 
-  (lambda (line) (replace-regexp-in-string "^[^@!]+[@!] " "" line))
+  (lambda (line) line)
   "Transformation function which transforms the howm summary string to calendar title.
 If this function splits into a list of string, the calfw displays those string in multi-lines.")
+
+(defun cfw:howm-schedule-parse-line (line)
+  "[internal] Parse the given string and return a result list, (date num type summary)."
+  (when (string-match "^\\[\\([^@!]+\\)\\]\\([@!]\\)\\([0-9]*\\) \\(.*\\)$" line)
+    (list 
+     (match-string 1 line) (string-to-number (match-string 3 line))
+     (match-string 2 line) (match-string 4 line))))
 
 (defun cfw:howm-schedule-period-to-calendar (begin end)
   "[internal] Return calfw calendar items between BEGIN and END
 from the howm schedule data."
-  (loop for i in (cfw:howm-schedule-period begin end)
+  (loop with contents = nil
+        with periods = nil
+        for i in (cfw:howm-schedule-period begin end)
         for date = (cfw:emacs-to-calendar
                     (seconds-to-time (+ 10 (* (howm-schedule-date i) 24 3600))))
-        for line = (funcall cfw:howm-schedule-summary-transformer
-                            (howm-item-summary i))
-        with contents = nil
-        do (setq contents (cfw:contents-add date line contents))
-        finally return contents))
+        for (datestr num type summary) = (cfw:howm-schedule-parse-line (howm-item-summary i))
+        for summary = (funcall cfw:howm-schedule-summary-transformer summary)
+        do 
+        (cond
+         ((< 0 num)
+          (push (list date (cfw:date-after date (1- num)) summary) periods))
+         (t
+          (setq contents (cfw:contents-add date summary contents))))
+        finally return (nconc contents (list (cons 'periods periods)))))
 
 (defun cfw:howm-create-source (&optional color)
   "Create a howm source."
