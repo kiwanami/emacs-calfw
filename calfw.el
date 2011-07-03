@@ -343,9 +343,10 @@ ones of DATE2. Otherwise is `nil'."
 ;; This structure defines data sources of the calendar.
 
 ;; [cfw:source]
-;; name  : data source title
-;; data  : a function that generates an alist of date-contents
-;; color : foreground color for normal items (optional)
+;; name   : data source title
+;; data   : a function that generates an alist of date-contents
+;; update : a function that is called when the user needs to update the contents (optional)
+;; color  : foreground color for normal items (optional)
 ;; period-fgcolor  : foreground color for period items (optional)
 ;; period-bgcolor  : background color for period items (optional)
 ;; opt-face        : a plist of additional face properties for normal items (optional)
@@ -354,7 +355,7 @@ ones of DATE2. Otherwise is `nil'."
 ;; If `period-bgcolor' is nil, the value of `color' is used.
 ;; If `period-fgcolor' is nil, the black or white (negative color of `period-bgcolor') is used.
 
-(defstruct cfw:source name data color period-bgcolor period-fgcolor opt-face opt-period-face)
+(defstruct cfw:source name data update color period-bgcolor period-fgcolor opt-face opt-period-face)
 
 (defun cfw:source-period-bgcolor-get (source)
   "[internal] Return a background color for period items.
@@ -1938,7 +1939,14 @@ calendar view."
   "Clear the calendar and render again."
   (interactive)
   (let ((cp (cfw:cp-get-component)))
-    (when cp (cfw:cp-update cp))))
+    (when cp 
+      (loop for s in (cfw:cp-get-contents-sources cp)
+            for f = (cfw:source-update s)
+            if f do (funcall f))
+      (loop for s in (cfw:cp-get-annotation-sources cp)
+            for f = (cfw:source-update s)
+            if f do (funcall f))
+      (cfw:cp-update cp))))
 
 (defun cfw:navi-goto-week-begin-command ()
   "Move the cursor to the first day of the current week."
@@ -2254,7 +2262,9 @@ DATE is initial focus date. If it is nil, today is selected initially."
                 ((1 8 2011) (1 9 2011) "PERIOD1")
                 ((1 11 2011) (1 12 2011) "Period2")
                 ((1 12 2011) (1 14 2011) "long long title3"))
-               ))))
+               ))
+           :update
+           (lambda () (message "SOURCE: test1 update!"))))
          (source2 
           (make-cfw:source
            :name "test2"
@@ -2285,7 +2295,6 @@ DATE is initial focus date. If it is nil, today is selected initially."
     (cfw:cp-add-selection-change-hook cp (lambda () (message "CFW: SELECT %S" (cfw:cursor-to-nearest-date))))
     (switch-to-buffer (cfw:cp-get-buffer cp))
     ))
-
 
 (provide 'calfw)
 ;;; calfw.el ends here

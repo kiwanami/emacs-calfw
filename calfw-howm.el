@@ -115,6 +115,7 @@ from the howm schedule data."
   (make-cfw:source
    :name "howm schedule"
    :color (or color "SteelBlue")
+   :update 'cfw:howm-schedule-cache-clear
    :data 'cfw:howm-schedule-period-to-calendar))
 
 (defvar cfw:howm-schedule-map

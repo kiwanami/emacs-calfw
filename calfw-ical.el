@@ -273,6 +273,7 @@ events have not been supported yet."
     (make-cfw:source
      :name (concat "iCal:" name)
      :color color
+     :update (lambda () (cfw:ical-data-cache-clear url))
      :data (lambda (begin end) 
              (cfw:ical-to-calendar url begin end)))))
 
