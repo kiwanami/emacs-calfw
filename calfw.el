@@ -345,9 +345,37 @@ ones of DATE2. Otherwise is `nil'."
 ;; [cfw:source]
 ;; name  : data source title
 ;; data  : a function that generates an alist of date-contents
-;; color : background color for periods
+;; color : foreground color for normal items (optional)
+;; period-fgcolor  : foreground color for period items (optional)
+;; period-bgcolor  : background color for period items (optional)
+;; opt-face        : a plist of additional face properties for normal items (optional)
+;; opt-period-face : a plist of additional face properties for period items (optional)
+;;
+;; If `period-bgcolor' is nil, the value of `color' is used.
+;; If `period-fgcolor' is nil, the black or white (negative color of `period-bgcolor') is used.
 
-(defstruct cfw:source name data color)
+(defstruct cfw:source name data color period-bgcolor period-fgcolor opt-face opt-period-face)
+
+(defun cfw:source-period-bgcolor-get (source)
+  "[internal] Return a background color for period items.
+If `cfw:source-period-bgcolor' is nil, the value of
+`cfw:source-color' is used."
+  (or (cfw:source-period-bgcolor source)
+      (let ((c (cfw:source-color source)))
+        (when c
+          (setf (cfw:source-period-bgcolor source) c))
+        c)))
+
+(defun cfw:source-period-fgcolor-get (source)
+  "[internal] Return a foreground color for period items.
+If `cfw:source-period-fgcolor' is nil, the black or
+white (negative color of `cfw:source-period-bgcolor') is used."
+  (or (cfw:source-period-fgcolor source)
+      (let ((c (destructuring-bind
+                   (r g b) (color-values (or (cfw:source-period-bgcolor-get source) "black"))
+                 (if (< 384 (+ r g b)) "black" "white"))))
+        (setf (cfw:source-period-fgcolor source) c)
+        c)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Rendering Destination
@@ -1033,10 +1061,12 @@ sides with the character PADDING."
 TEXT 
 DEFAULT-FACE"
   (let* ((src (get-text-property 0 'cfw:source text))
-         (bg-color (and src (cfw:source-color src))))
+         (bg-color (and src (cfw:source-period-bgcolor-get src)))
+         (fg-color (and src (cfw:source-period-fgcolor-get src))))
     (cond
      ((or (null src) (null bg-color)) default-face)
-     (t (list ':background bg-color ':foreground "White")))))
+     (t (append (list ':background bg-color ':foreground fg-color) 
+                (cfw:source-opt-period-face src))))))
 
 (defun cfw:render-get-face-content (text default-face)
   "[internal] render-get-face-content
@@ -1046,7 +1076,7 @@ DEFAULT-FACE"
          (fg-color (and src (cfw:source-color src))))
     (cond
      ((or (null src) (null fg-color)) default-face)
-     (t (list ':foreground fg-color)))))
+     (t (append (list ':foreground fg-color) (cfw:source-opt-face src))))))
 
 (defun cfw:render-default-content-face (str &optional default-face)
   "[internal] Put the default content face. If STR has some
@@ -2212,6 +2242,10 @@ DATE is initial focus date. If it is nil, today is selected initially."
           (make-cfw:source
            :name "test1"
            :color "Lightpink3"
+           :period-bgcolor "Lightpink1"
+           :period-fgcolor "White"
+           :opt-face '(:weight bold)
+           :opt-period-face '(:slant italic)
            :data 
            (lambda (b e)
              '(((1  1 2011) "TEST1") 
