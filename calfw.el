@@ -373,7 +373,7 @@ white (negative color of `cfw:source-period-bgcolor') is used."
   (or (cfw:source-period-fgcolor source)
       (let ((c (destructuring-bind
                    (r g b) (color-values (or (cfw:source-period-bgcolor-get source) "black"))
-                 (if (< 384 (+ r g b)) "black" "white"))))
+                 (if (< 147500 (+ r g b)) "black" "white")))) ; (* 65536 3 0.75)
         (setf (cfw:source-period-fgcolor source) c)
         c)))
 
