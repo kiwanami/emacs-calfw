@@ -728,10 +728,10 @@ HOOK is a function that has no argument."
   "[internal] Return a view function which is corresponding to the view symbol.
 VIEW is a symbol of the view type."
   (cond
-   ((eq 'month view)     'cfw:view-month)
-   ((eq 'week view)      'cfw:view-week)
-   ((eq 'two-weeks view) 'cfw:view-two-weeks)
-   ((eq 'day view)       'cfw:view-day)
+   ((eq 'month     view)  'cfw:view-month)
+   ((eq 'week      view)  'cfw:view-week)
+   ((eq 'two-weeks view)  'cfw:view-two-weeks)
+   ((eq 'day       view)  'cfw:view-day)
    (t (error "Not found such view : %s" view))))
 
 (defun cfw:cp-update (component)
@@ -1133,14 +1133,18 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
   (let* ((prev (cfw:render-button " < " prev-cmd))
          (today (cfw:render-button "Today" 'cfw:navi-goto-today-command))
          (next (cfw:render-button " > " next-cmd))
-         (month (cfw:render-button "Month" 'cfw:change-view-month
-                                   (eq current-view 'month)))
-         (tweek (cfw:render-button "Two Weeks" 'cfw:change-view-two-weeks
-                                  (eq current-view 'two-weeks)))
-         (week (cfw:render-button "Week" 'cfw:change-view-week
-                                  (eq current-view 'week)))
-         (day (cfw:render-button "Day" 'cfw:change-view-day
-                                  (eq current-view 'day)))
+         (month (cfw:render-button 
+                 "Month" 'cfw:change-view-month
+                 (eq current-view 'month)))
+         (tweek (cfw:render-button 
+                 "Two Weeks" 'cfw:change-view-two-weeks
+                 (eq current-view 'two-weeks)))
+         (week (cfw:render-button 
+                "Week" 'cfw:change-view-week
+                (eq current-view 'week)))
+         (day (cfw:render-button
+               "Day" 'cfw:change-view-day
+               (eq current-view 'day)))
          (sp  " ")
          (toolbar-text 
           (cfw:render-add-right 
@@ -1678,7 +1682,7 @@ return an alist of rendering parameters."
      (cfw:rt 
       (cfw:render-title-day current-date)
       'cfw:face-title)
-     EOL (cfw:render-toolbar total-width 'two-weeks
+     EOL (cfw:render-toolbar total-width 'day
                              'cfw:navi-previous-day-command
                              'cfw:navi-next-day-command)
      EOL hline)
@@ -2097,14 +2101,15 @@ DATE is a date to show. MODEL is model object."
       (and annotation (cfw:rt annotation 'cfw:face-annotation))
       EOL))
    HLINE
-   (loop for (begin end summary) in periods concat
-         (concat
-          (cfw:rt (concat 
-                   (cfw:strtime begin) " - " (cfw:strtime end) " : ") 
-                  'cfw:face-periods)
-          " " summary EOL))
+   (loop for (begin end summary) in periods 
+         for prefix = (cfw:rt
+                       (concat (cfw:strtime begin) " - " (cfw:strtime end) " : ")
+                       (cfw:render-get-face-period summary 'cfw:face-periods))
+         concat
+         (concat prefix " " summary EOL))
    (loop for i in contents concat
-         (concat "- " i EOL)))))
+         (concat "- " (cfw:rt i (cfw:render-get-face-content i 'cfw:face-default-content))
+                 EOL)))))
 
 (defvar cfw:details-mode-map
   (cfw:define-keymap
