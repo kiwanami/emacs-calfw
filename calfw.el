@@ -1148,6 +1148,25 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
            (concat day sp week sp tweek sp month sp))))
     (cfw:render-default-content-face toolbar-text 'cfw:face-toolbar)))
 
+(defun cfw:render-footer (width sources)
+  "[internal] Return a text of the footer."
+  (let* ((whole-text 
+          (mapconcat 
+           'identity
+           (loop for s in sources
+                 for title = (cfw:tp (substring (cfw:source-name s) 0)
+                                     'cfw:source s)
+                 for dot   = (cfw:tp (substring "(==)" 0) 'cfw:source s)
+                 collect
+                 (cfw:render-default-content-face 
+                  (concat
+                   "[" (cfw:rt dot (cfw:render-get-face-period dot 'cfw:face-periods))
+                   " " title "]")
+                  (cfw:render-get-face-content title 'cfw:face-default-content)))
+           "  ")))
+    (cfw:render-default-content-face 
+     (cfw:render-left width (concat " " whole-text)) 'cfw:face-toolbar)))
+
 (defun cfw:render-periods (date week-day periods-stack cell-width)
   "[internal] This function translates PERIOD-STACK to display content on the DATE."
   (when periods-stack
@@ -1469,7 +1488,9 @@ return an alist of rendering parameters."
           (cond
            (hday 'cfw:face-sunday)
            ((not (cfw:month-year-contain-p month year date)) 'cfw:face-disable)
-           (t (cfw:render-get-week-face week-day 'cfw:face-default-day)))))))))
+           (t (cfw:render-get-week-face week-day 'cfw:face-default-day)))))))
+    ;; footer
+    (insert (cfw:render-footer total-width (cfw:model-get-contents-sources model)))))
 
 
 
@@ -1531,7 +1552,9 @@ return an alist of rendering parameters."
        (cfw:rt (format "%s" (calendar-extract-day date))
                (if hday 'cfw:face-sunday 
                  (cfw:render-get-week-face 
-                  week-day 'cfw:face-default-day)))))))
+                  week-day 'cfw:face-default-day)))))
+    ;; footer
+    (insert (cfw:render-footer total-width (cfw:model-get-contents-sources model)))))
 
 
 
@@ -1614,7 +1637,9 @@ return an alist of rendering parameters."
        (cfw:rt (format "%s" (calendar-extract-day date))
                (if hday 'cfw:face-sunday 
                  (cfw:render-get-week-face 
-                  week-day 'cfw:face-default-day)))))))
+                  week-day 'cfw:face-default-day)))))
+    ;; footer
+    (insert (cfw:render-footer total-width (cfw:model-get-contents-sources model)))))
 
 
 
@@ -1667,7 +1692,9 @@ return an alist of rendering parameters."
        (cfw:rt (format "%s" (calendar-extract-day date))
                (if hday 'cfw:face-sunday 
                  (cfw:render-get-week-face 
-                  week-day 'cfw:face-default-day)))))))
+                  week-day 'cfw:face-default-day)))))
+    ;; footer
+    (insert (cfw:render-footer total-width (cfw:model-get-contents-sources model)))))
 
 (defun cfw:render-calendar-cells-days (model param title-func)
   "[internal] Insert calendar cells for the linear views."
