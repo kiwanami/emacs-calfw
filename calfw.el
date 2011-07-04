@@ -596,37 +596,45 @@ called by the initialization functions,
     (cfw:cp-update cp)
     cp))
 
+;; Getting the component instance 
+
+(defun cfw:cp-get-component ()
+  "Return the component object on the current cursor position.
+Firstly, getting a text property `cfw:component' on the current
+position. If no object is found in the text property, the buffer
+local variable `cfw:component' is tried to get. If no object is
+found at the variable, return nil."
+  (let ((component (get-text-property (point) 'cfw:component)))
+    (unless component
+      (unless (local-variable-p 'cfw:component (current-buffer))
+        (error "Not found cfw:component attribute..."))
+      (setq component (buffer-local-value 'cfw:component (current-buffer))))
+    component))
+
 ;; Getter
 
 (defun cfw:cp-get-selected-date (component)
-  "cp-get-selected-date
-COMPONENT"
+  "Return the selected date of the component."
   (cfw:component-selected component))
 
 (defun cfw:cp-get-contents-sources (component)
-  "cp-get-contents-sources
-COMPONENT"
+  "Return a list of the content sources."
   (cfw:model-get-contents-sources (cfw:component-model component)))
 
 (defun cfw:cp-get-annotation-sources (component)
-  "cp-get-annotation-sources
-COMPONENT"
+  "Return a list of the annotation sources."
   (cfw:model-get-annotation-sources (cfw:component-model component)))
 
 (defun cfw:cp-get-view (component)
-  "cp-get-view
-COMPONENT"
+  "Return a symbol of the current view type."
   (cfw:component-view component))
 
 (defun cfw:cp-get-buffer (component)
-  "cp-get-buffer
-COMPONENT"
+  "Return a buffer object on which the component draws the content."
   (cfw:dest-buffer (cfw:component-dest component)))
 
 (defun cfw:cp-displayed-date-p (component date)
-  "cp-displayed-date-p
-COMPONENT 
-DATE"
+  "If the date is displayed in the current view, return `t'. Otherwise return `nil'."
   (let* ((model (cfw:component-model component))
          (begin (cfw:k 'begin-date model))
          (end (cfw:k 'end-date model)))
@@ -636,8 +644,8 @@ DATE"
 ;; Setter
 
 (defun cfw:cp-move-cursor (date)
-  "[internal] cp-move-cursor
-DATE"
+  "[internal] Just move the cursor onto the date. This function
+is called by `cfw:cp-set-selected-date'."
   (let ((pos (cfw:find-by-date date)))
     (when pos
       (goto-char pos)
@@ -645,9 +653,8 @@ DATE"
         (set-window-point (get-buffer-window (current-buffer)) pos)))))
 
 (defun cfw:cp-set-selected-date (component date)
-  "cp-set-selected-date
-COMPONENT 
-DATE"
+  "Select the date on the component. If the current view doesn't contain the date, 
+this function updates the view to display the date."
   (let ((last (cfw:component-selected component))
         (dest (cfw:component-dest component))
         (model (cfw:component-model component)))
@@ -670,31 +677,25 @@ DATE"
       ))))
 
 (defun cfw:cp-set-contents-sources (component sources)
-  "cp-set-contents-sources
-COMPONENT 
-SOURCES"
+  "Set content sources for the component. 
+SOURCES is a list of content sources."
   (cfw:model-set-contents-sources
    (cfw:component-model component) sources))
 
 (defun cfw:cp-set-annotation-sources (component sources)
-  "cp-set-annotation-sources
-COMPONENT 
-SOURCES"
+  "Set annotation sources for the component.
+SOURCES is a list of annotation sources."
   (cfw:model-set-annotation-sources
    (cfw:component-model component) sources))
 
 (defun cfw:cp-set-view (component view)
-  "cp-set-view
-COMPONENT
-VIEW"
+  "Change the view type of the component and re-draw the content.
+VIEW is a symbol of the view type."
   (setf (cfw:component-view component) view)
   (cfw:cp-update component))
 
 (defun cfw:cp-resize (component width height)
-  "cp-resize
-COMPONENT 
-WIDTH 
-HEIGHT"
+  "Resize the component size and re-draw the content."
   (let* ((dest (cfw:component-dest component))
          (buf (cfw:dest-buffer dest))
          (window (or (and buf (get-buffer-window buf)) (selected-window))))
@@ -705,21 +706,18 @@ HEIGHT"
 ;; Hook
 
 (defun cfw:cp-add-update-hook (component hook)
-  "cp-add-update-hook
-COMPONENT 
-HOOK"
+  "Add the update hook function to the component. 
+HOOK is a function that has no argument."
   (push hook (cfw:component-update-hooks component)))
 
 (defun cfw:cp-add-selection-change-hook (component hook)
-  "cp-add-selection-change-hook
-COMPONENT 
-HOOK"
+  "Add the selection change hook function to the component. 
+HOOK is a function that has no argument."
   (push hook (cfw:component-selection-change-hooks component)))
 
 (defun cfw:cp-add-click-hook (component hook)
-  "cp-add-click-hook
-COMPONENT 
-HOOK"
+  "Add the click hook function to the component. 
+HOOK is a function that has no argument."
   (push hook (cfw:component-click-hooks component)))
 
 
@@ -727,30 +725,17 @@ HOOK"
 ;;; private methods
 
 (defun cfw:cp-dispatch-view-impl (view)
-  "cp-dispatch-view-impl
-VIEW"
+  "[internal] Return a view function which is corresponding to the view symbol.
+VIEW is a symbol of the view type."
   (cond
-   ((eq 'month view) 'cfw:view-month)
-   ((eq 'week view) 'cfw:view-week)
+   ((eq 'month view)     'cfw:view-month)
+   ((eq 'week view)      'cfw:view-week)
    ((eq 'two-weeks view) 'cfw:view-two-weeks)
-   ((eq 'day view) 'cfw:view-day)
+   ((eq 'day view)       'cfw:view-day)
    (t (error "Not found such view : %s" view))))
 
-(defun cfw:cp-get-component ()
-  "Return the component object on the current cursor position.
-Firstly, getting a text property `cfw:component' on the current
-position. Secondly, getting a buffer local variable
-`cfw:component'. If no object is found, return nil."
-  (let ((component (get-text-property (point) 'cfw:component)))
-    (unless component
-      (unless (local-variable-p 'cfw:component (current-buffer))
-        (error "Not found cfw:component attribute..."))
-      (setq component (buffer-local-value 'cfw:component (current-buffer))))
-    component))
-
 (defun cfw:cp-update (component)
-  "cp-update
-COMPONENT"
+  "[internal] Clear and re-draw the component content."
   (let* ((buf (cfw:cp-get-buffer component))
          (dest (cfw:component-dest component)))
     (with-current-buffer buf
@@ -760,33 +745,31 @@ COMPONENT"
       (let ((buffer-read-only nil))
         (cfw:dest-with-region dest 
           (cfw:dest-clear dest)
-          (funcall (cfw:cp-dispatch-view-impl (cfw:component-view component)) 
+          (funcall (cfw:cp-dispatch-view-impl 
+                    (cfw:component-view component)) 
                    component)))
       (cfw:dest-ol-today-set dest)
-      (cfw:cp-set-selected-date component (cfw:component-selected component))
+      (cfw:cp-set-selected-date 
+       component (cfw:component-selected component))
       (cfw:dest-after-update dest)
       (cfw:cp-fire-update-hooks component))))
 
 (defun cfw:cp-fire-click-hooks (component)
-  "cp-fire-click-hooks
-COMPONENT 
-DATE"
+  "[internal] Call click hook functions of the component with no arguments."
   (loop for f in (cfw:component-click-hooks component)
         do (condition-case err
                (funcall f)
              (nil (message "Calfw: Click / Hook error %S [%s]" f err)))))
 
 (defun cfw:cp-fire-selection-change-hooks (component)
-  "cp-fire-selection-change-hooks
-ARGS"
+  "[internal] Call selection change hook functions of the component with no arguments."
   (loop for f in (cfw:component-selection-change-hooks component)
         do (condition-case err
                (funcall f)
              (nil (message "Calfw: Selection change / Hook error %S [%s]" f err)))))
 
 (defun cfw:cp-fire-update-hooks (component)
-  "cp-fire-update-hooks
-COMPONENT"
+  "[internal] Call update hook functions of the component with no arguments."
   (loop for f in (cfw:component-update-hooks component)
         do (condition-case err
                (funcall f)
@@ -846,15 +829,16 @@ ORG-MODEL is a model object to inherit."
 ;; private functions
 
 (defun cfw:model-get-contents-sources (model)
-  "[internal]"
+  "[internal] Return a list of content sources of the model."
   (cfw:k 'contents-sources model))
 
 (defun cfw:model-get-annotation-sources (model)
-  "[internal]"
+  "[internal] Return a list of annotation sources of the model."
   (cfw:k 'annotation-sources model))
 
 (defun cfw:model-set-init-date (date model)
-  "[internal]"
+  "[internal] Set the init-date that is used to calculate the
+display period of the calendar."
   (let ((cell (assq 'init-date model)))
     (cond
      (cell (setcdr cell date))
@@ -862,7 +846,7 @@ ORG-MODEL is a model object to inherit."
   date)
 
 (defun cfw:model-set-contents-sources (sources model)
-  "[internal]"
+  "[internal] Set the content sources of the model."
   (let ((cell (assq 'contents-sources model)))
     (cond
      (cell (setcdr cell sources))
@@ -870,7 +854,7 @@ ORG-MODEL is a model object to inherit."
   sources)
 
 (defun cfw:model-set-annotation-sources (sources model)
-  "[internal]"
+  "[internal] Set the annotation sources of the model."
   (let ((cell (assq 'annotation-sources model)))
     (cond
      (cell (setcdr cell sources))
@@ -970,17 +954,14 @@ calling functions `cfw:annotations-functions'."
 ;;; Rendering Utilities
 
 (defun cfw:render-title-month (date)
-  "render-title-month
-DATE"
+  "Render the calendar title for the monthly view."
   (format "%4s / %s"
           (calendar-extract-year date)
           (aref calendar-month-name-array 
                 (1- (calendar-extract-month date)))))
 
 (defun cfw:render-title-period (begin-date end-date)
-  "render-title
-BEGIN-DATE 
-END-DATE"
+  "Render the calendar title for the period view between BEGIN-DATE and END-DATE."
   (cond
    ((eql (calendar-extract-month begin-date) (calendar-extract-month end-date))
     (format "%4s / %s %s - %s"
@@ -997,8 +978,7 @@ END-DATE"
             (calendar-extract-day end-date)))))
 
 (defun cfw:render-title-day (date)
-  "render-title-day
-DATE"
+  "Render the calendar title for the day view on DATE."
   (format "%4s / %s %s"
           (calendar-extract-year date)
           (aref calendar-month-name-array 
@@ -1058,9 +1038,7 @@ sides with the character PADDING."
   (sort (copy-sequence lst) 'string-lessp))
 
 (defun cfw:render-get-face-period (text default-face)
-  "[internal] render-get-face-period
-TEXT 
-DEFAULT-FACE"
+  "[internal] Return a face for the source object of the period text."
   (let* ((src (get-text-property 0 'cfw:source text))
          (bg-color (and src (cfw:source-period-bgcolor-get src)))
          (fg-color (and src (cfw:source-period-fgcolor-get src))))
@@ -1070,9 +1048,7 @@ DEFAULT-FACE"
                 (cfw:source-opt-period-face src))))))
 
 (defun cfw:render-get-face-content (text default-face)
-  "[internal] render-get-face-content
-TEXT 
-DEFAULT-FACE"
+  "[internal] Return a face for the source object of the content text."
   (let* ((src (get-text-property 0 'cfw:source text))
          (fg-color (and src (cfw:source-color src))))
     (cond
@@ -1134,13 +1110,12 @@ faces, the faces are remained."
      :foreground "Gray50" :weight bold))
   "Face for button on toolbar" :group 'calfw)
 
-;; (progn (eval-current-buffer) (cfw:open-debug-calendar))
-
 (defun cfw:render-button (title command &optional state)
-  "render-button
-TITLE 
-COMMAND
-STATE"
+  "[internal] Return a decorated text for the toolbar buttons.
+TITLE is a button title.  COMMAND is a interactive command
+function called by clicking.  If STATE is non-nil, the face
+`cfw:face-toolbar-button-on' is applied. Otherwise
+`cfw:face-toolbar-button-off' is applied."
   (let ((text (concat "[" title "]"))
         (keymap (make-sparse-keymap)))
     (cfw:rt text (if state 'cfw:face-toolbar-button-on
@@ -1151,8 +1126,10 @@ STATE"
     text))
 
 (defun cfw:render-toolbar (width current-view prev-cmd next-cmd)
-  "render-toolbar
-WIDTH"
+  "[internal] Return a text of the toolbar.
+WIDTH is width of the toolbar.
+CURRENT-VIEW is a symbol of the current view type. This symbol is used to select the button faces on the toolbar.
+PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(next)-month-command' and `cfw:navi-previous(next)-week-command'."
   (let* ((prev (cfw:render-button " < " prev-cmd))
          (today (cfw:render-button "Today" 'cfw:navi-goto-today-command))
          (next (cfw:render-button " > " next-cmd))
@@ -1288,15 +1265,15 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
                          "+" EOL) 'cfw:face-grid))))))
 
 (defun cfw:render-day-of-week-names (model param)
-  "render-week-names"
+  "[internal] Insert week names."
   (loop for i in (cfw:k 'headers model)
         with VL = (cfw:k 'vl param) with cell-width = (cfw:k 'cell-width param)
         for name = (aref calendar-day-name-array i) do
         (insert VL (cfw:rt (cfw:render-center cell-width name)
                            (cfw:render-get-week-face i 'cfw:face-header)))))
 
-(defun cfw:render-calendar-cells-std (model param title-func)
-  "render-cells-std"
+(defun cfw:render-calendar-cells-weeks (model param title-func)
+  "[internal] Insert calendar cells for week based views."
   (loop for week in (cfw:k 'weeks model) ; week rows loop 
         with cell-width = (cfw:k 'cell-width param) do
         (cfw:render-columns
@@ -1384,12 +1361,13 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
         (setq i (cfw:date-after i 1))))
 
 (defun cfw:view-model-make-holidays (date)
-  "[internal] Return alist of holidays around DATE."
+  "[internal] Return an alist of holidays around DATE."
   (let ((displayed-month (calendar-extract-month date))
         (displayed-year (calendar-extract-year date)))
     (calendar-holiday-list)))
 
 (defun cfw:view-model-make-common-data (model begin-date end-date &optional lst)
+  "[internal] Return an alist of common data for the model."
   (let* ((contents-all (cfw:contents-merge 
                         begin-date end-date
                         (cfw:model-get-contents-sources model))))
@@ -1407,7 +1385,7 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
     lst)))
 
 (defun cfw:view-model-make-common-data-for-weeks (model begin-date end-date)
-  "[internal] Return a model object."
+  "[internal] Return a model object for week based views."
   (cfw:model-create-updated-view-data
    model
    (cfw:view-model-make-common-data
@@ -1483,7 +1461,7 @@ return an alist of rendering parameters."
     ;; contents
     (let ((year (cfw:k 'year model))
           (month (cfw:k 'month model)))
-      (cfw:render-calendar-cells-std 
+      (cfw:render-calendar-cells-weeks 
        model param 
        (lambda (date week-day hday) 
          (cfw:rt
@@ -1547,7 +1525,7 @@ return an alist of rendering parameters."
     (cfw:render-day-of-week-names model param)
     (insert VL EOL cline)
     ;; contents
-    (cfw:render-calendar-cells-std 
+    (cfw:render-calendar-cells-weeks 
      model param 
      (lambda (date week-day hday) 
        (cfw:rt (format "%s" (calendar-extract-day date))
@@ -1630,7 +1608,7 @@ return an alist of rendering parameters."
     (cfw:render-day-of-week-names model param)
     (insert VL EOL cline)
     ;; contents
-    (cfw:render-calendar-cells-std 
+    (cfw:render-calendar-cells-weeks 
      model param 
      (lambda (date week-day hday) 
        (cfw:rt (format "%s" (calendar-extract-day date))
@@ -1692,7 +1670,7 @@ return an alist of rendering parameters."
                   week-day 'cfw:face-default-day)))))))
 
 (defun cfw:render-calendar-cells-days (model param title-func)
-  "render-cells-std"
+  "[internal] Insert calendar cells for the linear views."
   (cfw:render-columns
    (loop with cell-width = (cfw:k 'cell-width param)
          with days = (cfw:k 'days model)
@@ -1727,7 +1705,7 @@ return an alist of rendering parameters."
    param))
 
 (defun cfw:render-periods-days (date periods-stack cell-width)
-  "[internal] "
+  "[internal] Insert period texts."
   (when periods-stack
     (let ((stack (sort (copy-sequence periods-stack)
                        (lambda (a b) (< (car a) (car b))))))
@@ -1880,6 +1858,7 @@ calendar view."
      )) "Default key map of calendar views.")
 
 (defun cfw:calendar-mode-map (&optional custom-map)
+  "[internal] Return a keymap object for the calendar buffer."
   (cond
    (custom-map
     (set-keymap-parent custom-map cfw:calendar-mode-map)
@@ -2138,7 +2117,6 @@ DATE is a date to show. MODEL is model object."
     (when next-win (select-window next-win))))
 
 (defun cfw:details-navi-next-command (&optional num)
-  "details-navi-next"
   (interactive)
   (when cfw:main-buf
     (with-current-buffer cfw:main-buf
@@ -2146,7 +2124,6 @@ DATE is a date to show. MODEL is model object."
       (cfw:show-details-command))))
 
 (defun cfw:details-navi-prev-command (&optional num)
-  "details-navi-prev"
   (interactive)
   (when cfw:main-buf
     (with-current-buffer cfw:main-buf
