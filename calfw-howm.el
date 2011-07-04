@@ -187,7 +187,7 @@ This command should be executed on the calfw calendar."
     (setq cp (cfw:create-calendar-component-region
               :width width :height (or height 10)
               :keymap custom-map 
-              :contents-sources (cfw:howm-create-source)
+              :contents-sources (list (cfw:howm-create-source))
               :view 'month)))
   "") ; for null output
 

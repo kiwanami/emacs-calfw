@@ -919,10 +919,13 @@ object is used to put some face property."
           if (eq k 'periods)
           collect ; periods
           (cons k 
-                (loop for (begin end summary) in lst
+                (loop for (begin end summaries) in lst
+                      for summary-text = (if (listp summaries) 
+                                             (mapconcat 'identity summaries " ")
+                                           summaries)
                       collect (list 
                                begin end 
-                               (cfw:tp summary 'cfw:source source))))
+                               (cfw:tp summary-text 'cfw:source source))))
           else
           collect ; contents
           (cons k
@@ -2224,11 +2227,25 @@ KEYMAP is the keymap that is put to the text property `keymap'. If KEYMAP is nil
                     (let (buffer-read-only)
                       (put-text-property (point-min) (1- (point-max)) 
                                          'cfw:component cp)
-                      (put-text-property (point-min) (1- (point-max))
-                                         'keymap (or keymap cfw:calendar-mode-map))))))))
+                      (cfw:fill-keymap-property
+                       (point-min) (1- (point-max)) (or keymap cfw:calendar-mode-map))))))))
         (setf (cfw:dest-after-update-func dest) after-update-func)
         (funcall after-update-func)
         cp))))
+
+(defun cfw:fill-keymap-property (begin end keymap)
+  "[internal] Put the given text property to the region between BEGIN and END.
+If the text already has some keymap property, the text is skipped."
+  (save-excursion
+    (goto-char begin)
+    (loop with pos = begin with nxt = nil
+          until (or (null pos) (<= end pos))
+          when (get-text-property pos 'keymap) do
+          (setq pos (next-single-property-change pos 'keymap))
+          else do
+          (setq nxt (next-single-property-change pos 'keymap))
+          (when (null nxt) (setq nxt end))
+          (put-text-property pos (min nxt end) 'keymap keymap))))
 
 ;; inline
 
