@@ -36,7 +36,8 @@
 
 (defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
-  (let ((org-agenda-prefix-format "")) ; ?
+  (let ((org-agenda-prefix-format "")
+        (span 'day)) ; ?
     (org-compile-prefix-format nil)
     (loop for date in (cfw:enumerate-days begin end) append
           (loop for file in (org-agenda-files nil 'ifmode) append
