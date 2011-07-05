@@ -6,6 +6,17 @@ This program displays a calendar view in the Emacs buffer.
 
 ![Calfw image](https://cacoo.com/diagrams/OnjKgBHat0kHs0xp-9E5E0.png?width=600)
 
+### Screenshots
+
+Currently, calfw has 4 views, month, 1week, 2week and day view.
+![Views](https://cacoo.com/diagrams/OnjKgBHat0kHs0xp-F3756.png?width=600)
+
+Pushing SPC key, the detail buffer pops up. Pushing SPC key again, the buffer is closed.
+![Pop up details](https://cacoo.com/diagrams/OnjKgBHat0kHs0xp-83C80.png?width=600)
+
+Many informations are displayed in the Emacs buffer.
+![View details](https://cacoo.com/diagrams/OnjKgBHat0kHs0xp-B961B.png?width=600)
+
 ## Installation
 
 To use this program, locate this file to load-path directory,
@@ -43,6 +54,11 @@ In the calendar buffer and region, you can use following key bindings:
   <tr><td>  [PgDown], &gt;  </td><td> Next month</td></tr>
   <tr><td>  t               </td><td> Today</td></tr>
   <tr><td>  g               </td><td> Absolute date (YYYY/MM/DD)</td></tr>
+  <tr><th>Changing View     </th><th></th></tr>
+  <tr><td>  M               </td><td> Month view</td></tr>
+  <tr><td>  W               </td><td> 1 Week view</td></tr>
+  <tr><td>  T               </td><td> 2 Week view</td></tr>
+  <tr><td>  D               </td><td> Day view</td></tr>
   <tr><th>Operation         </th><th></th></tr>
   <tr><td>  r               </td><td> Refresh data and re-draw contents</td></tr>
   <tr><td>  SPC             </td><td> Pop-up detail buffer (like Quicklook in Mac)</td></tr>
@@ -112,4 +128,4 @@ Here is a minimum sample code:
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2011-07-05 02:39:25 sakurai>
+Time-stamp: <2011-07-05 17:56:54 sakurai>
