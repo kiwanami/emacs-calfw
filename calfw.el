@@ -68,6 +68,23 @@
 (defconst cfw:week-saturday  6)
 (defconst cfw:week-days      7)
 
+;;; Customs
+
+(defcustom cfw:vertical-line-char ?|
+  "The character used for drawing vertical lines."
+  :group 'cfw
+  :type 'character)
+
+(defcustom cfw:horizontal-line-char ?-
+  "The character used for drawing horizontal lines."
+  :group 'cfw
+  :type 'character)
+
+(defcustom cfw:cross-char ?+
+  "The character used for drawing crossing lines."
+  :group 'cfw
+  :type 'character)
+
 ;;; Faces
 
 (defface cfw:face-title
@@ -1279,16 +1296,17 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
         (columns (cfw:k 'columns param)))
     (append
      param
-     `((eol . ,EOL) (vl . ,(cfw:rt "|" 'cfw:face-grid))
+     `((eol . ,EOL) (vl . ,(cfw:rt (make-string 1 cfw:vertical-line-char) 'cfw:face-grid))
        (hline . ,(cfw:rt (concat
-                          (make-string (cfw:k 'total-width param) ?-)
+                          (make-string (cfw:k 'total-width param) cfw:horizontal-line-char)
                           EOL)
                          'cfw:face-grid))
        (cline . ,(cfw:rt (concat
                          (loop for i from 0 below columns
                                concat (concat
-                                       "+" (make-string cell-width ?-)))
-                         "+" EOL) 'cfw:face-grid))))))
+                                       (make-string 1 cfw:cross-char)
+				       (make-string cell-width cfw:horizontal-line-char)))
+			 (make-string 1 cfw:cross-char) EOL) 'cfw:face-grid))))))
 
 (defun cfw:render-day-of-week-names (model param)
   "[internal] Insert week names."
