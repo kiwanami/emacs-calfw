@@ -2177,7 +2177,7 @@ DATE is initial focus date. If it is nil, today is selected
 initially.  This function uses the function
 `cfw:create-calendar-buffer' internally."
   (interactive)
-  (let ((cp (cfw:create-calendar-buffer
+  (let ((cp (cfw:create-calendar-component-buffer
              :date date :contents-sources contents-sources 
              :annotation-sources annotation-sources :view view)))
     (switch-to-buffer (cfw:cp-get-buffer cp))))
