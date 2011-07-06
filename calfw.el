@@ -1888,6 +1888,8 @@ calendar view."
      ("M" . cfw:change-view-month)
 
      ([mouse-1] . cfw:navi-on-click)
+
+     ("q" . bury-buffer)
      )) "Default key map of calendar views.")
 
 (defun cfw:calendar-mode-map (&optional custom-map)
