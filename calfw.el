@@ -2176,9 +2176,9 @@ DATE is a date to show. MODEL is model object."
   "Open a calendar buffer simply.
 DATE is initial focus date. If it is nil, today is selected
 initially.  This function uses the function
-`cfw:create-calendar-buffer' internally."
+`cfw:create-calendar-component-buffer' internally."
   (interactive)
-  (let ((cp (cfw:create-calendar-buffer
+  (let ((cp (cfw:create-calendar-component-buffer
              :date date :contents-sources contents-sources
              :annotation-sources annotation-sources :view view)))
     (switch-to-buffer (cfw:cp-get-buffer cp))))
