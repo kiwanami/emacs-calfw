@@ -80,8 +80,28 @@
   :group 'cfw
   :type 'character)
 
-(defcustom cfw:cross-char ?+
-  "The character used for drawing crossing lines."
+(defcustom cfw:junction-char ?+
+  "The character used for drawing junction lines."
+  :group 'cfw
+  :type 'character)
+
+(defcustom cfw:top-right-corner-char ?+
+  "The character used for drawing the top-right corner."
+  :group 'cfw
+  :type 'character)
+
+(defcustom cfw:top-left-corner-char ?+
+  "The character used for drawing the top-left corner."
+  :group 'cfw
+  :type 'character)
+
+(defcustom cfw:left-junction-char ?+
+  "The character used for drawing junction lines at the left side."
+  :group 'cfw
+  :type 'character)
+
+(defcustom cfw:right-junction-char ?+
+  "The character used for drawing junction lines at the right side."
   :group 'cfw
   :type 'character)
 
@@ -1298,15 +1318,17 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
      param
      `((eol . ,EOL) (vl . ,(cfw:rt (make-string 1 cfw:vertical-line-char) 'cfw:face-grid))
        (hline . ,(cfw:rt (concat
-                          (make-string (cfw:k 'total-width param) cfw:horizontal-line-char)
+			  (make-string 1 cfw:top-left-corner-char)
+                          (make-string (-  (cfw:k 'total-width param) 2) cfw:horizontal-line-char)
+			  (make-string 1 cfw:top-right-corner-char)
                           EOL)
                          'cfw:face-grid))
        (cline . ,(cfw:rt (concat
                          (loop for i from 0 below columns
                                concat (concat
-                                       (make-string 1 cfw:cross-char)
+                                       (make-string 1 (if (= i 0) cfw:left-junction-char cfw:junction-char))
 				       (make-string cell-width cfw:horizontal-line-char)))
-			 (make-string 1 cfw:cross-char) EOL) 'cfw:face-grid))))))
+			 (make-string 1 cfw:right-junction-char) EOL) 'cfw:face-grid))))))
 
 (defun cfw:render-day-of-week-names (model param)
   "[internal] Insert week names."
