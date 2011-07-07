@@ -69,7 +69,10 @@
          (buffer (marker-buffer marker)))
     (propertize
      (concat item " " (buffer-name buffer))
-     'keymap cfw:org-text-keymap)))
+     'keymap cfw:org-text-keymap
+     ;; Delete the display property, since displaying images will break our
+     ;; table layout.
+     'display nil)))
 
 (defvar cfw:org-schedule-summary-transformer 'cfw:org-summary-format
   "Transformation function which transforms the org item string to calendar title.
