@@ -1316,25 +1316,29 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
 
 (defun cfw:render-append-parts (param)
   "[internal] Append rendering parts to PARAM and return a new list."
-  (let ((EOL "\n")
-        (cell-width (cfw:k 'cell-width param))
-        (columns (cfw:k 'columns param)))
+  (let* ((EOL "\n")
+         (cell-width (cfw:k 'cell-width param))
+         (columns (cfw:k 'columns param))
+         (num-cell-char 
+          (/ cell-width (char-width cfw:fchar-horizontal-line))))
     (append
      param
      `((eol . ,EOL) (vl . ,(cfw:rt (make-string 1 cfw:fchar-vertical-line) 'cfw:face-grid))
-       (hline . ,(cfw:rt (concat
-			  (loop for i from 0 below columns
-				concat (concat
-					(make-string 1 (if (= i 0) cfw:fchar-top-left-corner cfw:fchar-top-junction))
-					(make-string cell-width cfw:fchar-horizontal-line)))
-			  (make-string 1 cfw:fchar-top-right-corner) EOL)
-                         'cfw:face-grid))
-       (cline . ,(cfw:rt (concat
-			  (loop for i from 0 below columns
-				concat (concat
-					(make-string 1 (if (= i 0) cfw:fchar-left-junction cfw:fchar-junction))
-					(make-string cell-width cfw:fchar-horizontal-line)))
-			  (make-string 1 cfw:fchar-right-junction) EOL) 'cfw:face-grid))))))
+       (hline . ,(cfw:rt 
+                  (concat
+                   (loop for i from 0 below columns concat
+                         (concat
+                          (make-string 1 (if (= i 0) cfw:fchar-top-left-corner cfw:fchar-top-junction))
+                          (make-string num-cell-char cfw:fchar-horizontal-line)))
+                   (make-string 1 cfw:fchar-top-right-corner) EOL)
+                  'cfw:face-grid))
+       (cline . ,(cfw:rt 
+                  (concat
+                   (loop for i from 0 below columns concat
+                         (concat
+                          (make-string 1 (if (= i 0) cfw:fchar-left-junction cfw:fchar-junction))
+                          (make-string num-cell-char cfw:fchar-horizontal-line)))
+                   (make-string 1 cfw:fchar-right-junction) EOL) 'cfw:face-grid))))))
 
 (defun cfw:render-day-of-week-names (model param)
   "[internal] Insert week names."
@@ -1495,15 +1499,25 @@ not know how to display the contents in the destinations."
      (cfw:view-model-make-common-data-for-weeks model begin-date end-date)
      `((month . ,month) (year . ,year)))))
 
+(defun cfw:round-cell-width (width)
+  "[internal] If string-width of `cfw:fchar-horizontal-line' is not 1,
+this function re-calculate and return the adjusted width."
+  (cond
+   ((eql (char-width cfw:fchar-horizontal-line) 1) width)
+   (t (- width (% width (char-width cfw:fchar-horizontal-line))))))
+
 (defun cfw:view-month-calc-param (dest)
   "[internal] Calculate cell size from the reference size and
 return an alist of rendering parameters."
   (let*
       ((win-width (cfw:dest-width dest))
-       (win-height (max 15 (- (cfw:dest-height dest) 16)))
-       (cell-width  (max 5 (/ (- win-width 8) 7)))
-       (cell-height (max 2 (/ (- win-height 6) 5)))
-       (total-width (+ (* cell-width cfw:week-days) 8)))
+       ;; title 2, toolbar 1, header 2, hline 7, footer 1, margin 2 => 15
+       (win-height (max 15 (- (cfw:dest-height dest) 15)))
+       (junctions-width (* (char-width cfw:fchar-junction) 8)) ; weekdays+1
+       (cell-width  (cfw:round-cell-width 
+                     (max 5 (/ (- win-width junctions-width) 7)))) ; weekdays
+       (cell-height (max 2 (/ win-height 6))) ; max weeks = 6
+       (total-width (+ (* cell-width cfw:week-days) junctions-width)))
     `((cell-width . ,cell-width)
       (cell-height . ,cell-height)
       (total-width . ,total-width)
@@ -1565,10 +1579,13 @@ not know how to display the contents in the destinations."
 return an alist of rendering parameters."
   (let*
       ((win-width (cfw:dest-width dest))
+       ;; title 2, toolbar 1, header 2, hline 2, footer 1, margin 2 => 10
        (win-height (max 15 (- (cfw:dest-height dest) 10)))
-       (cell-width  (max 5 (/ (- win-width 8) 7)))
-       (cell-height (max 2 (- win-height 6)))
-       (total-width (+ (* cell-width cfw:week-days) 8)))
+       (junctions-width (* (char-width cfw:fchar-junction) 8))
+       (cell-width  (cfw:round-cell-width 
+                     (max 5 (/ (- win-width junctions-width) 7))))
+       (cell-height (max 2 win-height))
+       (total-width (+ (* cell-width cfw:week-days) junctions-width)))
     `((cell-width . ,cell-width)
       (cell-height . ,cell-height)
       (total-width . ,total-width)
@@ -1650,10 +1667,13 @@ not know how to display the contents in the destinations."
 return an alist of rendering parameters."
   (let*
       ((win-width (cfw:dest-width dest))
-       (win-height (max 15 (- (cfw:dest-height dest) 12)))
-       (cell-width  (max 5 (/ (- win-width 8) 7)))
-       (cell-height (max 2 (/ (- win-height 6) 2)))
-       (total-width (+ (* cell-width cfw:week-days) 8)))
+       ;; title 2, toolbar 1, header 2, hline 3, footer 1, margin 2 => 11
+       (win-height (max 15 (- (cfw:dest-height dest) 11)))
+       (junctions-width (* (char-width cfw:fchar-junction) 8))
+       (cell-width  (cfw:round-cell-width 
+                     (max 5 (/ (- win-width junctions-width) 7))))
+       (cell-height (max 2 (/ win-height 2)))
+       (total-width (+ (* cell-width cfw:week-days) junctions-width)))
     `((cell-width . ,cell-width)
       (cell-height . ,cell-height)
       (total-width . ,total-width)
@@ -1704,10 +1724,13 @@ return an alist of rendering parameters."
   (let*
       ((num (or num 1))
        (win-width (cfw:dest-width dest))
+       ;; title 2, toolbar 1, header 2, hline 2, footer 1, margin 2 => 10
        (win-height (max 15 (- (cfw:dest-height dest) 10)))
-       (cell-width  (max 3 (/ (- win-width (1+ num)) num)))
-       (cell-height (- win-height 2))
-       (total-width (+ (* cell-width num) num 1)))
+       (junctions-width (* (char-width cfw:fchar-junction) (1+ num)))
+       (cell-width  (cfw:round-cell-width 
+                     (max 3 (/ (- win-width junctions-width) num))))
+       (cell-height win-height)
+       (total-width (+ (* cell-width num) junctions-width)))
     `((cell-width . ,cell-width)
       (cell-height . ,cell-height)
       (total-width . ,total-width)
