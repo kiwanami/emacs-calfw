@@ -70,42 +70,42 @@
 
 ;;; Customs
 
-(defcustom cfw:vertical-line-char ?|
+(defcustom cfw:fchar-vertical-line ?|
   "The character used for drawing vertical lines."
   :group 'cfw
   :type 'character)
 
-(defcustom cfw:horizontal-line-char ?-
+(defcustom cfw:fchar-horizontal-line ?-
   "The character used for drawing horizontal lines."
   :group 'cfw
   :type 'character)
 
-(defcustom cfw:junction-char ?+
+(defcustom cfw:fchar-junction ?+
   "The character used for drawing junction lines."
   :group 'cfw
   :type 'character)
 
-(defcustom cfw:top-right-corner-char ?+
+(defcustom cfw:fchar-top-right-corner ?+
   "The character used for drawing the top-right corner."
   :group 'cfw
   :type 'character)
 
-(defcustom cfw:top-left-corner-char ?+
+(defcustom cfw:fchar-top-left-corner ?+
   "The character used for drawing the top-left corner."
   :group 'cfw
   :type 'character)
 
-(defcustom cfw:left-junction-char ?+
+(defcustom cfw:fchar-left-junction ?+
   "The character used for drawing junction lines at the left side."
   :group 'cfw
   :type 'character)
 
-(defcustom cfw:right-junction-char ?+
+(defcustom cfw:fchar-right-junction ?+
   "The character used for drawing junction lines at the right side."
   :group 'cfw
   :type 'character)
 
-(defcustom cfw:top-junction-char ?+
+(defcustom cfw:fchar-top-junction ?+
   "The character used for drawing junction lines at the top side."
   :group 'cfw
   :type 'character)
@@ -1321,20 +1321,20 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
         (columns (cfw:k 'columns param)))
     (append
      param
-     `((eol . ,EOL) (vl . ,(cfw:rt (make-string 1 cfw:vertical-line-char) 'cfw:face-grid))
+     `((eol . ,EOL) (vl . ,(cfw:rt (make-string 1 cfw:fchar-vertical-line) 'cfw:face-grid))
        (hline . ,(cfw:rt (concat
 			  (loop for i from 0 below columns
 				concat (concat
-					(make-string 1 (if (= i 0) cfw:top-left-corner-char cfw:top-junction-char))
-					(make-string cell-width cfw:horizontal-line-char)))
-			  (make-string 1 cfw:top-right-corner-char) EOL)
+					(make-string 1 (if (= i 0) cfw:fchar-top-left-corner cfw:fchar-top-junction))
+					(make-string cell-width cfw:fchar-horizontal-line)))
+			  (make-string 1 cfw:fchar-top-right-corner) EOL)
                          'cfw:face-grid))
        (cline . ,(cfw:rt (concat
 			  (loop for i from 0 below columns
 				concat (concat
-					(make-string 1 (if (= i 0) cfw:left-junction-char cfw:junction-char))
-					(make-string cell-width cfw:horizontal-line-char)))
-			  (make-string 1 cfw:right-junction-char) EOL) 'cfw:face-grid))))))
+					(make-string 1 (if (= i 0) cfw:fchar-left-junction cfw:fchar-junction))
+					(make-string cell-width cfw:fchar-horizontal-line)))
+			  (make-string 1 cfw:fchar-right-junction) EOL) 'cfw:face-grid))))))
 
 (defun cfw:render-day-of-week-names (model param)
   "[internal] Insert week names."
