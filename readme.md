@@ -41,28 +41,29 @@ This program gets the holidays using the function
 In the calendar buffer and region, you can use following key bindings:
 
 <table>
-  <tr><th>Navigation        </th><th></th></tr>
-  <tr><td>  [left], C-b, h  </td><td> Previous day</td></tr>
-  <tr><td>  [right], C-f, l </td><td> Next day</td></tr>
-  <tr><td>  [up], C-p, k    </td><td> Previous week</td></tr>
-  <tr><td>  [down], C-n, j  </td><td> Next week</td></tr>
-  <tr><td>  C-a, ^          </td><td> Week begin</td></tr>
-  <tr><td>  C-e, $          </td><td> Week end</td></tr>
-  <tr><td>  [home]          </td><td> Month begin</td></tr>
-  <tr><td>  [end]           </td><td> Month end</td></tr>
-  <tr><td>  [PgUp], &lt;    </td><td> Previous month</td></tr>
-  <tr><td>  [PgDown], &gt;  </td><td> Next month</td></tr>
-  <tr><td>  t               </td><td> Today</td></tr>
-  <tr><td>  g               </td><td> Absolute date (YYYY/MM/DD)</td></tr>
-  <tr><th>Changing View     </th><th></th></tr>
-  <tr><td>  M               </td><td> Month view</td></tr>
-  <tr><td>  W               </td><td> 1 Week view</td></tr>
-  <tr><td>  T               </td><td> 2 Week view</td></tr>
-  <tr><td>  D               </td><td> Day view</td></tr>
-  <tr><th>Operation         </th><th></th></tr>
-  <tr><td>  r               </td><td> Refresh data and re-draw contents</td></tr>
-  <tr><td>  SPC             </td><td> Pop-up detail buffer (like Quicklook in Mac)</td></tr>
-  <tr><td>  [click]         </td><td> Jump (howm, orgmode)</td></tr>
+  <tr><th>Navigation             </th><th></th></tr>
+  <tr><td>  [left], b, h         </td><td> Previous day</td></tr>
+  <tr><td>  [right], f, l        </td><td> Next day</td></tr>
+  <tr><td>  [up], p, k           </td><td> Previous week</td></tr>
+  <tr><td>  [down], n, j         </td><td> Next week</td></tr>
+  <tr><td>  ^                    </td><td> Week begin</td></tr>
+  <tr><td>  $                    </td><td> Week end</td></tr>
+  <tr><td>  [home]               </td><td> First date in this month</td></tr>
+  <tr><td>  [end]                </td><td> Last date in this month</td></tr>
+  <tr><td>  M-v, [PgUp], &lt;    </td><td> Previous month</td></tr>
+  <tr><td>  C-v, [PgDown], &gt;  </td><td> Next month</td></tr>
+  <tr><td>  t                    </td><td> Today</td></tr>
+  <tr><td>  g                    </td><td> Absolute date (YYYY/MM/DD)</td></tr>
+  <tr><th>Changing View          </th><th></th></tr>
+  <tr><td>  M                    </td><td> Month view</td></tr>
+  <tr><td>  W                    </td><td> 1 Week view</td></tr>
+  <tr><td>  T                    </td><td> 2 Week view</td></tr>
+  <tr><td>  D                    </td><td> Day view</td></tr>
+  <tr><th>Operation              </th><th></th></tr>
+  <tr><td>  r                    </td><td> Refresh data and re-draw contents</td></tr>
+  <tr><td>  SPC                  </td><td> Pop-up detail buffer (like Quicklook in Mac)</td></tr>
+  <tr><td>  RET, [click]         </td><td> Jump (howm, orgmode)</td></tr>
+  <tr><td>  q                    </td><td> Bury buffer</td></tr>
 </table>
 
 The buttons on the toolbar can be clicked.
@@ -128,4 +129,4 @@ Here is a minimum sample code:
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2011-07-05 17:56:54 sakurai>
+Time-stamp: <2011-07-09 14:47:44 sakurai>
