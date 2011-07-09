@@ -1973,7 +1973,9 @@ calendar view."
   "This hook is called at end of setting up major mode `cfw:calendar-mode'.")
 
 (defun cfw:calendar-mode (&optional custom-map)
-  "Set up major mode `cfw:calendar-mode'."
+  "Set up major mode `cfw:calendar-mode'.
+
+\\{cfw:calendar-mode-map}"
   (kill-all-local-variables)
   (setq truncate-lines t)
   (use-local-map (cfw:calendar-mode-map custom-map))
@@ -2200,7 +2202,9 @@ DATE is a date to show. MODEL is model object."
 (defvar cfw:details-mode-hook nil "")
 
 (defun cfw:details-mode ()
-  "Set up major mode `cfw:details-mode'."
+  "Set up major mode `cfw:details-mode'.
+
+\\{cfw:details-mode-map}"
   (kill-all-local-variables)
   (setq truncate-lines t)
   (use-local-map cfw:details-mode-map)
