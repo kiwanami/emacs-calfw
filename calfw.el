@@ -984,13 +984,16 @@ calling functions `cfw:annotations-functions'."
    (t
     (loop for s in sources
           for f = (cfw:source-data s)
-          for cnt = (funcall f begin end)
+          for cnts = (funcall f begin end)
           with annotations = nil
-          for prv = (cfw:contents-get-internal d annotations)
-          if prv
-          do (set-cdr prv (concat (cdr prv) "/" (cdr cnt)))
-          else
-          do (push (copy-sequence cnt) annotations)
+          do
+          (loop for c in cnts
+                for (d . line) = c
+                for prv = (cfw:contents-get-internal d annotations)
+                if prv
+                do (setcdr prv (concat (cdr prv) "/" line))
+                else
+                do (push (cons d line) annotations))
           finally return annotations))))
 
 
@@ -2380,7 +2383,7 @@ DATE is initial focus date. If it is nil, today is selected initially."
                 ((1 14 2011) (1 15 2011) "Stack")
                 ((1 29 2011) (1 31 2011) "PERIOD W"))
                ))))
-         (asource
+         (asource1
           (make-cfw:source
            :name "Moon"
            :data
@@ -2390,10 +2393,20 @@ DATE is initial focus date. If it is nil, today is selected initially."
                ((1 20 2011) . "Full Moon")
                ((1 26 2011) . "Waning Moon")
                ))))
+         (asource2
+          (make-cfw:source
+           :name "Moon"
+           :data
+           (lambda (b e)
+             '(((1  5 2011) . "AN1")
+               ((1 13 2011) . "AN2")
+               ((1 20 2011) . "AN3")
+               ((1 28 2011) . "AN4")
+               ))))
          (cp (cfw:create-calendar-component-buffer
               :view 'month
               :contents-sources (list source1 source2)
-              :annotation-sources (list asource))))
+              :annotation-sources (list asource1 asource2))))
     (cfw:cp-add-update-hook cp (lambda () (message "CFW: UPDATE HOOK")))
     (cfw:cp-add-click-hook cp (lambda () (message "CFW: CLICK HOOK %S" (cfw:cursor-to-nearest-date))))
     (cfw:cp-add-selection-change-hook cp (lambda () (message "CFW: SELECT %S" (cfw:cursor-to-nearest-date))))
