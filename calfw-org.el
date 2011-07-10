@@ -34,6 +34,9 @@
 (require 'org)
 (require 'org-agenda)
 
+(defvar cfw:org-agenda-schedule-args nil
+  "Default arguments for collecting agenda entries.")
+
 (defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
   (let ((org-agenda-prefix-format "")
@@ -43,7 +46,9 @@
           (loop for file in (org-agenda-files nil 'ifmode) append
                 (progn
                   (org-check-agenda-file file)
-                  (org-agenda-get-day-entries file date))))))
+                  (apply 'org-agenda-get-day-entries 
+                         file date 
+                         cfw:org-agenda-schedule-args))))))
 
 (defun cfw:org-onclick ()
   "Jump to the clicked org item."
