@@ -40,7 +40,7 @@
 (defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
   (let ((org-agenda-prefix-format "")
-        (span 'day)) ; ?
+        (span 'day))
     (org-compile-prefix-format nil)
     (loop for date in (cfw:enumerate-days begin end) append
           (loop for file in (org-agenda-files nil 'ifmode) append
@@ -68,12 +68,15 @@
 (defun cfw:org-summary-format (item)
   "Format an item. (How should be displayed?)"
   (let* ((time (get-text-property 0 'time item))
+         (time-of-day (get-text-property 0 'time-of-day item))
+         (time-str (and time-of-day 
+                        (format "%02i:%02i " (/ time-of-day 100) (% time-of-day 100))))
          (category (get-text-property 0 'org-category item))
          (tags (get-text-property 0 'tags item))
          (marker (get-text-property 0 'org-marker item))
          (buffer (marker-buffer marker)))
     (propertize
-     (concat item " " (buffer-name buffer))
+     (concat time-str item " " (buffer-name buffer))
      'keymap cfw:org-text-keymap
      ;; Delete the display property, since displaying images will break our
      ;; table layout.
@@ -103,6 +106,21 @@ from the org schedule data."
                                          line contents))
         finally return contents))
 
+(defun cfw:org-schedule-sorter (text1 text2)
+  "[internal] Sorting algorithm for org schedule items.
+TEXT1 < TEXT2."
+  (condition-case err
+      (let ((time1 (get-text-property 0 'time-of-day text1))
+            (time2 (get-text-property 0 'time-of-day text2)))
+        (cond
+         ((and time1 time2)
+          (< time1 time2))
+         (time1 t)   ; time object is moved to upper
+         (time2 nil) ; 
+         (t
+          (string-lessp text1 text2))))
+    (error (string-lessp text1 text2))))
+
 (defvar cfw:org-schedule-map
   (cfw:define-keymap
    '(
@@ -123,7 +141,8 @@ from the org schedule data."
   (let* ((source1 (cfw:org-create-source))
          (cp (cfw:create-calendar-component-buffer
               :view 'month
-              :contents-sources (list source1))))
+              :contents-sources (list source1)
+              :sorter 'cfw:org-schedule-sorter)))
     (switch-to-buffer (cfw:cp-get-buffer cp))))
 
 (defun cfw:org-from-calendar ()
