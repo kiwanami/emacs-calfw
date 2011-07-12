@@ -821,7 +821,7 @@ VIEW is a symbol of the view type."
 
 ;;; Models
 
-(defun cfw:model-abstract-new (date contents-sources annotation-sources)
+(defun cfw:model-abstract-new (date contents-sources annotation-sources &optional sorter)
   "Return an abstract model object.
 DATE is initial date for the calculation of the start date and end one.
 CONTENTS-SOURCES is a list of contents functions.
@@ -829,7 +829,8 @@ ANNOTATION-SOURCES is a list of annotation functions."
   (unless date (setq date (calendar-current-date)))
   `((init-date . ,date)
     (contents-sources . ,contents-sources)
-    (annotation-sources . ,annotation-sources)))
+    (annotation-sources . ,annotation-sources)
+    (sorter . ,(or sorter cfw:default-text-sorter))))
 
 (defun cfw:model-abstract-derived (date org-model)
   "Return an abstract model object. The contents functions and annotation ones are copied from ORG-MODEL.
@@ -838,7 +839,8 @@ ORG-MODEL is a model object to inherit."
   (cfw:model-abstract-new
    date
    (cfw:model-get-contents-sources org-model)
-   (cfw:model-get-annotation-sources org-model)))
+   (cfw:model-get-annotation-sources org-model)
+   (cfw:model-get-sorter org-model)))
 
 (defun cfw:model-create-updated-view-data (model view-data)
   "[internal] Clear previous view model data from MODEL and return a new model with VIEW-DATA."
@@ -846,6 +848,8 @@ ORG-MODEL is a model object to inherit."
    (cfw:model-abstract-derived
     (cfw:k 'init-date model) model)
    view-data))
+
+(defvar cfw:default-text-sorter 'string-lessp "[internal] Default sorting criteria in a calendar cell.")
 
 ;; public functions
 
@@ -867,6 +871,10 @@ ORG-MODEL is a model object to inherit."
         for (begin end content) = period
         if (cfw:date-between begin end date)
         collect period))
+
+(defun cfw:model-get-sorter (model)
+  "Return a sorter function."
+  (cfw:k 'sorter model))
 
 ;; private functions
 
@@ -1081,9 +1089,9 @@ sides with the character PADDING."
          (cmargin (- width llen (string-width rcnt))))
     (concat lcnt (if (< 0 cmargin) (make-string cmargin padding)) rcnt)))
 
-(defun cfw:render-sort-contents (lst)
+(defun cfw:render-sort-contents (lst sorter)
   "[internal] Sort the string list LST. Maybe need to improve the sorting rule..."
-  (sort (copy-sequence lst) 'string-lessp))
+  (sort (copy-sequence lst) sorter))
 
 (defun cfw:render-get-face-period (text default-face)
   "[internal] Return a face for the source object of the period text."
@@ -1366,8 +1374,8 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
                for raw-periods = (cfw:contents-get
                                   date (cfw:render-periods-stacks model))
                for raw-contents = (cfw:render-sort-contents
-                                   (cfw:contents-get
-                                    date (cfw:k 'contents model)))
+                                   (cfw:model-get-contents-by-date date model)
+                                   (cfw:model-get-sorter model))
                for prs-contents = (append
                                    (cfw:render-periods
                                     date week-day raw-periods cell-width)
@@ -1790,8 +1798,8 @@ return an alist of rendering parameters."
          for raw-periods = (cfw:contents-get
                             date (cfw:render-periods-stacks model))
          for raw-contents = (cfw:render-sort-contents
-                             (cfw:contents-get
-                              date (cfw:k 'contents model)))
+                             (cfw:model-get-contents-by-date date model)
+                             (cfw:model-get-sorter model))
          for prs-contents = (append
                              (cfw:render-periods-days
                               date raw-periods cell-width)
@@ -2166,7 +2174,9 @@ DATE is a date to show. MODEL is model object."
          (holiday (cfw:model-get-holiday-by-date date model))
          (annotation (cfw:model-get-annotation-by-date date model))
          (periods (cfw:model-get-periods-by-date date model))
-         (contents (cfw:model-get-contents-by-date date model)))
+         (contents (cfw:render-sort-contents
+                    (cfw:model-get-contents-by-date date model)
+                    (cfw:model-get-sorter model))))
   (concat
    (cfw:rt (concat "Schedule on " (cfw:strtime date) " (") 'cfw:face-header)
    (cfw:rt (calendar-day-name date)
@@ -2248,7 +2258,7 @@ DATE is a date to show. MODEL is model object."
 ;; buffer
 
 (defun* cfw:open-calendar-buffer
-    (&key date buffer custom-map contents-sources annotation-sources view)
+    (&key date buffer custom-map contents-sources annotation-sources view sorter)
   "Open a calendar buffer simply.
 DATE is initial focus date. If it is nil, today is selected
 initially.  This function uses the function
@@ -2256,11 +2266,11 @@ initially.  This function uses the function
   (interactive)
   (let ((cp (cfw:create-calendar-component-buffer
              :date date :contents-sources contents-sources
-             :annotation-sources annotation-sources :view view)))
+             :annotation-sources annotation-sources :view view :sorter sorter)))
     (switch-to-buffer (cfw:cp-get-buffer cp))))
 
 (defun* cfw:create-calendar-component-buffer
-    (&key date buffer custom-map contents-sources annotation-sources view)
+    (&key date buffer custom-map contents-sources annotation-sources view sorter)
   "Return a calendar buffer with some customize parameters.
 
 This function binds the component object at the
@@ -2272,7 +2282,7 @@ DATE is initial focus date. If it is nil, today is selected initially.
 BUFFER is the buffer to be rendered. If BUFFER is nil, this function creates a new buffer named `cfw:calendar-buffer-name'.
 CUSTOM-MAP is the additional keymap that is added to default keymap `cfw:calendar-mode-map'."
   (let* ((dest  (cfw:dest-init-buffer buffer nil nil custom-map))
-         (model (cfw:model-abstract-new date contents-sources annotation-sources))
+         (model (cfw:model-abstract-new date contents-sources annotation-sources sorter))
          (cp (cfw:cp-new dest model view date)))
     (with-current-buffer (cfw:dest-buffer dest)
       (set (make-local-variable 'cfw:component) cp))
@@ -2281,7 +2291,7 @@ CUSTOM-MAP is the additional keymap that is added to default keymap `cfw:calenda
 ;; region
 
 (defun* cfw:create-calendar-component-region
-    (&key date width height keymap contents-sources annotation-sources view)
+    (&key date width height keymap contents-sources annotation-sources view sorter)
   "Insert markers of the rendering destination at current point and display the calendar view.
 
 This function returns a component object and stores it at the text property `cfw:component'.
@@ -2295,7 +2305,7 @@ KEYMAP is the keymap that is put to the text property `keymap'. If KEYMAP is nil
     (setq mark-end (point-marker))
     (save-excursion
       (let* ((dest (cfw:dest-init-region (current-buffer) mark-begin mark-end width height))
-             (model (cfw:model-abstract-new date contents-sources annotation-sources))
+             (model (cfw:model-abstract-new date contents-sources annotation-sources sorter))
              (cp (cfw:cp-new dest model view date))
              (after-update-func
               (lexical-let ((keymap keymap) (cp cp))
@@ -2305,7 +2315,8 @@ KEYMAP is the keymap that is put to the text property `keymap'. If KEYMAP is nil
                       (put-text-property (point-min) (1- (point-max))
                                          'cfw:component cp)
                       (cfw:fill-keymap-property
-                       (point-min) (1- (point-max)) (or keymap cfw:calendar-mode-map))))))))
+                       (point-min) (1- (point-max)) 
+                       (or keymap cfw:calendar-mode-map))))))))
         (setf (cfw:dest-after-update-func dest) after-update-func)
         (funcall after-update-func)
         cp))))
@@ -2327,7 +2338,7 @@ If the text already has some keymap property, the text is skipped."
 ;; inline
 
 (defun* cfw:get-calendar-text
-    (width height &key date keymap contents-sources annotation-sources view)
+    (width height &key date keymap contents-sources annotation-sources view sorter)
   "Return a text that is drew the calendar view.
 
 In this case, the rendering destination object is disposable.
@@ -2339,7 +2350,7 @@ smaller, the minimum size is used.
 
 DATE is initial focus date. If it is nil, today is selected initially."
   (let* ((dest (cfw:dest-init-inline width height))
-         (model (cfw:model-abstract-new date contents-sources annotation-sources))
+         (model (cfw:model-abstract-new date contents-sources annotation-sources sorter))
          (cp (cfw:cp-new dest model view date))
          text)
     (setq text
