@@ -2031,11 +2031,14 @@ calendar view."
       (cfw:cp-set-selected-date cp date)
       (cfw:cp-fire-click-hooks cp))))
 
-(defun cfw:refresh-calendar-buffer ()
-  "Clear the calendar and render again."
-  (interactive)
+(defun cfw:refresh-calendar-buffer (no-resize)
+  "Clear the calendar and render again.
+With prefix arg NO-RESIZE, don't fit calendar to window size."
+  (interactive "P")
   (let ((cp (cfw:cp-get-component)))
     (when cp
+      (unless no-resize
+	(cfw:cp-resize cp (window-width) (window-height)))
       (loop for s in (cfw:cp-get-contents-sources cp)
             for f = (cfw:source-update s)
             if f do (funcall f))
