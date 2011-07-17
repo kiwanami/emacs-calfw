@@ -134,10 +134,18 @@ TEXT1 < TEXT2."
           (string-lessp text1 text2))))
     (error (string-lessp text1 text2))))
 
+(defun cfw:org-open-agenda-day ()
+  "Open org-agenda buffer on the selected date."
+  (interactive)
+  (let ((date (cfw:cursor-to-nearest-date)))
+    (when date
+      (org-agenda-list nil (calendar-absolute-from-gregorian date) 'day))))
+
 (defvar cfw:org-schedule-map
   (cfw:define-keymap
    '(
-     ("q"   . kill-buffer)
+     ("q"   . bury-buffer)
+     ("SPC" . cfw:org-open-agenda-day)
      ))
   "Key map for the calendar buffer.")
 
@@ -155,6 +163,7 @@ TEXT1 < TEXT2."
          (cp (cfw:create-calendar-component-buffer
               :view 'month
               :contents-sources (list source1)
+              :custom-map cfw:org-schedule-map
               :sorter 'cfw:org-schedule-sorter)))
     (switch-to-buffer (cfw:cp-get-buffer cp))))
 
