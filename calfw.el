@@ -1141,7 +1141,7 @@ faces, the faces are remained."
       (let ((str (truncate-string-to-width
                   (substring org 0) limit-width 0 nil ellipsis)))
         (cfw:tp str 'mouse-face 'highlight)
-        (unless (get-text-property str 'help-echo str)
+        (unless (get-text-property 0 'help-echo str)
           (cfw:tp str 'help-echo org))
         str)
     org))
