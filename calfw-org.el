@@ -39,7 +39,7 @@
 
 (defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
-  (let ((org-agenda-prefix-format "")
+  (let ((org-agenda-prefix-format " ")
         (span 'day))
     (org-compile-prefix-format nil)
     (loop for date in (cfw:enumerate-days begin end) append
@@ -65,6 +65,17 @@
     map)
   "key map on the calendar item text.")
 
+(defun cfw:org-extract-summary (org-item)
+  "[internal] Remove some strings."
+  (let ((item org-item))
+    (when (string-match cfw:org-todo-keywords-regexp item) ; dynamic bind
+      (setq item (replace-match "" nil nil item)))
+    (when (string-match "^ +" item)
+      (setq item (replace-match "" nil nil item)))
+    (when (= 0 (length item))
+      (setq item (get-text-property 0 'org-category org-item)))
+    item))
+
 (defun cfw:org-summary-format (item)
   "Format an item. (How should be displayed?)"
   (let* ((time (get-text-property 0 'time item))
@@ -74,9 +85,10 @@
          (category (get-text-property 0 'org-category item))
          (tags (get-text-property 0 'tags item))
          (marker (get-text-property 0 'org-marker item))
-         (buffer (marker-buffer marker)))
+         (buffer (and marker (marker-buffer marker)))
+         (text (cfw:org-extract-summary item)))
     (propertize
-     (concat time-str item " " (buffer-name buffer))
+     (concat time-str text " " (and buffer (buffer-name buffer)))
      'keymap cfw:org-text-keymap
      ;; Delete the display property, since displaying images will break our
      ;; table layout.
@@ -97,6 +109,7 @@ If this function splits into a list of string, the calfw displays those string i
   "[internal] Return calfw calendar items between BEGIN and END
 from the org schedule data."
   (loop 
+   with cfw:org-todo-keywords-regexp = (regexp-opt org-todo-keywords-for-agenda) ; dynamic bind
    for i in (cfw:org-collect-schedules-period begin end)
         for date = (get-text-property 0 'date i)
         for line = (funcall cfw:org-schedule-summary-transformer i)
@@ -156,7 +169,7 @@ TEXT1 < TEXT2."
     ))
 
 ;; (progn (eval-current-buffer) (cfw:open-org-calendar))
-;; (setq org-agenda-files '("a.org"))
+;; (setq org-agenda-files '("./org-samples/complex.org"))
 
 
 (provide 'calfw-org)
