@@ -34,6 +34,10 @@
 (require 'org)
 (require 'org-agenda)
 
+(defsubst cfw:org-tp (text prop)
+  "[internal] Return text property at position 0."
+  (get-text-property 0 prop text))
+
 (defvar cfw:org-agenda-schedule-args nil
   "Default arguments for collecting agenda entries.")
 
@@ -73,18 +77,18 @@
     (when (string-match "^ +" item)
       (setq item (replace-match "" nil nil item)))
     (when (= 0 (length item))
-      (setq item (get-text-property 0 'org-category org-item)))
+      (setq item (cfw:org-tp org-item 'org-category)))
     item))
 
 (defun cfw:org-summary-format (item)
   "Format an item. (How should be displayed?)"
-  (let* ((time (get-text-property 0 'time item))
-         (time-of-day (get-text-property 0 'time-of-day item))
+  (let* ((time (cfw:org-tp item 'time))
+         (time-of-day (cfw:org-tp item 'time-of-day))
          (time-str (and time-of-day 
                         (format "%02i:%02i " (/ time-of-day 100) (% time-of-day 100))))
-         (category (get-text-property 0 'org-category item))
-         (tags (get-text-property 0 'tags item))
-         (marker (get-text-property 0 'org-marker item))
+         (category (cfw:org-tp item 'org-category))
+         (tags (cfw:org-tp item 'tags))
+         (marker (cfw:org-tp item 'org-marker))
          (buffer (and marker (marker-buffer marker)))
          (text (cfw:org-extract-summary item)))
     (propertize
@@ -105,26 +109,44 @@ If this function splits into a list of string, the calfw displays those string i
     (calendar-gregorian-from-absolute date))
    (t date)))
 
+(defun cfw:org-get-timerange (text)
+  "Return a range object (begin end text).
+If TEXT does not have a range, return nil."
+  (let* ((dotime (cfw:org-tp text 'dotime))
+         (ps (and dotime (stringp dotime) (string-match org-tr-regexp dotime))))
+    (and ps
+         (let* ((s1 (match-string 1 dotime))
+                (s2 (match-string 2 dotime))
+                (d1 (time-to-days (org-time-string-to-time s1)))
+                (d2 (time-to-days (org-time-string-to-time s2))))
+           (list (calendar-gregorian-from-absolute d1) 
+                 (calendar-gregorian-from-absolute d2) text)))))
+
 (defun cfw:org-schedule-period-to-calendar (begin end)
   "[internal] Return calfw calendar items between BEGIN and END
 from the org schedule data."
   (loop 
    with cfw:org-todo-keywords-regexp = (regexp-opt org-todo-keywords-for-agenda) ; dynamic bind
+   with contents = nil with periods = nil
    for i in (cfw:org-collect-schedules-period begin end)
-        for date = (get-text-property 0 'date i)
-        for line = (funcall cfw:org-schedule-summary-transformer i)
-        with contents = nil
-        do 
-        (setq contents (cfw:contents-add (cfw:org-normalize-date date)
-                                         line contents))
-        finally return contents))
+   for date = (cfw:org-tp i 'date)
+   for line = (funcall cfw:org-schedule-summary-transformer i)
+   for range = (cfw:org-get-timerange line)
+   if range do
+   (unless (member range periods)
+     (push range periods))
+   else do
+   (setq contents (cfw:contents-add
+                   (cfw:org-normalize-date date)
+                   line contents))
+   finally return (nconc contents (list (cons 'periods periods)))))
 
 (defun cfw:org-schedule-sorter (text1 text2)
   "[internal] Sorting algorithm for org schedule items.
 TEXT1 < TEXT2."
   (condition-case err
-      (let ((time1 (get-text-property 0 'time-of-day text1))
-            (time2 (get-text-property 0 'time-of-day text2)))
+      (let ((time1 (cfw:org-tp text1 'time-of-day))
+            (time2 (cfw:org-tp text2 'time-of-day)))
         (cond
          ((and time1 time2)
           (< time1 time2))
