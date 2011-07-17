@@ -1,4 +1,4 @@
-;;; calfw-cal.el --- calendar view for org-agenda
+;;; calfw-cal.el --- calendar view for emacs diary
 
 ;; Copyright (C) 2011  SAKURAI Masashi
 
@@ -20,13 +20,11 @@
 
 ;;; Commentary:
 
-;; Display org-agenda items in the calfw buffer.
-;; (Because I don't use the org-agenda mainly,
-;; I hope someone continue integration with the org.)
+;; Display diary items in the calfw buffer.
 
-;; (require 'calfw-org)
+;; (require 'calfw-cal)
 ;;
-;; M-x cfw:open-org-calendar
+;; M-x cfw:open-diary-calendar
 
 ;;; Code:
 
@@ -81,7 +79,7 @@ from the diary schedule data."
   "Create calendar source."
   (make-cfw:source
    :name "calendar diary"
-   :color (or color "Seagreen4")
+   :color (or color "SaddleBrown")
    :data 'cfw:cal-schedule-period-to-calendar))
 
 (defun cfw:open-diary-calendar ()
