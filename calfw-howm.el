@@ -180,7 +180,7 @@ This command should be executed on the calfw calendar."
    '(("RET" . cfw:howm-from-calendar)))
   "Key map for the howm inline calendar.")
 
-(defun cfw:howm-schedule-inline (&optional width height)
+(defun cfw:howm-schedule-inline (&optional width height view)
   "Inline function for the howm menu. See the comment text on the top of this file for the usage."
   (let ((custom-map (copy-keymap cfw:howm-schedule-inline-keymap)) cp)
     (set-keymap-parent custom-map cfw:calendar-mode-map)
@@ -188,7 +188,7 @@ This command should be executed on the calfw calendar."
               :width width :height (or height 10)
               :keymap custom-map 
               :contents-sources (list (cfw:howm-create-source))
-              :view 'month)))
+              :view (or view 'month))))
   "") ; for null output
 
 ;;; Installation
