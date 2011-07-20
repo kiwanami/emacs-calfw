@@ -624,7 +624,7 @@ the calfw is responsible to manage the buffer and key maps."
 (defun cfw:cp-new (dest model view &optional selected-date)
   "[internal] Create a new component object.
 DEST is a cfw:dest object.  MODEL is a model object.  VIEW is a
-symbol of the view type: month, two-week, week and day.
+symbol of the view type: month, two-weeks, week and day.
 SELECTED-DATE is a selected date initially.  This function is
 called by the initialization functions,
 `cfw:create-calendar-component-buffer',
