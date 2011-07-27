@@ -126,13 +126,18 @@ from the howm schedule data."
      ))
   "Key map for the howm calendar mode.")
 
+(defvar cfw:howm-schedule-contents nil  "A list of cfw:source objects for schedule contents.")
+(defvar cfw:howm-annotation-contents nil  "A list of cfw:source objects for annotations.")
+
 (defun cfw:open-howm-calendar ()
   "Open a howm schedule calendar in the new buffer."
   (interactive)
   (let ((cp (cfw:create-calendar-component-buffer
              :custom-map cfw:howm-schedule-map
              :view 'month
-             :contents-sources (list (cfw:howm-create-source)))))
+             :contents-sources (append (list (cfw:howm-create-source)) 
+                                       cfw:howm-schedule-contents)
+             :annotation-sources cfw:howm-annotation-contents)))
   (switch-to-buffer (cfw:cp-get-buffer cp))))
 
 (defun cfw:howm-from-calendar ()
@@ -187,7 +192,9 @@ This command should be executed on the calfw calendar."
     (setq cp (cfw:create-calendar-component-region
               :width width :height (or height 10)
               :keymap custom-map 
-              :contents-sources (list (cfw:howm-create-source))
+              :contents-sources (append (list (cfw:howm-create-source)) 
+                                        cfw:howm-schedule-contents)
+              :annotation-sources cfw:howm-annotation-contents
               :view (or view 'month))))
   "") ; for null output
 
@@ -223,5 +230,3 @@ schedule data and set up inline calendar function for the howm menu."
 
 (provide 'calfw-howm)
 ;;; calfw-howm.el ends here
-
-; LocalWords:  SteelBlue
