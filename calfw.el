@@ -1377,10 +1377,11 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
                for raw-contents = (cfw:render-sort-contents
                                    (cfw:model-get-contents-by-date date model)
                                    (cfw:model-get-sorter model))
-               for prs-contents = (append
-                                   (cfw:render-periods
-                                    date week-day raw-periods cell-width)
-                                   (mapcar 'cfw:render-default-content-face raw-contents))
+               for prs-contents = (cfw:render-rows-prop
+                                   (append
+                                    (cfw:render-periods
+                                     date week-day raw-periods cell-width)
+                                    (mapcar 'cfw:render-default-content-face raw-contents)))
                for num-label = (if prs-contents
                                    (format "(%s)"
                                            (+ (length raw-contents)
@@ -1394,6 +1395,15 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
                collect
                (cons date (cons (cons tday ant) prs-contents)))
          param)))
+
+(defun cfw:render-rows-prop (rows)
+  "[internal] Put a marker as a text property for TAB navigation."
+  (loop with i = 0
+        for line in rows
+        collect
+        (prog1
+            (cfw:tp line 'cfw:row-count i)
+          (if (< 0 (length line)) (incf i)))))
 
 
 
@@ -1905,8 +1915,8 @@ found in the current view, return nil."
 
 (defun cfw:find-all-by-date (date func)
   "[internal] Call the function FUNC in each regions where the
-text-property `cfw:date' is equal to DATE. The function FUNC
-receives two arguments, begin date and end one. This function is
+text-property `cfw:date' is equal to DATE. The argument function FUNC
+receives two arguments, begin position and end one. This function is
 mainly used at functions for putting overlays."
   (let ((pos (point-min)) begin text-date)
     (while (setq begin (next-single-property-change pos 'cfw:date))
@@ -1916,6 +1926,20 @@ mainly used at functions for putting overlays."
                     begin 'cfw:date nil (point-max))))
           (funcall func begin end)))
       (setq pos begin))))
+
+(defun cfw:find-item (date row-count)
+  "[internal] Find the schedule item which has the text properties as
+`cfw:date' = DATE and `cfw:row-count' = ROW-COUNT. If no item is found, 
+this function returns nil."
+  (loop with pos = (point-min)
+        for next = (next-single-property-change pos 'cfw:date)
+        for text-date = (and next (cfw:cursor-to-date next))
+        for text-row-count = (and next (get-text-property next 'cfw:row-count))
+        while next do
+        (when (and text-date (equal date text-date) 
+                   (eql row-count text-row-count))
+          (return next))
+        (setq pos next)))
 
 (defun cfw:navi-goto-date (date)
   "Move the cursor to DATE and put selection. If DATE is not
@@ -1959,6 +1983,8 @@ calendar view."
 
      ("g" . cfw:navi-goto-date-command)
      ("t" . cfw:navi-goto-today-command)
+
+     ("TAB" . cfw:navi-next-item-command)
 
      ("r"   . cfw:refresh-calendar-buffer)
      ("SPC" . cfw:show-details-command)
@@ -2022,6 +2048,17 @@ calendar view."
   (interactive)
   (when (cfw:cp-get-component)
     (cfw:cp-set-view (cfw:cp-get-component) 'day)))
+
+(defun cfw:navi-next-item-command ()
+  "Move the cursor to the next item."
+  (interactive)
+  (let ((cp (cfw:cp-get-component))
+        (date (cfw:cursor-to-date))
+        (count (or (get-text-property (point) 'cfw:row-count) -1)))
+    (when (and cp date)
+      (let ((next (cfw:find-item date (1+ count))))
+        (if next (goto-char next)
+          (cfw:navi-goto-date date))))))
 
 (defun cfw:navi-on-click ()
   "click"
@@ -2427,6 +2464,7 @@ DATE is initial focus date. If it is nil, today is selected initially."
     (cfw:cp-add-click-hook cp (lambda () (message "CFW: CLICK HOOK %S" (cfw:cursor-to-nearest-date))))
     (cfw:cp-add-selection-change-hook cp (lambda () (message "CFW: SELECT %S" (cfw:cursor-to-nearest-date))))
     (switch-to-buffer (cfw:cp-get-buffer cp))
+    (cfw:navi-goto-date (cfw:date 1 1 2011))
     ))
 
 (provide 'calfw)
