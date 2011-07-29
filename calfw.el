@@ -238,6 +238,19 @@
     (put-text-property 0 (length text) prop value text))
   text)
 
+(defun cfw:extract-text-props (text &rest excludes)
+  "[internal] Return text properties."
+  (loop with ret = nil
+        with props = (text-properties-at 0 text)
+        for name = (car props)
+        for val = (cadr props)
+        while props
+        do
+        (when (and name (not (memq name excludes)))
+          (setq ret (cons name (cons val ret))))
+        (setq props (cddr props))
+        finally return ret))
+
 (defun cfw:define-keymap (keymap-list)
   "[internal] Key map definition utility.
 KEYMAP-LIST is a source list like ((key . command) ... )."
@@ -1235,9 +1248,9 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
                        (lambda (a b) (< (car a) (car b))))))
       (loop for i from 0 below (car (car stack))
             do (push ; insert blank lines
-                (list i (list nil nil nil))
+                (list i (list nil nil nil nil))
                 stack))
-      (loop for (row (begin end content)) in stack
+      (loop for (row (begin end content props)) in stack
             for beginp = (equal date begin)
             for endp = (equal date end)
             for width = (- cell-width (if beginp 1 0) (if endp 1 0))
@@ -1248,12 +1261,13 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
                             (cfw:render-truncate content width t) "")
             collect
             (if content
-                (cfw:rt
-                 (concat
-                  (if beginp "(" "")
-                  (cfw:render-left width title ?-)
-                  (if endp ")" ""))
-                 (cfw:render-get-face-period content 'cfw:face-periods))
+                (apply 'propertize
+                       (concat
+                        (if beginp "(" "")
+                        (cfw:render-left width title ?-)
+                        (if endp ")" ""))
+                       'face (cfw:render-get-face-period content 'cfw:face-periods)
+                       props)
               "")))))
 
 (defun cfw:render-periods-get-min (periods-each-days begin end)
@@ -1286,12 +1300,13 @@ period-stack -> ((row-num . period) ... )"
   (let* (periods-each-days)
     (loop for period in (cfw:k 'periods model)
           for (begin end content) = period
+          for vperiod = (append period (list (cfw:extract-text-props content 'face)))
           for row = (cfw:render-periods-get-min
                      periods-each-days begin end)
           do
           (setq periods-each-days
                 (cfw:render-periods-place
-                 periods-each-days row period)))
+                 periods-each-days row vperiod)))
     periods-each-days))
 
 (defun cfw:render-columns (day-columns param)
@@ -1811,10 +1826,11 @@ return an alist of rendering parameters."
          for raw-contents = (cfw:render-sort-contents
                              (cfw:model-get-contents-by-date date model)
                              (cfw:model-get-sorter model))
-         for prs-contents = (append
-                             (cfw:render-periods-days
-                              date raw-periods cell-width)
-                             (mapcar 'cfw:render-default-content-face raw-contents))
+         for prs-contents = (cfw:render-rows-prop
+                             (append
+                              (cfw:render-periods-days
+                               date raw-periods cell-width)
+                              (mapcar 'cfw:render-default-content-face raw-contents)))
          for num-label = (if prs-contents
                              (format "(%s)"
                                      (+ (length raw-contents)

@@ -58,7 +58,7 @@
   "Jump to the clicked org item."
   (interactive)
   (let ((marker (get-text-property (point) 'org-marker)))
-    (when marker
+    (when (and marker (marker-buffer marker))
       (switch-to-buffer (marker-buffer marker))
       (goto-char (marker-position marker)))))
 
@@ -80,19 +80,6 @@
       (setq item (cfw:org-tp org-item 'org-category)))
     item))
 
-(defun cfw:org-extract-props (text)
-  "[internal] "
-  (loop with ret = nil
-        with props = (text-properties-at 0 text)
-        for name = (car props)
-        for val = (cadr props)
-        while props
-        do
-        (when name 
-          (setq ret (cons name (cons val ret))))
-        (setq props (cddr props))
-        finally return ret))
-
 (defun cfw:org-summary-format (item)
   "Format an item. (How should be displayed?)"
   (let* ((time (cfw:org-tp item 'time))
@@ -104,7 +91,7 @@
          (marker (cfw:org-tp item 'org-marker))
          (buffer (and marker (marker-buffer marker)))
          (text (cfw:org-extract-summary item))
-         (props (cfw:org-extract-props item)))
+         (props (cfw:extract-text-props item 'face 'keymap)))
     (propertize
      (concat 
       (if time-str (apply 'propertize time-str props)) text " "
