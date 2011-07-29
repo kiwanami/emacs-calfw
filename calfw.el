@@ -2217,7 +2217,8 @@ DATE is a date to show. MODEL is model object."
          (periods (cfw:model-get-periods-by-date date model))
          (contents (cfw:render-sort-contents
                     (cfw:model-get-contents-by-date date model)
-                    (cfw:model-get-sorter model))))
+                    (cfw:model-get-sorter model)))
+         (row-count -1))
   (concat
    (cfw:rt (concat "Schedule on " (cfw:strtime date) " (") 'cfw:face-header)
    (cfw:rt (calendar-day-name date)
@@ -2231,25 +2232,30 @@ DATE is a date to show. MODEL is model object."
       EOL))
    HLINE
    (loop for (begin end summary) in periods
-         for prefix = (cfw:rt
+         for prefix = (propertize
                        (concat (cfw:strtime begin) " - " (cfw:strtime end) " : ")
-                       (cfw:render-get-face-period summary 'cfw:face-periods))
+                       'face (cfw:render-get-face-period summary 'cfw:face-periods)
+                       'cfw:row-count (incf row-count))
          concat
          (concat prefix " " summary EOL))
    (loop for i in contents concat
-         (concat "- " (cfw:rt i (cfw:render-get-face-content i 'cfw:face-default-content))
+         (concat "- " (propertize 
+                       i 'face (cfw:render-get-face-content
+                                i 'cfw:face-default-content)
+                       'cfw:row-count (incf row-count))
                  EOL)))))
 
 (defvar cfw:details-mode-map
   (cfw:define-keymap
-   '(("q"   . cfw:details-kill-buffer-command)
-     ("SPC" . cfw:details-kill-buffer-command)
-     ("n"   . cfw:details-navi-next-command)
-     ("f"   . cfw:details-navi-next-command)
-     ("<right>"  . cfw:details-navi-next-command)
-     ("p"   . cfw:details-navi-prev-command)
-     ("b"   . cfw:details-navi-prev-command)
-     ("<left>"   . cfw:details-navi-prev-command)
+   '(("q"       . cfw:details-kill-buffer-command)
+     ("SPC"     . cfw:details-kill-buffer-command)
+     ("n"       . cfw:details-navi-next-command)
+     ("f"       . cfw:details-navi-next-command)
+     ("<right>" . cfw:details-navi-next-command)
+     ("p"       . cfw:details-navi-prev-command)
+     ("b"       . cfw:details-navi-prev-command)
+     ("<left>"  . cfw:details-navi-prev-command)
+     ("TAB"     . cfw:details-navi-next-item-command)
      ))
   "Default key map for the details buffer.")
 
@@ -2292,6 +2298,24 @@ DATE is a date to show. MODEL is model object."
     (with-current-buffer cfw:main-buf
       (cfw:navi-previous-day-command num)
       (cfw:show-details-command))))
+
+(defun cfw:details-navi-next-item-command ()
+  (interactive)
+  (let* ((count (or (get-text-property (point) 'cfw:row-count) -1))
+         (next (cfw:details-find-item (1+ count))))
+    (goto-char (or next (point-min)))))
+
+(defun cfw:details-find-item (row-count)
+  "[internal] Find the schedule item which has the text
+properties as `cfw:row-count' = ROW-COUNT. If no item is found,
+this function returns nil."
+  (loop with pos = (point-min)
+        for next = (next-single-property-change pos 'cfw:row-count)
+        for text-row-count = (and next (get-text-property next 'cfw:row-count))
+        while next do
+        (when (eql row-count text-row-count)
+          (return next))
+        (setq pos next)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; High level API
