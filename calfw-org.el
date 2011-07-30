@@ -60,7 +60,14 @@
   (let ((marker (get-text-property (point) 'org-marker)))
     (when (and marker (marker-buffer marker))
       (switch-to-buffer (marker-buffer marker))
-      (goto-char (marker-position marker)))))
+      (widen)
+      (goto-char (marker-position marker))
+      (when (org-mode-p)
+        (org-show-context 'agenda)
+        (save-excursion
+          (and (outline-next-heading)
+               (org-flag-heading nil)))))))
+
 
 (defvar cfw:org-text-keymap 
   (let ((map (make-sparse-keymap)))
