@@ -1267,6 +1267,7 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
                         (cfw:render-left width title ?-)
                         (if endp ")" ""))
                        'face (cfw:render-get-face-period content 'cfw:face-periods)
+                       'font-lock-face (cfw:render-get-face-period content 'cfw:face-periods)
                        props)
               "")))))
 
@@ -2251,13 +2252,15 @@ DATE is a date to show. MODEL is model object."
          for prefix = (propertize
                        (concat (cfw:strtime begin) " - " (cfw:strtime end) " : ")
                        'face (cfw:render-get-face-period summary 'cfw:face-periods)
+                       'font-lock-face (cfw:render-get-face-period summary 'cfw:face-periods)
                        'cfw:row-count (incf row-count))
          concat
          (concat prefix " " summary EOL))
-   (loop for i in contents concat
+   (loop for i in contents 
+         for f = (cfw:render-get-face-content i 'cfw:face-default-content)
+         concat
          (concat "- " (propertize 
-                       i 'face (cfw:render-get-face-content
-                                i 'cfw:face-default-content)
+                       i 'face f 'font-lock-face f
                        'cfw:row-count (incf row-count))
                  EOL)))))
 
