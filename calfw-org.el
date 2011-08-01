@@ -79,8 +79,8 @@
 (defun cfw:org-extract-summary (org-item)
   "[internal] Remove some strings."
   (let ((item org-item))
-    (when (string-match cfw:org-todo-keywords-regexp item) ; dynamic bind
-      (setq item (replace-match "" nil nil item)))
+;;  (when (string-match cfw:org-todo-keywords-regexp item) ; dynamic bind
+;;   (setq item (replace-match "" nil nil item)))
     (when (string-match org-tr-regexp item)
       (setq item (replace-match "" nil nil item)))
     (when (string-match "^ +" item)
