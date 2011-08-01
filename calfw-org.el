@@ -103,8 +103,7 @@
          (props (cfw:extract-text-props item 'face 'keymap)))
     (propertize
      (concat 
-      (if time-str (apply 'propertize time-str props)) text " "
-      (and buffer (buffer-name buffer)))
+      (if time-str (apply 'propertize time-str props)) text))
      'keymap cfw:org-text-keymap
      ;; Delete the display property, since displaying images will break our
      ;; table layout.
