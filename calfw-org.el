@@ -101,13 +101,22 @@
          (buffer (and marker (marker-buffer marker)))
          (text (cfw:org-extract-summary item))
          (props (cfw:extract-text-props item 'face 'keymap)))
-    (propertize
-     (concat 
-      (if time-str (apply 'propertize time-str props)) text))
-     'keymap cfw:org-text-keymap
-     ;; Delete the display property, since displaying images will break our
-     ;; table layout.
-     'display nil)))
+    (concat
+     (if time-str time-str)
+     (if (string-match (cfw:org-tp item 'org-not-done-regexp) text)
+	 (propertize (substring text (match-beginning 0) (match-end 0)) 'face 'org-todo))
+     (if (and (string-match (cfw:org-tp item 'org-todo-regexp) text) (not (string-match (cfw:org-tp item 'org-not-done-regexp) text)))
+	 (propertize (substring text (match-beginning 0) (match-end 0)) 'face 'org-done))
+     (propertize 
+      (if (string-match (cfw:org-tp item 'org-todo-regexp) text)
+	  (replace-match "" nil nil text)
+	text)
+      'keymap cfw:org-text-keymap
+      ;; Delete the display property, since displaying images will break our
+      ;; table layout.
+      'display nil
+      'face nil
+      ))))
 
 (defvar cfw:org-schedule-summary-transformer 'cfw:org-summary-format
   "Transformation function which transforms the org item string to calendar title.
