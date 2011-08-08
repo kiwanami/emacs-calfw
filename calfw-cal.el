@@ -40,7 +40,7 @@
 (require 'calendar)
 
 (defun cfw:cal-modify-diary-entry-string (string)
-  "Add text properties to string, allowing calfw to act on it."
+  "[internal] Add text properties to string, allowing calfw to act on it."
   (propertize string 
               'mouse-face 'highlight
               'help-echo string
@@ -108,7 +108,7 @@ from the diary schedule data."
     (switch-to-buffer (cfw:cp-get-buffer cp))))
 
 (defun cfw:cal-from-calendar ()
-  "Do something. This command should be executed on the calfw calendar."
+  "Insert a new item. This command should be executed on the calfw calendar."
   (interactive)
   (let* ((mdy (cfw:cursor-to-nearest-date))
          (m (calendar-extract-month mdy))

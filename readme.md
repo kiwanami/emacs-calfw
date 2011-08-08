@@ -75,6 +75,7 @@ Following programs are also useful:
 - calfw-howm.el : Display howm schedules (http://howm.sourceforge.jp/index.html)
 - calfw-ical.el : Display schedules of the iCalendar format, such as the google calendar.
 - calfw-org.el  : Display org schedules (http://orgmode.org/)
+- calfw-cal.el  : Display diary schedules.
 
 ## Setting example:
 
@@ -115,12 +116,109 @@ Here is a minimum sample code:
 
 ![Google Calendar and calfw-ical](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-5E808.png)
 
+### For diary users:
+
+Here is a minimum sample code:
+
+    (require 'calfw-cal)
+
+Then, M-x cfw:open-diary-calendar.
+
+### General setting
+
+The calfw view can display many schedule items, gathering some schedule sources.
+Using the function `cfw:open-calendar-buffer` is the general way to display the schedules.
+
+Here is the sample code:
+
+    (require 'calfw-cal)
+    (require 'calfw-ical)
+    (require 'calfw-howm)
+    (require 'calfw-org)
+    
+    (defun my-open-calendar ()
+      (interactive)
+      (cfw:open-calendar-buffer
+       :contents-sources
+       (list
+        (cfw:org-create-source "Green")  ; orgmode source
+        (cfw:howm-create-source "Blue")  ; howm source
+        (cfw:cal-create-source "Orange") ; diary source
+        (cfw:ical-create-source "Moon" "~/moon.ics" "Gray")  ; ICS source1
+        (cfw:ical-create-source "gcal" "https://..../basic.ics" "IndianRed") ; google calendar ICS
+       ))) 
+
+The function `cfw:open-calendar-buffer` receives schedules sources via
+the named argument `:contents-sources`.
+
+One can customize the keymap on the calendar buffer with the named
+argument `:custom-map` of `cfw:open-calendar-buffer`.
+
+
 ## Customize
 
-(todo...)
+### Holidays
+
+The calfw collects holidays from the customize variable
+`calendar-holidays` which belongs to holidays.el in the Emacs. See the
+document and source of holidays.el for details.
+
+### Format of month and week days
+
+The calfw uses some customization variables in the calendar.el.
+
+Here is a customization code:
+
+    ;; Month
+    (setq calendar-month-name-array
+      ["January" "February" "March"     "April"   "May"      "June"
+       "July"    "August"   "September" "October" "November" "December"])
+    
+    ;; Week days
+    (setq calendar-day-name-array
+          ["Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday"])
+    
+    ;; First day of the week
+    (setq calendar-week-start-day 0) ; 0:Sunday, 1:Monday
+
+### Faces
+
+TODO...
+
+### Grid frame
+
+Users can have nice unicode grid frame. (However, in the some
+environment, the Emacs can not display the grid characters correctly.)
+
+Grid setting example:
+
+    ;; Default setting
+    (setq cfw:fchar-junction ?+
+          cfw:fchar-vertical-line ?|
+          cfw:fchar-horizontal-line ?-
+          cfw:fchar-left-junction ?+
+          cfw:fchar-right-junction ?+
+          cfw:fchar-top-junction ?+
+          cfw:fchar-top-left-corner ?+
+          cfw:fchar-top-right-corner ?+ )
+    
+    ;; Unicode characters
+    (setq cfw:fchar-junction ?╋
+          cfw:fchar-vertical-line ?┃
+          cfw:fchar-horizontal-line ?━
+          cfw:fchar-left-junction ?┣
+          cfw:fchar-right-junction ?┫
+          cfw:fchar-top-junction ?┯
+          cfw:fchar-top-left-corner ?┏
+          cfw:fchar-top-right-corner ?┓)
+
+## Calfw framework details
+
+TODO...
 
 ## History
 
+- 2011/07/20 ver 1.2 : Merged many patches and improved many and bug fixed.
 - 2011/07/05 ver 1.0 : Refactored the whole implementation and design. Improved UI and views.
 - 2011/01/07 ver 0.2.1 : Supporting org-agenda schedules.
 - 2011/01/07 ver 0.1 : First release. Supporting howm and iCal schedules.
@@ -129,4 +227,4 @@ Here is a minimum sample code:
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2011-07-09 14:47:44 sakurai>
+Time-stamp: <2011-08-08 12:49:41 sakurai>
