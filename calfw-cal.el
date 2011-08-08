@@ -26,32 +26,46 @@
 ;;
 ;; M-x cfw:open-diary-calendar
 
+;; Key binding
+;; i : insert an entry on the date
+;; RET or Click : jump to the entry
+;; q : kill-buffer
+
+
+;; Thanks for furieux's initial code.
+
 ;;; Code:
 
 (require 'calfw)
 (require 'calendar)
 
-(defvar cfw:cal-agenda-schedule-args nil
-  "Default arguments for collecting agenda entries.")
+(defun cfw:cal-modify-diary-entry-string (string)
+  "Add text properties to string, allowing calfw to act on it."
+  (propertize string 
+              'mouse-face 'highlight
+              'help-echo string
+              'cfw-marker (copy-marker (point-at-bol))))
 
 (defun cfw:cal-collect-schedules-period (begin end)
   "[internal] Return diary schedule items between BEGIN and END."
-  (loop for date in (cfw:enumerate-days begin end) append
-        (apply 'diary-list-entries date '1
-               cfw:cal-agenda-schedule-args)))
+  (let ((diary-modify-entry-list-string-function 
+         'cfw:cal-modify-diary-entry-string))
+    (loop for date in (cfw:enumerate-days begin end) 
+          append
+          (diary-list-entries date 1 t))))
 
-(defun cfw:org-onclick ()
-  "Jump to the clicked org item."
+(defun cfw:cal-onclick ()
+  "Jump to the clicked diary item."
   (interactive)
-  (let ((marker (get-text-property (point) 'org-marker)))
-    (when marker
+  (let ((marker (get-text-property (point) 'cfw-marker)))
+    (when (and marker (marker-buffer marker))
       (switch-to-buffer (marker-buffer marker))
       (goto-char (marker-position marker)))))
 
-(defvar cfw:org-text-keymap
+(defvar cfw:cal-text-keymap
   (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'cfw:org-onclick)
-    (define-key map (kbd "<return>") 'cfw:org-onclick)
+    (define-key map [mouse-1] 'cfw:cal-onclick)
+    (define-key map (kbd "<return>") 'cfw:cal-onclick)
     map)
   "key map on the calendar item text.")
 
@@ -60,23 +74,24 @@
 from the diary schedule data."
   (loop
    for i in (cfw:cal-collect-schedules-period begin end)
-   for date = (car i)
-   for line = (car (cdr i))
+   for (date line . rest)  = i
    with contents = nil
    do
-   (message line)
-   (setq contents (cfw:contents-add date line contents))
+   (setq contents (cfw:contents-add 
+                   date (propertize line 'keymap cfw:cal-text-keymap) 
+                   contents))
    finally return contents))
 
 (defvar cfw:cal-schedule-map
   (cfw:define-keymap
    '(
      ("q" . kill-buffer)
+     ("i" . cfw:cal-from-calendar)
      ))
   "Key map for the calendar buffer.")
 
 (defun cfw:cal-create-source (&optional color)
-  "Create calendar source."
+  "Create diary calendar source."
   (make-cfw:source
    :name "calendar diary"
    :color (or color "SaddleBrown")
@@ -88,6 +103,7 @@ from the diary schedule data."
   (let* ((source1 (cfw:cal-create-source))
          (cp (cfw:create-calendar-component-buffer
               :view 'month
+              :custom-map cfw:cal-schedule-map
               :contents-sources (list source1))))
     (switch-to-buffer (cfw:cp-get-buffer cp))))
 
@@ -98,7 +114,7 @@ from the diary schedule data."
          (m (calendar-extract-month mdy))
          (d (calendar-extract-day   mdy))
          (y (calendar-extract-year  mdy)))
-    ;; exec something here?
+    (diary-make-entry (calendar-date-string (cfw:date m d y) t t))
     ))
 
 ;; (progn (eval-current-buffer) (cfw:open-diary-calendar))
