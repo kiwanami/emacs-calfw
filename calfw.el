@@ -502,7 +502,7 @@ white (negative color of `cfw:source-period-bgcolor') is used."
   (lexical-let (ols)
     (cfw:dest-with-region dest
       (cfw:find-all-by-date
-       date
+       dest date
        (lambda (begin end)
          (let ((overlay (make-overlay begin end)))
            (overlay-put overlay 'face
@@ -523,7 +523,7 @@ white (negative color of `cfw:source-period-bgcolor') is used."
   (lexical-let (ols)
     (cfw:dest-with-region dest
       (cfw:find-all-by-date
-       (calendar-current-date)
+       dest (calendar-current-date)
        (lambda (begin end)
          (let ((overlay (make-overlay begin end)))
            (overlay-put overlay 'face
@@ -698,10 +698,10 @@ found at the variable, return nil."
 
 ;; Setter
 
-(defun cfw:cp-move-cursor (date)
+(defun cfw:cp-move-cursor (dest date)
   "[internal] Just move the cursor onto the date. This function
 is called by `cfw:cp-set-selected-date'."
-  (let ((pos (cfw:find-by-date date)))
+  (let ((pos (cfw:find-by-date dest date)))
     (when pos
       (goto-char pos)
       (unless (eql (selected-window) (get-buffer-window (current-buffer)))
@@ -720,7 +720,7 @@ this function updates the view to display the date."
       (cfw:dest-ol-selection-clear dest)
       (cfw:dest-ol-selection-set dest date)
       (cfw:dest-after-update dest)
-      (cfw:cp-move-cursor date)
+      (cfw:cp-move-cursor dest date)
       (unless (equal last date)
         (cfw:cp-fire-selection-change-hooks component)))
      (t
@@ -1891,7 +1891,9 @@ function may return nil."
       (let* ((r (lambda () (when (not (eolp)) (forward-char))))
              (l (lambda () (when (not (bolp)) (backward-char))))
              (u (lambda () (when (not (bobp)) (line-move 1))))
-             (d (lambda () (when (not (eobp)) (line-move -1)))) get)
+             (d (lambda () (when (not (eobp)) (line-move -1)))) 
+             (dest (cfw:component-dest (cfw:cp-get-component)))
+             get)
         (setq get (lambda (cmds)
                     (save-excursion
                       (if (null cmds) (cfw:cursor-to-date)
@@ -1904,56 +1906,61 @@ function may return nil."
                   if date return date)
             (cond
              ((> (/ (point-max) 2) (point))
-              (cfw:find-first-date))
-             (t (cfw:find-last-date)))))))
+              (cfw:find-first-date dest))
+             (t (cfw:find-last-date dest)))))))
 
-(defun cfw:find-first-date ()
+(defun cfw:find-first-date (dest)
   "[internal] Return the first date in the current buffer."
-  (let ((pos (next-single-property-change (point-min) 'cfw:date)))
+  (let ((pos (next-single-property-change 
+              (cfw:dest-point-min dest) 'cfw:date)))
     (and pos (cfw:cursor-to-date pos))))
 
-(defun cfw:find-last-date ()
+(defun cfw:find-last-date (dest)
   "[internal] Return the last date in the current buffer."
-  (let ((pos (previous-single-property-change (point-max) 'cfw:date)))
+  (let ((pos (previous-single-property-change
+              (cfw:dest-point-max dest) 'cfw:date)))
     (and pos (cfw:cursor-to-date (1- pos)))))
 
-(defun cfw:find-by-date (date)
+(defun cfw:find-by-date (dest date)
   "[internal] Return a point where the text property `cfw:date'
 is equal to DATE in the current calender view. If DATE is not
 found in the current view, return nil."
-  (let ((pos (point-min)) begin ret text-date)
-    (while (setq begin (next-single-property-change pos 'cfw:date))
-      (setq pos begin
-            text-date (cfw:cursor-to-date begin))
-      (when (and text-date (equal date text-date))
-        (setq ret begin
-              pos (point-max))))
-    ret))
+  (loop with pos = (cfw:dest-point-min dest)
+        with end = (cfw:dest-point-max dest)
+        for next = (next-single-property-change pos 'cfw:date nil end)
+        for text-date = (and next (cfw:cursor-to-date next))
+        while (and next (< next end)) do
+        (if (and text-date (equal date text-date))
+            (return next))
+        (setq pos next)))
 
-(defun cfw:find-all-by-date (date func)
+(defun cfw:find-all-by-date (dest date func)
   "[internal] Call the function FUNC in each regions where the
 text-property `cfw:date' is equal to DATE. The argument function FUNC
 receives two arguments, begin position and end one. This function is
 mainly used at functions for putting overlays."
-  (let ((pos (point-min)) begin text-date)
-    (while (setq begin (next-single-property-change pos 'cfw:date))
-      (setq text-date (cfw:cursor-to-date begin))
-      (when (and text-date (equal date text-date))
-        (let ((end (next-single-property-change
-                    begin 'cfw:date nil (point-max))))
-          (funcall func begin end)))
-      (setq pos begin))))
+  (loop with pos = (cfw:dest-point-min dest)
+        with end = (cfw:dest-point-max dest)
+        for next = (next-single-property-change pos 'cfw:date nil end)
+        for text-date = (and next (cfw:cursor-to-date next))
+        while (and next (< next end)) do
+        (if (and text-date (equal date text-date))
+            (let ((cend (next-single-property-change
+                         next 'cfw:date nil end)))
+              (funcall func next cend)))
+        (setq pos next)))
 
-(defun cfw:find-item (date row-count)
+(defun cfw:find-item (dest date row-count)
   "[internal] Find the schedule item which has the text properties as
 `cfw:date' = DATE and `cfw:row-count' = ROW-COUNT. If no item is found, 
 this function returns nil."
-  (loop with pos = (point-min)
-        for next = (next-single-property-change pos 'cfw:date)
+  (loop with pos = (cfw:dest-point-min dest)
+        with end = (cfw:dest-point-max dest)
+        for next = (next-single-property-change pos 'cfw:date nil end)
         for text-date = (and next (cfw:cursor-to-date next))
         for text-row-count = (and next (get-text-property next 'cfw:row-count))
-        while next do
-        (when (and text-date (equal date text-date) 
+        while (and next (< next end)) do
+        (when (and text-date (equal date text-date)
                    (eql row-count text-row-count))
           (return next))
         (setq pos next)))
@@ -2073,7 +2080,7 @@ calendar view."
         (date (cfw:cursor-to-date))
         (count (or (get-text-property (point) 'cfw:row-count) -1)))
     (when (and cp date)
-      (let ((next (cfw:find-item date (1+ count))))
+      (let ((next (cfw:find-item (cfw:component-dest cp) date (1+ count))))
         (if next (goto-char next)
           (cfw:navi-goto-date date))))))
 
@@ -2147,12 +2154,16 @@ Moves forward if NUM is negative."
 (defun cfw:navi-goto-first-date-command ()
   "Move the cursor to the first day on the current calendar view."
   (interactive)
-  (cfw:navi-goto-date (cfw:find-first-date)))
+  (cfw:navi-goto-date
+   (cfw:find-first-date
+    (cfw:component-dest (cfw:cp-get-component)))))
 
 (defun cfw:navi-goto-last-date-command ()
   "Move the cursor to the last day on the current calendar view."
   (interactive)
-  (cfw:navi-goto-date (cfw:find-last-date)))
+  (cfw:navi-goto-date 
+   (cfw:find-last-date
+    (cfw:component-dest (cfw:cp-get-component)))))
 
 (defun cfw:navi-next-week-command (&optional num)
   "Move the cursor forward NUM weeks. If NUM is nil, 1 is used.
