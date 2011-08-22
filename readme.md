@@ -187,8 +187,7 @@ TODO...
 
 ### Grid frame
 
-Users can have nice unicode grid frame. (However, in the some
-environment, the Emacs can not display the grid characters correctly.)
+Users can have nice unicode grid frame. However, in the some environment, the Emacs can not display the grid characters correctly. Please try following settings.
 
 Grid setting example:
 
@@ -211,6 +210,16 @@ Grid setting example:
           cfw:fchar-top-junction ?┯
           cfw:fchar-top-left-corner ?┏
           cfw:fchar-top-right-corner ?┓)
+          
+    ;; Another unicode chars
+    (setq cfw:fchar-junction ?╬
+          cfw:fchar-vertical-line ?║
+          cfw:fchar-horizontal-line ?═
+          cfw:fchar-left-junction ?╠
+          cfw:fchar-right-junction ?╣
+          cfw:fchar-top-junction ?╦
+          cfw:fchar-top-left-corner ?╔
+          cfw:fchar-top-right-corner ?╗)
 
 ## Calfw framework details
 
@@ -227,4 +236,4 @@ TODO...
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2011-08-08 12:49:41 sakurai>
+Time-stamp: <2011-08-22 15:22:42 sakurai>
