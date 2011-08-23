@@ -223,7 +223,155 @@ Grid setting example:
 
 ## Calfw framework details
 
+In this section, I would explain how to add a new calendar source and how to embed the calfw component in the other applications.
+
+### How to add a new calendar source?
+
+Defining the `cfw:source` object, one can extend calfw calendar source.
+
+#### struct 'cfw:source' details
+
+The struct `cfw:source` is a simple data type defined by cl-defstruct.
+
+Here is the details of the slot members of cfw:source.
+
+<table>
+<tr><th> slot name       </th><th> 
+   description </th></tr>
+<tr><td> name            </td><td>
+   [required] Source name. This name is shown at the status bar.
+</td></tr>
+<tr><td> data            </td><td>
+   [required] Data function which returns calendar contents.
+   The function details are described in the next section.
+</td></tr>
+<tr><td> update          </td><td>
+   [option] Update function. Calfw calls this function when this source needs to refresh the data.
+</td></tr>
+<tr><td> color           </td><td>
+   [option] Color string for this source. 
+   Color names those are shown by `M-x list-colors-display` or RGB hex format like "#abcdef".
+</td></tr>
+<tr><td> period-fgcolor  </td><td>
+   [option] Foreground color for period items. The default color is white or black.
+</td></tr>
+<tr><td> period-bgcolor  </td><td>
+   [option] Background color for period items. The default color is `cfw:source-color`.
+</td></tr>
+<tr><td> opt-face        </td><td>
+   [option] Additional options for the normal item face.
+   Ex. `:opt-face '(:weight bold)`
+</td></tr>
+<tr><td> opt-period-face </td><td> 
+  [option] Additional options for the period item face.
+</td></tr>
+</table>
+
+Only `name` and `data` slots are essential. Many slots are visual options.
+
+In many cases, one has to specify only the `color` slot for visual, because the calfw chooses appropriate colors for the rest color options.
+
+#### cfw:source-data details
+
+This section explains what the function-slot `cfw:source-data` should return.
+
+The function-slot `cfw:source-data` receives two arguments, start and end date of the query period, and returns an alist that consists of ([date] . ([item1] [item2] ... )).
+
+Here is a simple example. 
+
+cfw:source-data example1:
+
+    ;; cfw:source-data example
+    (defun sample-data1 (b e)
+      '(
+        ((1  1 2011) . ("item1"))
+        ((1 10 2011) . ("item2-1" "item2-2"))
+        ))
+    
+    (cfw:open-calendar-buffer
+      :date (cfw:date 1 1 2011)
+      :contents-sources
+       (list 
+         (make-cfw:source
+          :name "test1" :data 'sample-data1)))
+
+Evaluating this code in the scratch buffer, following result is displayed.
+
+<a href="https://cacoo.com/diagrams/P6baUrxEQj4NYheV-50310.png">
+<img src="https://cacoo.com/diagrams/P6baUrxEQj4NYheV-50310.png?width=450" />
+</a>
+
+The date is specified by `([month] [day] [year])`. This format is commonly used in calendar.el and orgmode.
+(I diagrammed the exchange ways for some time and date formats in Emacs, [here](https://cacoo.com/diagrams/lsA64PTazlLTbSwR).)
+
+
+Period items are little different. One period item is specified by `([start date] [end date] [content])` and the `periods` record of the alist collects them as a list, like the following code.
+
+cfw:source-data example2:
+
+    ;; cfw:source-data period items
+    (defun sample-data2 (b e)
+      '(
+        ((1  8 2011) . ("item1"))
+         (periods
+          ((1 8 2011) (1 9 2011) "period item")
+          ((1 11 2011) (1 12 2011) "next item"))
+        ))
+    ;; (A . (B C) ) is equivalent to (A B C)
+    
+    (cfw:open-calendar-buffer
+      :date (cfw:date 1 1 2011)
+      :contents-sources
+       (list 
+         (make-cfw:source
+          :name "test2" :data 'sample-data2)))
+
+Evaluating this code in the scratch buffer, following result is displayed.
+
+<a href="https://cacoo.com/diagrams/P6baUrxEQj4NYheV-40315.png">
+<img src="https://cacoo.com/diagrams/P6baUrxEQj4NYheV-40315.png?width=450" />
+</a>
+
+Here are other detailed specifications.
+
+- The both start and end date are included by the query period.
+- The items those aren't included in the query period are ignored.
+- `cfw:source-data` should return a value as fast as possible, because users are waiting for the result. Caching is good idea.
+- Schedule items don't have to be ordered. Duplicated items may be gathered.
+- In the day cell, the items are sorted by `string-lessp`, i.e. numerical and alphabetical order.
+  - The ordering function can be customized by the named argument `:sorter` of the component construction.
+
+In the above examples, the dates of the schedule items are fixed. The actual sources generate result values by the programs. The codes of calfw add-ons may be helpful for your implementation.
+
+
+### How to embed the calfw component in the other applications?
+
+Calfw is built on the MVC architecture, using simple structure objects and modules employed by naming rules.
+
 TODO...
+
+#### Calfw component
+
+##### Buffer
+
+##### Region
+
+##### Text
+
+
+#### Calfw objects
+
+##### Overview
+
+##### cfw:component
+
+##### cfw:model
+
+##### cfw:dest
+
+
+#### Application desgin
+
 
 ## History
 
@@ -236,4 +384,4 @@ TODO...
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2011-08-22 15:22:42 sakurai>
+Time-stamp: <2011-08-24 01:04:28 sakurai>
