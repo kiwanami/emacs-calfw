@@ -2361,8 +2361,8 @@ initially.  This function uses the function
   (interactive)
   (let ((cp (cfw:create-calendar-component-buffer
              :date date :buffer buffer :custom-map custom-map
-	     :contents-sources contents-sources
-	     :annotation-sources annotation-sources :view view :sorter sorter)))
+             :contents-sources contents-sources
+             :annotation-sources annotation-sources :view view :sorter sorter)))
     (switch-to-buffer (cfw:cp-get-buffer cp))))
 
 (defun* cfw:create-calendar-component-buffer
