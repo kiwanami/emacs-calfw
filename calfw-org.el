@@ -63,10 +63,7 @@
       (widen)
       (goto-char (marker-position marker))
       (when (org-mode-p)
-        (org-show-context 'agenda)
-        (save-excursion
-          (and (outline-next-heading)
-               (org-flag-heading nil)))))))
+        (org-reveal)))))
 
 
 (defvar cfw:org-text-keymap 
