@@ -96,7 +96,7 @@ You can display a calendar in your howm menu file.
 
     %here%(cfw:howm-schedule-inline)
 
-![howm menu embedding](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-1F941.png)
+![howm menu embedding](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-1F941.png?width=450)
 
 ### For org users:
 
@@ -104,7 +104,7 @@ You can display a calendar in your howm menu file.
 
 Then, M-x cfw:open-org-calendar.
 
-![org-agenda and calfw-org](https://cacoo.com/diagrams/S6aJntG6giGs44Yn-89CB2.png)
+![org-agenda and calfw-org](https://cacoo.com/diagrams/S6aJntG6giGs44Yn-89CB2.png?width=450)
 
 ### For iCal (Google Calendar) users:
 
@@ -114,7 +114,7 @@ Here is a minimum sample code:
     (require 'calfw-ical)
     (cfw:open-ical-calendar "http://www.google.com/calendar/ical/.../basic.ics")
 
-![Google Calendar and calfw-ical](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-5E808.png)
+![Google Calendar and calfw-ical](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-5E808.png?width=450)
 
 ### For diary users:
 
@@ -427,7 +427,7 @@ The calfw consists of four objects:
 
 The relations between the objects are displayed as UML class diagram ([Diagrammed by astah](http://astah.change-vision.com/ja/:title=Astah)).
 
-![Overview for calfw objects](https://cacoo.com/diagrams/P6baUrxEQj4NYheV-9EF3C.png)
+![Overview for calfw objects](https://cacoo.com/diagrams/P6baUrxEQj4NYheV-EC8C6.png)
 
 `cfw:component` acts as Controller of MVC. It connects model object and destination one, and controls all events. It also gives the interface of calfw objects for the other applications.
 
@@ -521,7 +521,7 @@ Once the model is modified, update function of the `cfw:component` object should
 
 The summary diagram is here.
 
-![Summary of application design](https://cacoo.com/diagrams/P6baUrxEQj4NYheV-355E2.png?width=600)
+![Summary of application design](https://cacoo.com/diagrams/P6baUrxEQj4NYheV-465D4.png)
 
 See the calfw-howm.el code for more details.
 
@@ -536,4 +536,4 @@ See the calfw-howm.el code for more details.
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2011-09-02 16:34:49 sakurai>
+Time-stamp: <2011-09-02 16:44:58 sakurai>
