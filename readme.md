@@ -297,9 +297,7 @@ cfw:source-data example1:
 
 Evaluating this code in the scratch buffer, following result is displayed.
 
-<a href="https://cacoo.com/diagrams/P6baUrxEQj4NYheV-50310.png">
-<img src="https://cacoo.com/diagrams/P6baUrxEQj4NYheV-50310.png?width=450" />
-</a>
+![Simple source example](https://cacoo.com/diagrams/P6baUrxEQj4NYheV-50310.png?width=450)
 
 The date is specified by `([month] [day] [year])`. This format is commonly used in calendar.el and orgmode.
 (I diagrammed the exchange ways for some time and date formats in Emacs, [here](https://cacoo.com/diagrams/lsA64PTazlLTbSwR).)
@@ -328,9 +326,7 @@ cfw:source-data example2:
 
 Evaluating this code in the scratch buffer, following result is displayed.
 
-<a href="https://cacoo.com/diagrams/P6baUrxEQj4NYheV-40315.png">
-<img src="https://cacoo.com/diagrams/P6baUrxEQj4NYheV-40315.png?width=450" />
-</a>
+![Range items example](https://cacoo.com/diagrams/P6baUrxEQj4NYheV-40315.png?width=450)
 
 Here are other detailed specifications.
 
@@ -346,32 +342,166 @@ In the above examples, the dates of the schedule items are fixed. The actual sou
 
 ### How to embed the calfw component in the other applications?
 
-Calfw is built on the MVC architecture, using simple structure objects and modules employed by naming rules.
+In this section, the details of calfw components would be explained so as for users to extend calfw in themselves.
 
-TODO...
+Calfw is built on the MVC architecture, using simple structure objects and modules employed by naming rules.
 
 #### Calfw component
 
+Calfw has three destination components to display the calendar.
+
+- Independent buffer
+- Region in the other buffer
+- Text output
+
 ##### Buffer
+
+The 'buffer' destination displays the calendar view as ordinary Emacs applications do.
+
+The function `cfw:open-calendar-buffer` makes a new calendar buffer (calfw buffer) and displays it by `switch-to-buffer`. The major mode of the calfw buffer is `cfw:calendar-mode` and the keymap `cfw:calendar-mode-map` is bound.
+
+This destination is easy to use for applications and users, because the buffer is usual application boundary and users know how to use buffers.
 
 ##### Region
 
+The 'Region' destination embeds the calendar view in the buffer which is managed by the other applications. This destination can give the other applications a nice calendar view. See the howm embedding for example.
+
+Let's try a demonstration. Evaluate this code in your scratch buffer.
+
+Region destination example:
+
+    ;; Evaluate this code in the scratch buffer
+    (require 'calfw)
+    (cfw:create-calendar-component-region :height 10)
+
+Then, the calendar view will be embedded in the scratch buffer like the following screenshot. You can navigate the calfw view in the buffer. Undoing for the some times, you can remove the calfw view.
+
+![calfw in the scratch buffer](https://cacoo.com/diagrams/P6baUrxEQj4NYheV-B9649.png?width=600)
+
+Because this destination never interacts anything out of the region and has its own key-binds as a text property, users can easily embed a calendar view in the other applications.
+
 ##### Text
 
+The 'text' destination generates just a text which represent calfw view. The function `cfw:get-calendar-text` returns the text.
+
+##### Destination and View
+
+Three destinations are explained as mentioned above. Although they have different appearance, the application can operate the calfw component in the same way.
+
+Let us call them 'destination', it is the abstraction of UI components.
+
+The similar word 'view' means in which form the calfw displays the contents, for example, monthly form, two-weeks and weekly one and etc.
 
 #### Calfw objects
 
 ##### Overview
 
+The calfw consists of four objects:
+
+- `cfw:component` that gathers following objects up.
+- `cfw:model` that manages calendar contents.
+- `cfw:source` that defines schedule items.
+- `cfw:dest` that is abstraction of destinations.
+
+The relations between the objects are displayed as UML class diagram ([Diagrammed by astah](http://astah.change-vision.com/ja/:title=Astah)).
+
+![Overview for calfw objects](https://cacoo.com/diagrams/P6baUrxEQj4NYheV-9EF3C.png)
+
+`cfw:component` acts as Controller of MVC. It connects model object and destination one, and controls all events. It also gives the interface of calfw objects for the other applications.
+
+`cfw:model` and `cfw:source` act as Model of MVC. They manage the schedule contents and calendar logics.
+
+`cfw:dest` acts as View of MVC. It abstracts the common interface from UI destinations.
+
 ##### cfw:component
+
+The object `cfw:component` controls calfw objects and events.
+
+The object has following information:
+
+- References to `cfw:dest` object and `cfw:model` one.
+- Selected date on the calfw component.
+- View style.
+- Hooks
+  - `update-hooks`
+  - `selection-change-hooks`
+  - `click-hooks`.
+
+The object has following operations:
+
+- Getting object references to `cfw:dest`, `cfw:model`, belonging buffer and so on.
+- Getting and setting the selected date (`get-selected-date` / `set-selected-date`).
+- Getting and setting the view style (`get-view` / `set-view`).
+  - The view style is a symbol, such as `month`, `two-weeks`, `week` and `day`.
+- Resizing and refreshing the view (`resize` / `update`).
+- Managing hooks (`add-xxx-hook` / `remove-xxx-hook`)
+
+After construction of the calfw component, the destination object can not be changed.
+
+The views are defined as a function and dispatched by the function `cfw:cp-dispatch-view-impl`.
+
+The instance of the calfw component is stored at following places:
+
+- `buffer` destination: the buffer-local variable `cfw:component`
+- `region` destination: the text property `cfw:component`
+- `text` destination: N/A
+
+Calling the utility function `cfw:cp-get-component`, one can obtain the calfw instance at the appropriate places. The stateless functions, such as simple event handler functions, can use this function to get the instance.
+
+The applications those have the state-full operations, however, should hold their own calfw instance for the safety object reference.
 
 ##### cfw:model
 
+The object `cfw:model` gathers schedule sources and gives a common interface for view functions to access the contents.
+
+The object has following information:
+
+- contents source objects (`contents-sources`)
+- annotation source objects (`annotation-sources`)
+- sorting function (`sorter`)
+
+The model object has no information of views and destinations, just manages schedule contents.
+
+The holidays are retrieved from the global function `calendar-holiday-list` of calendar.el.
+
+The schedule contents are modified through the model object after the component construction.
+
+(In the current implementation, the model object is build by alist. Then, view functions adds some data as view model. I think it is not good solution, so the implementation may be modified in future.)
+
 ##### cfw:dest
 
+The object `cfw:dest` abstracts rendering destinations and gives a common interface of rendering operation to view functions.
+
+The object has following information:
+
+- destination buffer object (`buffer`)
+- region functions (`min-func`, `max-func`)
+- reference size (`width`, `height`)
+- clearing function (`clear-func`)
+- advice functions (`before-update-func`, `after-update-func`)
+- overlay data (`select-ol`, `today-ol`)
+
+In the current implementation, `cfw:dest` has three forms, buffer, region and text, mentioned above. Actually, the region destination is what I want. One buffer can have some destination objects, because all data (including local-variables and keymaps) are packed in the `cfw:dest` object.
 
 #### Application desgin
 
+In this section, I would describe a simple guide line of application design using calfw.
+
+One can use calfw as an application UI (like calfw-howm) or dialog UI for selecting a date (like calendar.el). The user application can choose the destination style: buffer or region. Switching between them is very easy.
+
+The data presentation can be achieved by defining `cfw:source` object. It may be straightforward.
+
+The input events by the user can be caught by hooks in the `cfw:component`. Then, the selected date is obtained by the function `cfw:cursor-to-nearest-date` or `cfw:cursor-to-date`. The current implementation, calfw can not treat a range on the calendar.
+
+Generally, any events can be caught by the custom keymap which is given by the named argument `:custom-map` with component construction. Furthermore, because calfw reserves the text properties (face, keymap and so on) on the text that is returned by `cfw:source` objects, one can control event handling at each characters.
+
+Once the model is modified, update function of the `cfw:component` object should be called to refresh the view.
+
+The summary diagram is here.
+
+![Summary of application design](https://cacoo.com/diagrams/P6baUrxEQj4NYheV-355E2.png?width=600)
+
+See the calfw-howm.el code for more details.
 
 ## History
 
@@ -384,4 +514,4 @@ TODO...
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2011-08-24 01:04:28 sakurai>
+Time-stamp: <2011-09-02 14:54:10 sakurai>
