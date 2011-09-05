@@ -1254,11 +1254,9 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
             for beginp = (equal date begin)
             for endp = (equal date end)
             for width = (- cell-width (if beginp 1 0) (if endp 1 0))
-            for title = (if (and content
-                                 (or (equal date begin)
-                                     (eql 1 (calendar-extract-day date))
-                                     (eql week-day calendar-week-start-day)))
-                            (cfw:render-truncate content width t) "")
+            for title = (if content 
+                            (cfw:render-periods-title
+                             date week-day begin end content cell-width))
             collect
             (if content
                 (apply 'propertize
@@ -1270,6 +1268,29 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
                        'font-lock-face (cfw:render-get-face-period content 'cfw:face-periods)
                        props)
               "")))))
+
+(defun cfw:render-periods-title (date week-day begin end content cell-width)
+  "[internal] Return a title string."
+  (let* ((week-begin (cfw:date-after date (- week-day)))
+         (month-begin (cfw:date
+                       (calendar-extract-month date)
+                       1 (calendar-extract-year date)))
+         (title-begin-abs
+          (max
+           (calendar-absolute-from-gregorian begin)
+           (calendar-absolute-from-gregorian week-begin)))
+         (title-begin (calendar-gregorian-from-absolute title-begin-abs))
+         (num (- (calendar-absolute-from-gregorian date) title-begin-abs)))
+    (when content
+      (loop with title = (substring content 0)
+            for i from 0 below num
+            for pdate = (calendar-gregorian-from-absolute (+ title-begin-abs i))
+            for chopn = (+ (if (equal begin pdate) 1 0) (if (equal end pdate) 1 0))
+            for del = (truncate-string-to-width title (- cell-width chopn))
+            do
+            (setq title (substring title (length del)))
+            finally return
+            (cfw:render-truncate title width (equal end date))))))
 
 (defun cfw:render-periods-get-min (periods-each-days begin end)
   "[internal] Find the minimum empty row number of the days between
