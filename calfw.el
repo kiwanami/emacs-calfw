@@ -1371,7 +1371,7 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
           (insert VL EOL))
     (insert cline)))
 
-(defvar cfw:render-line-breaker 'cfw:render-line-breaker-none
+(defvar cfw:render-line-breaker 'cfw:render-line-breaker-simple
   "A function which breaks a long line into some lines. The arguments are
 STRING, LINE-WIDTH and MAX-LINE-NUMBER.")
 
@@ -2550,11 +2550,11 @@ DATE is initial focus date. If it is nil, today is selected initially."
            :opt-period-face '(:slant italic)
            :data
            (lambda (b e)
-             '(((1  1 2011) "TEST1")
+             '(((1  1 2011) "A happy new year!")
                ((1 10 2011) "TEST2" "TEST3")
                (periods
-                ((1 8 2011) (1 9 2011) "PERIOD1")
-                ((1 11 2011) (1 12 2011) "Period2")
+                ((1 8 2011) (1 9 2011) "Range1")
+                ((1 11 2011) (1 12 2011) "[Sample]Range2 1/8-1/9")
                 ((1 12 2011) (1 14 2011) "long long title3"))
                ))
            :update
@@ -2565,7 +2565,7 @@ DATE is initial focus date. If it is nil, today is selected initially."
            :data
            (lambda (b e)
              '(((1  2 2011) "The quick brown fox jumped over the lazy dog. The internationalization and Localization are long words.")
-               ((1 10 2011) "PTEST2" "PTEST3")
+               ((1 10 2011) "PTEST2 title subject" "PTEST3 multi-line sample")
                (periods
                 ((1 14 2011) (1 15 2011) "Stack")
                 ((1 29 2011) (1 31 2011) "PERIOD W"))
