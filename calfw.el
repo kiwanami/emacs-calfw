@@ -1338,6 +1338,7 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
         (cell-height (cfw:k 'cell-height param))
         (EOL (cfw:k 'eol param)) (VL (cfw:k 'vl param))
         (hline (cfw:k 'hline param)) (cline (cfw:k 'cline param)))
+    ;; day title
     (loop for day-rows in day-columns
           for date = (car day-rows)
           for (tday . ant) = (cadr day-rows)
@@ -1351,8 +1352,15 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
                    'cfw:date date)
                 (cfw:render-left cell-width ""))))
     (insert VL EOL)
-    (loop for i from 2 upto cell-height do
-          (loop for day-rows in day-columns
+    ;; day contents
+    (loop with breaked-day-columns = 
+          (loop for day-rows in day-columns 
+                for (date ants . lines) = day-rows
+                collect
+                (cons date (cfw:render-break-lines 
+                            lines cell-width (1- cell-height))))
+          for i from 1 below cell-height do
+          (loop for day-rows in breaked-day-columns
                 for date = (car day-rows)
                 for row = (nth i day-rows)
                 do
@@ -1362,6 +1370,57 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
                      'cfw:date date)))
           (insert VL EOL))
     (insert cline)))
+
+(defvar cfw:render-line-breaker 'cfw:render-line-breaker-none
+  "A function which breaks a long line into some lines. The arguments are
+STRING, LINE-WIDTH and MAX-LINE-NUMBER.")
+
+(defun cfw:render-break-lines (lines cell-width cell-height)
+  "[internal] Return lines those are split into some lines by the
+algorithm defined at `cfw:render-line-breaker'."
+  (and lines
+       (let ((num (/ cell-height (length lines))))
+         (cond
+          ((> 2 num) lines)
+          (t
+           (loop for line in lines
+                 append (funcall cfw:render-line-breaker line cell-width num)))))))
+
+(defun cfw:render-line-breaker-none (line w n)
+  "Line breaking algorithm: Do nothing."
+  (list line))
+
+(defun cfw:render-line-breaker-simple (string line-width max-line-num)
+  "Line breaking algorithm: Just splitting a line with the rigid width."
+  (loop with ret = nil    with linenum = 1
+        with curcol = 0   with lastpos = 0
+        with endpos = (1- (length string))
+        for i from 0 upto endpos
+        for c = (aref string i)
+        for w = (char-width c) 
+        for wsum = (+ curcol w) do
+        (cond
+         ((and (< i endpos) (<= max-line-num linenum))
+          (push (cfw:trim
+                 (replace-regexp-in-string 
+                  "[\n\r]" " " (substring string lastpos))) ret)
+          (setq i endpos))
+         ((= endpos i)
+          (push (substring string lastpos) ret))
+         ((or (= c 13) (= c 10))
+          (push (substring string lastpos i) ret)
+          (setq lastpos (1+ i) curcol 0)
+          (incf linenum))
+         ((= line-width wsum)
+          (push (substring string lastpos (1+ i)) ret)
+          (setq lastpos (1+ i) curcol 0)
+          (incf linenum))
+         ((< line-width wsum)
+          (push (substring string lastpos i) ret)
+          (setq lastpos i curcol w)
+          (incf linenum))
+         (t (incf curcol w)))
+        finally return (or (and ret (nreverse ret)) '(""))))
 
 (defun cfw:render-append-parts (param)
   "[internal] Append rendering parts to PARAM and return a new list."
@@ -2505,7 +2564,7 @@ DATE is initial focus date. If it is nil, today is selected initially."
            :name "test2"
            :data
            (lambda (b e)
-             '(((1  2 2011) "PTEST1")
+             '(((1  2 2011) "The quick brown fox jumped over the lazy dog. The internationalization and Localization are long words.")
                ((1 10 2011) "PTEST2" "PTEST3")
                (periods
                 ((1 14 2011) (1 15 2011) "Stack")
@@ -2532,6 +2591,7 @@ DATE is initial focus date. If it is nil, today is selected initially."
                ((1 28 2011) . "AN4")
                ))))
          (cp (cfw:create-calendar-component-buffer
+              :date (cfw:date 1 10 2011)
               :view 'month
               :contents-sources (list source1 source2)
               :annotation-sources (list asource1 asource2))))
@@ -2539,7 +2599,6 @@ DATE is initial focus date. If it is nil, today is selected initially."
     (cfw:cp-add-click-hook cp (lambda () (message "CFW: CLICK HOOK %S" (cfw:cursor-to-nearest-date))))
     (cfw:cp-add-selection-change-hook cp (lambda () (message "CFW: SELECT %S" (cfw:cursor-to-nearest-date))))
     (switch-to-buffer (cfw:cp-get-buffer cp))
-    (cfw:navi-goto-date (cfw:date 1 1 2011))
     ))
 
 (provide 'calfw)
