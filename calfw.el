@@ -1087,7 +1087,8 @@ sides with the character PADDING."
       (cond
        ((or (null last-face) (listp last-face))
         (setq last-face (append last-face `(:underline ,cfw:face-item-separator-color)))
-        (put-text-property 0 (length string) 'face last-face string))
+        (put-text-property 0 (length string) 'face last-face string)
+        (put-text-property 0 (length string) 'font-lock-face last-face string))
        ((symbolp last-face)
         (let ((attrs (face-all-attributes last-face (selected-frame))))
           (setq attrs ; transform alist to plist
@@ -1095,7 +1096,8 @@ sides with the character PADDING."
                       for (n . v) in (append attrs `((:underline . ,cfw:face-item-separator-color)))
                       do (setq nattrs (cons n (cons v nattrs)))
                       finally return nattrs))
-          (put-text-property 0 (length string) 'face attrs string)))
+          (put-text-property 0 (length string) 'face attrs string)
+          (put-text-property 0 (length string) 'font-lock-face attrs string)))
        (t
         (message "DEBUG? CFW: FACE %S / %S" string last-face)))))
   string)
