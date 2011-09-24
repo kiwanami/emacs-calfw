@@ -217,6 +217,9 @@
      :background "Blue4"))
   "Face for selection" :group 'calfw)
 
+(defvar cfw:face-item-separator-color "SlateBlue"
+  "Color for the separator line of items in a day.")
+
 
 
 ;;; Utilities
@@ -1077,6 +1080,26 @@ sides with the character PADDING."
          (margin (- width len)))
     (concat cnt (make-string margin padding))))
 
+(defun cfw:render-separator (string)
+  "[internal] Add a separator into the ROWS list."
+  (when (get-text-property 0 'cfw:item-separator string)
+    (let ((last-face (get-text-property 0 'face string)))
+      (cond
+       ((or (null last-face) (listp last-face))
+        (setq last-face (append last-face `(:underline ,cfw:face-item-separator-color)))
+        (put-text-property 0 (length string) 'face last-face string))
+       ((symbolp last-face)
+        (let ((attrs (face-all-attributes last-face (selected-frame))))
+          (setq attrs ; transform alist to plist
+                (loop with nattrs = nil
+                      for (n . v) in (append attrs `((:underline . ,cfw:face-item-separator-color)))
+                      do (setq nattrs (cons n (cons v nattrs)))
+                      finally return nattrs))
+          (put-text-property 0 (length string) 'face attrs string)))
+       (t
+        (message "DEBUG? CFW: FACE %S / %S" string last-face)))))
+  string)
+
 (defun cfw:render-right (width string &optional padding)
   "[internal] Format STRING, padding on the left with the character PADDING."
   (let* ((padding (or padding ?\ ))
@@ -1266,6 +1289,7 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
                         (if endp ")" ""))
                        'face (cfw:render-get-face-period content 'cfw:face-periods)
                        'font-lock-face (cfw:render-get-face-period content 'cfw:face-periods)
+                       'cfw:period t
                        props)
               "")))))
 
@@ -1366,7 +1390,8 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
                 do
                 (insert
                  VL (cfw:tp
-                     (cfw:render-left cell-width (and row (format "%s" row)))
+                     (cfw:render-separator
+                      (cfw:render-left cell-width (and row (format "%s" row))))
                      'cfw:date date)))
           (insert VL EOL))
     (insert cline)))
@@ -1383,8 +1408,22 @@ algorithm defined at `cfw:render-line-breaker'."
          (cond
           ((> 2 num) lines)
           (t
-           (loop for line in lines
-                 append (funcall cfw:render-line-breaker line cell-width num)))))))
+           (loop with total-rows = nil
+                 for line in lines
+                 for rows = (funcall cfw:render-line-breaker line cell-width num)
+                 do
+                 (when total-rows
+                   (cfw:render-add-item-separator-sign total-rows))
+                 (setq total-rows (append total-rows rows))
+                 finally return total-rows))))))
+
+(defun cfw:render-add-item-separator-sign (rows)
+  "[internal] Add a separator into the ROWS list."
+  (let ((last-line (car (last rows)))
+        last-face)
+    (unless (get-text-property 0 'cfw:period last-line)
+      (put-text-property 0 (length last-line) 'cfw:item-separator t last-line))
+    rows))
 
 (defun cfw:render-line-breaker-none (line w n)
   "Line breaking algorithm: Do nothing."
@@ -2592,7 +2631,7 @@ DATE is initial focus date. If it is nil, today is selected initially."
                ))))
          (cp (cfw:create-calendar-component-buffer
               :date (cfw:date 1 10 2011)
-              :view 'month
+              :view 'two-weeks
               :contents-sources (list source1 source2)
               :annotation-sources (list asource1 asource2))))
     (cfw:cp-add-update-hook cp (lambda () (message "CFW: UPDATE HOOK")))
