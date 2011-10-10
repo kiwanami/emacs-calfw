@@ -54,6 +54,7 @@ In the calendar buffer and region, you can use following key bindings:
   <tr><td>  C-v, [PgDown], &gt;  </td><td> Next month</td></tr>
   <tr><td>  t                    </td><td> Today</td></tr>
   <tr><td>  g                    </td><td> Absolute date (YYYY/MM/DD)</td></tr>
+  <tr><td>  TAB                  </td><td> Next item in a day</td></tr>
   <tr><th>Changing View          </th><th></th></tr>
   <tr><td>  M                    </td><td> Month view</td></tr>
   <tr><td>  W                    </td><td> 1 Week view</td></tr>
@@ -539,6 +540,7 @@ See the calfw-howm.el code for more details.
 
 ## History
 
+- 2011/10/10 ver 1.3 : Improved visual and navigations: multi-line, moving items in a day, diary mode and so on.
 - 2011/07/20 ver 1.2 : Merged many patches and improved many and bug fixed.
 - 2011/07/05 ver 1.0 : Refactored the whole implementation and design. Improved UI and views.
 - 2011/01/07 ver 0.2.1 : Supporting org-agenda schedules.
@@ -548,4 +550,4 @@ See the calfw-howm.el code for more details.
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2011-10-10 17:03:08 sakurai>
+Time-stamp: <2011-10-10 17:08:30 sakurai>
