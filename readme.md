@@ -243,6 +243,18 @@ Grid setting example:
           cfw:fchar-top-left-corner ?╔
           cfw:fchar-top-right-corner ?╗)
 
+### Line breaking
+
+If a content string is longer than the cell width, the calfw breaks into the multiple lines.
+In the current implementation, the Calfw has 3 strategies: none, simple and wordwrap. The variable `cfw:render-line-breaker` selects the strategy to break lines.
+
+- `cfw:render-line-breaker-none`
+ - Never breaks lines. Longer contents are truncated.
+- `cfw:render-line-breaker-simple` (default)
+ - This strategy breaks lines with rigid width. This may be not so beautiful, but In the most cases it looks good.
+- `cfw:render-line-breaker-wordwrap`
+ - This strategy breaks lines with the emacs function `fill-region`. Although, the line breaking algorithm of the Emacs is not so smart as more complicated ones, such as Knuth/Plass algorithm, this strategy is better than the simple one.
+
 ## Calfw framework details
 
 In this section, I would explain how to add a new calendar source and how to embed the calfw component in the other applications.
@@ -536,4 +548,4 @@ See the calfw-howm.el code for more details.
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2011-09-02 16:44:58 sakurai>
+Time-stamp: <2011-10-10 17:03:08 sakurai>
