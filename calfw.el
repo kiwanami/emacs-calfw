@@ -1321,7 +1321,7 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
 (defun cfw:render-periods-get-min (periods-each-days begin end)
   "[internal] Find the minimum empty row number of the days between
 BEGIN and END from the PERIODS-EACH-DAYS."
-  (loop for row-num from 0 below 10 ; assuming the number of stacked periods is less than 10
+  (loop for row-num from 0 below 30 ; assuming the number of stacked periods is less than 30
         unless
         (loop for d in (cfw:enumerate-days begin end)
               for periods-stack = (cfw:contents-get d periods-each-days)
@@ -1399,8 +1399,13 @@ DAY-COLUMNS is a list of columns. A column is a list of following form: (DATE (D
     (insert cline)))
 
 (defvar cfw:render-line-breaker 'cfw:render-line-breaker-simple
-  "A function which breaks a long line into some lines. The arguments are
-STRING, LINE-WIDTH and MAX-LINE-NUMBER.")
+  "A function which breaks a long line into some lines.
+Calfw has 3 strategies: none, simple and wordwrap.
+`cfw:render-line-breaker-none' never breaks lines.
+`cfw:render-line-breaker-simple' breaks lines with rigid width (default).
+`cfw:render-line-breaker-wordwrap' breaks lines with the emacs function `fill-region'.
+
+The arguments of a line-breaking function are STRING, LINE-WIDTH and MAX-LINE-NUMBER.")
 
 (defun cfw:render-break-lines (lines cell-width cell-height)
   "[internal] Return lines those are split into some lines by the
@@ -1463,6 +1468,30 @@ algorithm defined at `cfw:render-line-breaker'."
          (t (incf curcol w)))
         finally return (or (and ret (nreverse ret)) '(""))))
 
+(defun cfw:render-line-breaker-wordwrap (string line-width max-line-num)
+  "Line breaking algorithm: Simple word wrapping with fill-region."
+  (if (<= (length string) line-width)
+      (list string)
+    (let ((fill-column line-width) (use-hard-newlines t))
+      (with-temp-buffer
+        (insert string)
+        (fill-region (point-min) (point-max))
+        ;; collect lines
+        (goto-char (point-min))
+        (let ((cont t) (last (point)) ps ret)
+          (while cont
+            (setq ps (re-search-forward "\n" nil t))
+            (cond
+             ((null ps) (setq cont nil)
+              (when (not (eobp))
+                (push (buffer-substring last (point-max)) ret)))
+             (t 
+              (push (cfw:trim (buffer-substring last (1- ps))) ret)
+              (when (<= max-line-num (length ret))
+                (setq cont nil))
+              (setq last ps))))
+          (or (and ret (nreverse ret)) '("")))))))
+    
 (defun cfw:render-append-parts (param)
   "[internal] Append rendering parts to PARAM and return a new list."
   (let* ((EOL "\n")
