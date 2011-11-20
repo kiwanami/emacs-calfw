@@ -62,7 +62,7 @@
       (switch-to-buffer (marker-buffer marker))
       (widen)
       (goto-char (marker-position marker))
-      (when (org-mode-p)
+      (when (eq major-mode 'org-mode)
         (org-reveal)))))
 
 
