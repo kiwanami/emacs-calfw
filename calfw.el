@@ -110,6 +110,12 @@
   :group 'cfw
   :type 'character)
 
+(defcustom cfw:read-date-command 'cfw:read-date-command-simple
+  "The command used to read the date in `cfw:navi-goto-date-command',
+for example `cfw:read-date-command-simple' or `cfw:org-read-date-command'."
+  :group 'cfw
+  :type 'function)
+
 ;;; Faces
 
 (defface cfw:face-title
@@ -346,6 +352,11 @@ ones of DATE2. Otherwise is `nil'."
 (defun cfw:parsetime (str)
   "Transform the string format YYYY/MM/DD to a calendar date value."
   (cfw:emacs-to-calendar (cfw:parsetime-emacs str)))
+
+(defun cfw:read-date-command-simple (string-date)
+  "Move the cursor to the specified date."
+  (interactive "sInput Date (YYYY/MM/DD): ")
+  (cfw:parsetime string-date))
 
 (defun cfw:enumerate-days (begin end)
   "Enumerate date objects between BEGIN and END."
@@ -2288,10 +2299,10 @@ With prefix arg NO-RESIZE, don't fit calendar to window size."
      (cfw:week-end-date
       (cfw:cp-get-selected-date (cfw:cp-get-component))))))
 
-(defun cfw:navi-goto-date-command (string-date)
+(defun cfw:navi-goto-date-command ()
   "Move the cursor to the specified date."
-  (interactive "sInput Date (YYYY/MM/DD): ")
-  (cfw:navi-goto-date (cfw:parsetime string-date)))
+  (interactive)
+  (cfw:navi-goto-date (call-interactively cfw:read-date-command)))
 
 (defun cfw:navi-goto-today-command ()
   "Move the cursor to today."

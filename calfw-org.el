@@ -217,6 +217,11 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
     ;; exec org-remember here?
     ))
 
+(defun cfw:org-read-date-command ()
+  "Move the cursor to the specified date."
+  (interactive)
+  (cfw:emacs-to-calendar (org-read-date nil 'to-time)))
+
 ;; (progn (eval-current-buffer) (cfw:open-org-calendar))
 ;; (setq org-agenda-files '("./org-samples/complex.org"))
 
