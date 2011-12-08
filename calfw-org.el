@@ -69,7 +69,7 @@
 (defvar cfw:org-text-keymap 
   (let ((map (make-sparse-keymap)))
     (define-key map [mouse-1] 'cfw:org-onclick)
-    (define-key map (kbd "<return>") 'cfw:org-onclick)
+    (define-key map (kbd "RET") 'cfw:org-onclick)
     map)
   "key map on the calendar item text.")
 
@@ -216,6 +216,11 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
          (y (calendar-extract-year  mdy)))
     ;; exec org-remember here?
     ))
+
+(defun cfw:org-read-date-command ()
+  "Move the cursor to the specified date."
+  (interactive)
+  (cfw:emacs-to-calendar (org-read-date nil 'to-time)))
 
 ;; (progn (eval-current-buffer) (cfw:open-org-calendar))
 ;; (setq org-agenda-files '("./org-samples/complex.org"))
