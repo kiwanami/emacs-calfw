@@ -69,7 +69,7 @@
 (defvar cfw:org-text-keymap 
   (let ((map (make-sparse-keymap)))
     (define-key map [mouse-1] 'cfw:org-onclick)
-    (define-key map (kbd "<return>") 'cfw:org-onclick)
+    (define-key map (kbd "RET") 'cfw:org-onclick)
     map)
   "key map on the calendar item text.")
 
