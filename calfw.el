@@ -110,6 +110,12 @@
   :group 'cfw
   :type 'character)
 
+(defcustom cfw:read-date-command 'cfw:read-date-command-simple
+  "The command used to read the date in `cfw:navi-goto-date-command',
+for example `cfw:read-date-command-simple' or `cfw:org-read-date-command'."
+  :group 'cfw
+  :type 'function)
+
 ;;; Faces
 
 (defface cfw:face-title
@@ -346,6 +352,11 @@ ones of DATE2. Otherwise is `nil'."
 (defun cfw:parsetime (str)
   "Transform the string format YYYY/MM/DD to a calendar date value."
   (cfw:emacs-to-calendar (cfw:parsetime-emacs str)))
+
+(defun cfw:read-date-command-simple (string-date)
+  "Move the cursor to the specified date."
+  (interactive "sInput Date (YYYY/MM/DD): ")
+  (cfw:parsetime string-date))
 
 (defun cfw:enumerate-days (begin end)
   "Enumerate date objects between BEGIN and END."
@@ -2157,6 +2168,7 @@ calendar view."
 
      ("g" . cfw:navi-goto-date-command)
      ("t" . cfw:navi-goto-today-command)
+     ("." . cfw:navi-goto-today-command)
 
      ("TAB" . cfw:navi-next-item-command)
 
@@ -2171,6 +2183,18 @@ calendar view."
      ([mouse-1] . cfw:navi-on-click)
 
      ("q" . bury-buffer)
+
+     ("0" . digit-argument)
+     ("1" . digit-argument)
+     ("2" . digit-argument)
+     ("3" . digit-argument)
+     ("4" . digit-argument)
+     ("5" . digit-argument)
+     ("6" . digit-argument)
+     ("7" . digit-argument)
+     ("8" . digit-argument)
+     ("9" . digit-argument)
+
      )) "Default key map of calendar views.")
 
 (defun cfw:calendar-mode-map (&optional custom-map)
@@ -2275,10 +2299,10 @@ With prefix arg NO-RESIZE, don't fit calendar to window size."
      (cfw:week-end-date
       (cfw:cp-get-selected-date (cfw:cp-get-component))))))
 
-(defun cfw:navi-goto-date-command (string-date)
+(defun cfw:navi-goto-date-command ()
   "Move the cursor to the specified date."
-  (interactive "sInput Date (YYYY/MM/DD): ")
-  (cfw:navi-goto-date (cfw:parsetime string-date)))
+  (interactive)
+  (cfw:navi-goto-date (call-interactively cfw:read-date-command)))
 
 (defun cfw:navi-goto-today-command ()
   "Move the cursor to today."
@@ -2288,7 +2312,7 @@ With prefix arg NO-RESIZE, don't fit calendar to window size."
 (defun cfw:navi-next-day-command (&optional num)
   "Move the cursor forward NUM days. If NUM is nil, 1 is used.
 Moves backward if NUM is negative."
-  (interactive)
+  (interactive "p")
   (when (cfw:cp-get-component)
     (unless num (setq num 1))
     (let* ((cursor-date (cfw:cp-get-selected-date (cfw:cp-get-component)))
@@ -2298,7 +2322,7 @@ Moves backward if NUM is negative."
 (defun cfw:navi-previous-day-command (&optional num)
   "Move the cursor back NUM days. If NUM is nil, 1 is used.
 Moves forward if NUM is negative."
-  (interactive)
+  (interactive "p")
   (cfw:navi-next-day-command (- (or num 1))))
 
 (defun cfw:navi-goto-first-date-command ()
@@ -2318,19 +2342,19 @@ Moves forward if NUM is negative."
 (defun cfw:navi-next-week-command (&optional num)
   "Move the cursor forward NUM weeks. If NUM is nil, 1 is used.
 Moves backward if NUM is negative."
-  (interactive)
+  (interactive "p")
   (cfw:navi-next-day-command (* cfw:week-days (or num 1))))
 
 (defun cfw:navi-previous-week-command (&optional num)
   "Move the cursor back NUM weeks. If NUM is nil, 1 is used.
 Moves forward if NUM is negative."
-  (interactive)
+  (interactive "p")
   (cfw:navi-next-day-command (* (- cfw:week-days) (or num 1))))
 
 (defun cfw:navi-next-month-command (&optional num)
   "Move the cursor forward NUM months. If NUM is nil, 1 is used.
 Movement is backward if NUM is negative."
-  (interactive)
+  (interactive "p")
   (when (cfw:cp-get-component)
     (unless num (setq num 1))
     (let* ((cursor-date (cfw:cp-get-selected-date (cfw:cp-get-component)))
@@ -2347,7 +2371,7 @@ Movement is backward if NUM is negative."
 (defun cfw:navi-previous-month-command (&optional num)
   "Move the cursor back NUM months. If NUM is nil, 1 is used.
 Movement is forward if NUM is negative."
-  (interactive)
+  (interactive "p")
   (cfw:navi-next-month-command (- (or num 1))))
 
 ;;; Detail popup
@@ -2466,14 +2490,14 @@ DATE is a date to show. MODEL is model object."
     (when next-win (select-window next-win))))
 
 (defun cfw:details-navi-next-command (&optional num)
-  (interactive)
+  (interactive "p")
   (when cfw:main-buf
     (with-current-buffer cfw:main-buf
       (cfw:navi-next-day-command num)
       (cfw:show-details-command))))
 
 (defun cfw:details-navi-prev-command (&optional num)
-  (interactive)
+  (interactive "p")
   (when cfw:main-buf
     (with-current-buffer cfw:main-buf
       (cfw:navi-previous-day-command num)
