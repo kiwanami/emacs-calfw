@@ -41,13 +41,16 @@
 (defvar cfw:org-agenda-schedule-args nil
   "Default arguments for collecting agenda entries.")
 
+(defvar cfw:org-icalendars (org-agenda-files nil 'ifmode)
+  "Org buffers for exporting icalendars.")
+
 (defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
   (let ((org-agenda-prefix-format " ")
         (span 'day))
     (org-compile-prefix-format nil)
     (loop for date in (cfw:enumerate-days begin end) append
-          (loop for file in (org-agenda-files nil 'ifmode) append
+          (loop for file in cfw:org-icalendars append
                 (progn
                   (org-check-agenda-file file)
                   (apply 'org-agenda-get-day-entries 
@@ -59,17 +62,19 @@
   (interactive)
   (let ((marker (get-text-property (point) 'org-marker)))
     (when (and marker (marker-buffer marker))
+      (org-mark-ring-push)
       (switch-to-buffer (marker-buffer marker))
       (widen)
       (goto-char (marker-position marker))
-      (when (org-mode-p)
+      (when (eq major-mode 'org-mode)
         (org-reveal)))))
 
 
 (defvar cfw:org-text-keymap 
   (let ((map (make-sparse-keymap)))
     (define-key map [mouse-1] 'cfw:org-onclick)
-    (define-key map (kbd "<return>") 'cfw:org-onclick)
+    (define-key map (kbd "RET") 'cfw:org-onclick)
+    (define-key map (kbd "C-c C-o") 'cfw:org-onclick)
     map)
   "key map on the calendar item text.")
 
@@ -216,6 +221,11 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
          (y (calendar-extract-year  mdy)))
     ;; exec org-remember here?
     ))
+
+(defun cfw:org-read-date-command ()
+  "Move the cursor to the specified date."
+  (interactive)
+  (cfw:emacs-to-calendar (org-read-date nil 'to-time)))
 
 ;; (progn (eval-current-buffer) (cfw:open-org-calendar))
 ;; (setq org-agenda-files '("./org-samples/complex.org"))
