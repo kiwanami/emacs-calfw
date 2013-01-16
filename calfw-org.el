@@ -76,7 +76,9 @@
 (defun cfw:org-extract-summary (org-item)
   "[internal] Remove some strings."
   (let ((item org-item))
-    (when (string-match cfw:org-todo-keywords-regexp item) ; dynamic bind
+;;  (when (string-match cfw:org-todo-keywords-regexp item) ; dynamic bind
+;;   (setq item (replace-match "" nil nil item)))
+    (when (string-match org-tr-regexp item)
       (setq item (replace-match "" nil nil item)))
     (when (string-match "^ +" item)
       (setq item (replace-match "" nil nil item)))
@@ -96,14 +98,22 @@
          (buffer (and marker (marker-buffer marker)))
          (text (cfw:org-extract-summary item))
          (props (cfw:extract-text-props item 'face 'keymap)))
-    (propertize
-     (concat 
-      (if time-str (apply 'propertize time-str props)) text " "
-      (and buffer (buffer-name buffer)))
-     'keymap cfw:org-text-keymap
-     ;; Delete the display property, since displaying images will break our
-     ;; table layout.
-     'display nil)))
+    (concat
+     (if time-str time-str)
+     (if (string-match (cfw:org-tp item 'org-not-done-regexp) text)
+	 (propertize (substring text (match-beginning 0) (match-end 0)) 'face 'org-todo))
+     (if (and (string-match (cfw:org-tp item 'org-todo-regexp) text) (not (string-match (cfw:org-tp item 'org-not-done-regexp) text)))
+	 (propertize (substring text (match-beginning 0) (match-end 0)) 'face 'org-done))
+     (propertize 
+      (if (string-match (cfw:org-tp item 'org-todo-regexp) text)
+	  (replace-match "" nil nil text)
+	text)
+      'keymap cfw:org-text-keymap
+      ;; Delete the display property, since displaying images will break our
+      ;; table layout.
+      'display nil
+      'face nil
+      ))))
 
 (defvar cfw:org-schedule-summary-transformer 'cfw:org-summary-format
   "Transformation function which transforms the org item string to calendar title.
@@ -128,6 +138,35 @@ If TEXT does not have a range, return nil."
                 (d2 (time-to-days (org-time-string-to-time s2))))
            (list (calendar-gregorian-from-absolute d1) 
                  (calendar-gregorian-from-absolute d2) text)))))
+
+(defun cfw:org-get-timerange2 (text)
+  "Return a range object (begin end text).
+If TEXT does not have a range, return nil."
+  (let* ((dotime (cfw:org-tp text 'txt))
+         (ps (and dotime (stringp dotime) (string-match org-tr-regexp dotime))))
+    (and ps
+         (let* ((s1 (match-string 1 dotime))
+                (s2 (match-string 2 dotime))
+                (d1 (time-to-days (org-time-string-to-time s1)))
+                (d2 (time-to-days (org-time-string-to-time s2))))
+           (list (calendar-gregorian-from-absolute d1) 
+                 (calendar-gregorian-from-absolute d2) text)))))
+
+(defun cfw:org-get-timerange3 (text)
+  "Return a range object (begin end text).
+If TEXT does not have a range, return nil."
+  (let (extra date begin end)
+    (setq extra (cfw:org-tp text 'extra))
+    (setq date (cfw:org-tp text 'date))
+    (if (and extra (string-match "(\\([1-9]*\\)\/\\([1-9]*\\)): " extra))
+	(progn
+	  (setq begin (string-to-number (match-string 1 extra)))
+	  (setq end (string-to-number (match-string 2 extra)))
+	  (setq today (calendar-absolute-from-gregorian date))
+	  (list 
+	   (calendar-gregorian-from-absolute  (- today (- begin 1)))
+	   (calendar-gregorian-from-absolute (+ today (- end begin)))
+	   text)))))
 
 (defun cfw:org-schedule-period-to-calendar (begin end)
   "[internal] Return calfw calendar items between BEGIN and END
