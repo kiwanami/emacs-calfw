@@ -41,13 +41,16 @@
 (defvar cfw:org-agenda-schedule-args nil
   "Default arguments for collecting agenda entries.")
 
+(defvar cfw:org-icalendars (org-agenda-files nil 'ifmode)
+  "Org buffers for exporting icalendars.")
+
 (defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
   (let ((org-agenda-prefix-format " ")
         (span 'day))
     (org-compile-prefix-format nil)
     (loop for date in (cfw:enumerate-days begin end) append
-          (loop for file in (org-agenda-files nil 'ifmode) append
+          (loop for file in cfw:org-icalendars append
                 (progn
                   (org-check-agenda-file file)
                   (apply 'org-agenda-get-day-entries 
@@ -59,6 +62,7 @@
   (interactive)
   (let ((marker (get-text-property (point) 'org-marker)))
     (when (and marker (marker-buffer marker))
+      (org-mark-ring-push)
       (switch-to-buffer (marker-buffer marker))
       (widen)
       (goto-char (marker-position marker))
@@ -70,6 +74,7 @@
   (let ((map (make-sparse-keymap)))
     (define-key map [mouse-1] 'cfw:org-onclick)
     (define-key map (kbd "RET") 'cfw:org-onclick)
+    (define-key map (kbd "C-c C-o") 'cfw:org-onclick)
     map)
   "key map on the calendar item text.")
 
