@@ -41,8 +41,10 @@
 (defvar cfw:org-agenda-schedule-args nil
   "Default arguments for collecting agenda entries.")
 
-(defvar cfw:org-icalendars (org-agenda-files nil 'ifmode)
-  "Org buffers for exporting icalendars.")
+(defvar cfw:org-icalendars nil
+  "Org buffers for exporting icalendars.
+Setting a list of the custom agenda files, one can use the
+different agenda files from the default agenda ones.")
 
 (defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
@@ -50,7 +52,8 @@
         (span 'day))
     (org-compile-prefix-format nil)
     (loop for date in (cfw:enumerate-days begin end) append
-          (loop for file in cfw:org-icalendars append
+          (loop for file in (or cfw:org-icalendars (org-agenda-files nil 'ifmode))
+                append
                 (progn
                   (org-check-agenda-file file)
                   (apply 'org-agenda-get-day-entries 
