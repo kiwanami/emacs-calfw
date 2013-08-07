@@ -39,20 +39,34 @@
 (require 'calfw)
 (require 'calendar)
 
-(defun cfw:cal-modify-diary-entry-string (string)
-  "[internal] Add text properties to string, allowing calfw to act on it."
-  (propertize string
-              'mouse-face 'highlight
-              'help-echo string
-              'cfw-marker (copy-marker (point-at-bol))))
+(defvar cfw:cal-diary-regex
+  (let ((time   "[[:digit:]]\\{2\\}:[[:digit:]]\\{2\\}")
+        (blanks "[[:blank:]]*"))
+    (concat "\\(" time "\\)?"
+            "\\(?:" blanks "-" blanks "\\(" time "\\)\\)?"
+            blanks "\\(.*\\)"))
+  "Regex extracting start/end time and title from a diary string")
 
-(defun cfw:cal-collect-schedules-period (begin end)
-  "[internal] Return diary schedule items between BEGIN and END."
-  (let ((diary-modify-entry-list-string-function
-         'cfw:cal-modify-diary-entry-string))
-    (loop for date in (cfw:enumerate-days begin end)
-          append
-          (diary-list-entries date 1 t))))
+(defun cfw:cal-entry-to-event (date string)
+  "[internal] Add text properties to string, allowing calfw to act on it."
+  (let* ((lines      (split-string string "\n"))
+         (first      (car lines))
+         (desc       (mapconcat 'identity (cdr lines) "\n"))
+         (title      (progn
+                       (string-match cfw:cal-diary-regex first)
+                       (match-string 3 first)))
+         (start      (match-string 1 first))
+         (end        (match-string 2 first))
+         (properties (list 'mouse-face 'highlight
+                           'help-echo string
+                           'cfw-marker (copy-marker (point-at-bol)))))
+    (make-cfw:event :title       (apply 'propertize title properties)
+                    :start-date  date
+                    :start-time  (when start
+                                   (cfw:parse-str-time start))
+                    :end-time    (when end
+                                   (cfw:parse-str-time end))
+                    :description (apply 'propertize desc properties))))
 
 (defun cfw:cal-onclick ()
   "Jump to the clicked diary item."
@@ -73,14 +87,10 @@
   "[internal] Return calfw calendar items between BEGIN and END
 from the diary schedule data."
   (loop
-   for i in (cfw:cal-collect-schedules-period begin end)
-   for (date line . rest)  = i
-   with contents = nil
-   do
-   (setq contents (cfw:contents-add
-                   date (propertize line 'keymap cfw:cal-text-keymap)
-                   contents))
-   finally return contents))
+   for (date string . rest) in (diary-list-entries
+                                begin
+                                (1+ (cfw:days-diff begin end)) t)
+   collect (cfw:cal-entry-to-event date string)))
 
 (defvar cfw:cal-schedule-map
   (cfw:define-keymap

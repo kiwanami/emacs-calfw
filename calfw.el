@@ -110,11 +110,93 @@
   :group 'cfw
   :type 'character)
 
+(defcustom cfw:fstring-period-start "("
+  "The string used to indicate the beginning of a period."
+  :group 'cfw
+  :type 'string)
+
+(defcustom cfw:fstring-period-end ")"
+  "The string used to indicate the end of a period."
+  :group 'cfw
+  :type 'string)
+
 (defcustom cfw:read-date-command 'cfw:read-date-command-simple
   "The command used to read the date in `cfw:navi-goto-date-command',
 for example `cfw:read-date-command-simple' or `cfw:org-read-date-command'."
   :group 'cfw
   :type 'function)
+
+(defcustom cfw:event-format-overview "%t"
+  "Format string of `cfw:event's for overviews (month-, 2-week-, week-view).
+ See `cfw:event-format' for possible values."
+  :group 'cfw
+  :type 'string)
+
+(defcustom cfw:event-format-days-overview "%s%e%t"
+  "Format string of `cfw:event's for days overviews.
+ See `cfw:event-format' for possible values."
+  :group 'cfw
+  :type 'string)
+
+(defcustom cfw:event-format-period-overview "%t%l"
+  "Format string of `cfw:event's for period overviews.
+ See `cfw:event-format' for possible values."
+  :group 'cfw
+  :type 'string)
+
+(defcustom cfw:event-format-detail "%s%e%t%l%d"
+  "Format string of `cfw:event's for overviews (month-, week-, day-view).
+ See `cfw:event-format' for possible values."
+  :group 'cfw
+  :type 'string)
+
+(defcustom cfw:event-format-title "%s"
+  "Format string for the title of a `cfw:event'
+%s = title string"
+  :group 'cfw
+  :type 'string)
+
+(defcustom cfw:event-format-start-date "%Y-%m-%d"
+  "Format string for the start date of a `cfw:event'
+%Y = year
+%m = month
+%d = day"
+  :group 'cfw
+  :type 'string)
+
+(defcustom cfw:event-format-start-time "%H:%M "
+  "Format string for the start time of a `cfw:event'
+%H = hours
+%M = minutes"
+  :group 'cfw
+  :type 'string)
+
+(defcustom cfw:event-format-end-date "%Y-%m-%d"
+  "Format string for the end date of a `cfw:event'
+%Y = year
+%m = month
+%d = day"
+  :group 'cfw
+  :type 'string)
+
+(defcustom cfw:event-format-end-time "- %H:%M "
+  "Format string for the end time of a `cfw:event'
+%H = hours
+%M = minutes"
+  :group 'cfw
+  :type 'string)
+
+(defcustom cfw:event-format-location "\n  Location:    %s"
+  "Format string for the location of a `cfw:event'
+%s = location string"
+  :group 'cfw
+  :type 'string)
+
+(defcustom cfw:event-format-description "\n\n%s\n--------------------\n"
+  "Format string for the description of a `cfw:event'
+%s = location string"
+  :group 'cfw
+  :type 'string)
 
 ;;; Faces
 
@@ -234,6 +316,10 @@ for example `cfw:read-date-command-simple' or `cfw:org-read-date-command'."
   "[internal] Get a content by key from the given alist."
   (cdr (assq key alist)))
 
+(defun cfw:sym (&rest strings)
+  "[internal] concatenate `strings' and return as symbol."
+  (intern-soft (apply 'concat strings)))
+
 (defun cfw:rt (text face)
   "[internal] Put a face to the given text."
   (unless (stringp text) (setq text (format "%s" (or text ""))))
@@ -243,8 +329,8 @@ for example `cfw:read-date-command-simple' or `cfw:org-read-date-command'."
 
 (defun cfw:tp (text prop value)
   "[internal] Put a text property to the entire text string."
-  (if (< 0 (length text))
-      (put-text-property 0 (length text) prop value text))
+  (when (< 0 (length text))
+    (put-text-property 0 (length text) prop value text))
   text)
 
 (defun cfw:extract-text-props (text &rest excludes)
@@ -287,6 +373,11 @@ KEYMAP-LIST is a source list like ((key . command) ... )."
   "Construct a date object in the calendar format."
   (and month day year
        (list month day year)))
+
+(defun cfw:time (hours minutes)
+  "Construct a date object in the calendar format."
+  (and hours minutes
+       (list hours minutes)))
 
 (defun cfw:emacs-to-calendar (time)
   "Transform an emacs time format to a calendar one."
@@ -349,6 +440,12 @@ ones of DATE2. Otherwise is `nil'."
                (push (string-to-number (or (match-string (+ i 1) str) "0")) ret))
              ret))))
 
+(defun cfw:parse-str-time (str)
+  "Parsese a time string of the format HH:MM to an internal format."
+  (when (string-match "\\([[:digit:]]\\{2\\}\\):\\([[:digit:]]\\{2\\}\\)" str)
+    (cfw:time (string-to-number (match-string 1 str))
+              (string-to-number (match-string 2 str)))))
+
 (defun cfw:parsetime (str)
   "Transform the string format YYYY/MM/DD to a calendar date value."
   (cfw:emacs-to-calendar (cfw:parsetime-emacs str)))
@@ -357,6 +454,11 @@ ones of DATE2. Otherwise is `nil'."
   "Move the cursor to the specified date."
   (interactive "sInput Date (YYYY/MM/DD): ")
   (cfw:parsetime string-date))
+
+(defun cfw:days-diff (begin end)
+  "Returns the number of days between `begin' and `end'."
+  (- (time-to-days (cfw:calendar-to-emacs end))
+     (time-to-days (cfw:calendar-to-emacs begin))))
 
 (defun cfw:enumerate-days (begin end)
   "Enumerate date objects between BEGIN and END."
@@ -446,6 +548,93 @@ white (negative color of `cfw:source-period-bgcolor') is used."
                 (if (< 147500 (+ r g b)) "black" "white")))) ; (* 65536 3 0.75)
         (setf (cfw:source-period-fgcolor source) c)
         c)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Calendar event
+
+;; This structure defines calendar events.
+(defstruct cfw:event
+  title       ; event title [string]
+  start-date  ; start date of the event [cfw:date]
+  start-time  ; start time of the event (optional)
+  end-date    ; end date of the event [cfw:date] (optional)
+  end-time    ; end of the event (optional)
+  description ; event description [string] (optional)
+  location    ; location [strting] (optional)
+  source      ; [internal] source of the event
+  )
+
+(defun cfw:event-overview (event)
+  "Function that extracts the overview string from a`cfw:event'."
+  (cfw:event-format event cfw:event-format-overview))
+
+(defun cfw:event-days-overview (event)
+  "Function that extracts the days overview string from a`cfw:event'."
+  (cfw:event-format event cfw:event-format-days-overview))
+
+(defun cfw:event-period-overview (event)
+  "Function that extracts the period overview string from a`cfw:event'."
+  (cfw:event-format event cfw:event-format-period-overview))
+
+(defun cfw:event-detail (event)
+  "Function that extracts the details string from a`cfw:event'."
+  (cfw:event-format event cfw:event-format-detail))
+
+(defun cfw:event-format-field-string (string)
+  "[internal] Used by `cfw:event-format-field' to format string values."
+  `((?s . ,string)))
+
+(defun cfw:event-format-field-time (time)
+  "[internal] Used by `cfw:event-format-field' to format time values."
+  `((?H . ,(cfw:event-format-field-number (car time) 2))
+    (?M . ,(cfw:event-format-field-number (cadr time) 2))))
+
+(defun cfw:event-format-field-date (date)
+  "[internal] Used by `cfw:event-format-field' to format date values."
+  `((?Y . ,(cfw:event-format-field-number (caddr date) 4))
+    (?m . ,(cfw:event-format-field-number (car date) 2))
+    (?d . ,(cfw:event-format-field-number (cadr date) 2))))
+
+(defun cfw:event-format-field-number (num width)
+  "[internal] Like `number-to-string', but with width specifier. Padded with zeros."
+  (format (concat "%0" (number-to-string width) "d") num))
+
+(defun cfw:event-format-field (event field args-fun)
+  "[internal] format `field' of the `cfw:event' `event' according to
+the string specified in cfw:event-format-`field'."
+  (let* ((s-name        (symbol-name field))
+         (format-string (symbol-value (cfw:sym "cfw:event-format-" s-name)))
+         (field-val     (funcall (cfw:sym "cfw:event-" s-name) event)))
+    (if field-val
+        (format-spec format-string (funcall args-fun field-val))
+      "")))
+
+(defun cfw:event-format (event format-string)
+  "Format the `cfw:event' `event' according to `format-string'.
+
+The following values are possible:
+
+%t = title
+%S = start date
+%s = start time
+%E = end date
+%e = end time
+%l = Location
+%d = Description"
+  (cfw:tp
+   (format-spec
+    format-string
+    (mapcar #'(lambda (field)
+                `(,(car field) . ,(cfw:event-format-field
+                                   event (cadr field) (caddr field))))
+            '((?t title       cfw:event-format-field-string)
+              (?S start-date  cfw:event-format-field-date)
+              (?s start-time  cfw:event-format-field-time)
+              (?E end-date    cfw:event-format-field-date)
+              (?e end-time    cfw:event-format-field-time)
+              (?l location    cfw:event-format-field-string)
+              (?d description cfw:event-format-field-string))))
+   'cfw:source (cfw:event-source event)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Rendering Destination
@@ -599,20 +788,20 @@ application buffer.  Because this destination does not set up
 any modes and key maps for the buffer, the application that uses
 the calfw is responsible to manage the buffer and key maps."
   (lexical-let
-   ((mark-begin mark-begin) (mark-end mark-end)
-    (window (or (get-buffer-window buf) (selected-window))))
-   (make-cfw:dest
-    :type 'region
-    :min-func (lambda () (marker-position mark-begin))
-    :max-func (lambda () (marker-position mark-end))
-    :buffer buf
-    :width (or width (window-width window))
-    :height (or height (window-height window))
-    :clear-func
-    (lambda ()
-      (cfw:dest-region-clear (marker-position mark-begin)
-                             (marker-position mark-end)))
-    )))
+      ((mark-begin mark-begin) (mark-end mark-end)
+       (window (or (get-buffer-window buf) (selected-window))))
+    (make-cfw:dest
+     :type 'region
+     :min-func (lambda () (marker-position mark-begin))
+     :max-func (lambda () (marker-position mark-end))
+     :buffer buf
+     :width (or width (window-width window))
+     :height (or height (window-height window))
+     :clear-func
+     (lambda ()
+       (cfw:dest-region-clear (marker-position mark-begin)
+                              (marker-position mark-end)))
+     )))
 
 (defun cfw:dest-region-clear (begin end)
   "[internal] Clear the content text."
@@ -894,10 +1083,12 @@ ORG-MODEL is a model object to inherit."
 
 (defun cfw:model-get-periods-by-date (date model)
   "Return a list of periods on the DATE."
-  (loop for period in (cfw:k 'periods model)
-        for (begin end content) = period
+  (loop for (begin end event) in (cfw:k 'periods model)
+        for content = (if (cfw:event-p event)
+                          (cfw:event-detail event)
+                        event)
         if (cfw:date-between begin end date)
-        collect period))
+        collect `(,begin ,end ,content)))
 
 (defun cfw:model-get-sorter (model)
   "Return a sorter function."
@@ -985,6 +1176,23 @@ calling functions `:data' function."
                 do (setq contents (cfw:contents-add d line contents)))
           finally return contents))))
 
+(defun cfw:periods-put-source (periods source)
+  (loop for period in periods
+        collect
+        (cond
+         ((cfw:event-p period)
+          (setf (cfw:event-source period) source)
+          `(,(cfw:event-start-date period)
+            ,(cfw:event-end-date period)
+            ,period))
+         (t
+          (destructuring-bind (begin end . summaries) period
+            (list begin end
+                  (cfw:tp (if (listp summaries)
+                              (mapconcat 'identity summaries " ")
+                            summaries)
+                          'cfw:source source)))))))
+
 (defun cfw:contents-put-source (contents source)
   "[internal] Put the source object to the text property
 `cfw:source' in the contents list. During rendering, the source
@@ -992,22 +1200,19 @@ object is used to put some face property."
   (cond
    ((null source) contents)
    (t
-    (loop for (k . lst) in contents
-          if (eq k 'periods)
-          collect ; periods
-          (cons k
-                (loop for (begin end summaries) in lst
-                      for summary-text = (if (listp summaries)
-                                             (mapconcat 'identity summaries " ")
-                                           summaries)
-                      collect (list
-                               begin end
-                               (cfw:tp summary-text 'cfw:source source))))
-          else
-          collect ; contents
-          (cons k
-                (loop for i in lst
-                      collect (cfw:tp i 'cfw:source source)))))))
+    (loop for content in contents
+          collect
+          (cond
+           ((cfw:event-p content)
+            (setf (cfw:event-source content) source)
+            `(,(cfw:event-start-date content) ,content))
+           ((eq (car content) 'periods)
+            (cons 'periods
+                  (cfw:periods-put-source (cdr content) source)))
+           (t
+            (cons (car content)
+                  (loop for i in (cdr content)
+                        collect (cfw:tp i 'cfw:source source)))))))))
 
 (defun cfw:annotations-merge (begin end sources)
   "[internal] Return an annotation alist between begin date and end one,
@@ -1279,32 +1484,27 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
 
 (defun cfw:render-periods (date week-day periods-stack cell-width)
   "[internal] This function translates PERIOD-STACK to display content on the DATE."
-  (when periods-stack
-    (let ((stack (sort (copy-sequence periods-stack)
-                       (lambda (a b) (< (car a) (car b))))))
-      (loop for i from 0 below (car (car stack))
-            do (push ; insert blank lines
-                (list i (list nil nil nil nil))
-                stack))
-      (loop for (row (begin end content props)) in stack
-            for beginp = (equal date begin)
-            for endp = (equal date end)
-            for width = (- cell-width (if beginp 1 0) (if endp 1 0))
-            for title = (if content
-                            (cfw:render-periods-title
-                             date week-day begin end content cell-width))
-            collect
-            (if content
-                (apply 'propertize
-                       (concat
-                        (if beginp "(" "")
-                        (cfw:render-left width title ?-)
-                        (if endp ")" ""))
-                       'face (cfw:render-get-face-period content 'cfw:face-periods)
-                       'font-lock-face (cfw:render-get-face-period content 'cfw:face-periods)
-                       'cfw:period t
-                       props)
-              "")))))
+  (loop with prev-row = -1
+        for (row (begin end content props)) in (sort periods-stack
+                                                     (lambda (a b)
+                                                       (< (car a) (car b))))
+        nconc (make-list (- row prev-row 1) "") ; add empty padding lines
+        do (setq prev-row row)
+
+        for beginp = (equal date begin)
+        for endp   = (equal date end)
+        for width  = (- cell-width (if beginp 1 0) (if endp 1 0))
+        for title  = (cfw:render-periods-title
+                      date week-day begin end content cell-width)
+        collect
+        (apply 'propertize
+               (concat (when beginp cfw:fstring-period-start)
+                       (cfw:render-left width title ?-)
+                       (when endp cfw:fstring-period-end))
+               'face (cfw:render-get-face-period content 'cfw:face-periods)
+               'font-lock-face (cfw:render-get-face-period content 'cfw:face-periods)
+               'cfw:period t
+               props)))
 
 (defun cfw:render-periods-title (date week-day begin end content cell-width)
   "[internal] Return a title string."
@@ -1329,6 +1529,7 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
             finally return
             (cfw:render-truncate title width (equal end date))))))
 
+;; event periods shifts pos - not one line
 (defun cfw:render-periods-get-min (periods-each-days begin end)
   "[internal] Find the minimum empty row number of the days between
 BEGIN and END from the PERIODS-EACH-DAYS."
@@ -1357,15 +1558,16 @@ and append the result to periods-each-days."
 create period-stacks on the each days.
 period-stack -> ((row-num . period) ... )"
   (let* (periods-each-days)
-    (loop for period in (cfw:k 'periods model)
-          for (begin end content) = period
-          for vperiod = (append period (list (cfw:extract-text-props content 'face)))
-          for row = (cfw:render-periods-get-min
-                     periods-each-days begin end)
+    (loop for (begin end event) in (cfw:k 'periods model)
+          for content = (if (cfw:event-p event)
+                            (cfw:event-period-overview event)
+                          event)
+          for period = (list begin end content
+                             (cfw:extract-text-props content 'face))
+          for row = (cfw:render-periods-get-min periods-each-days begin end)
           do
-          (setq periods-each-days
-                (cfw:render-periods-place
-                 periods-each-days row vperiod)))
+          (setq periods-each-days (cfw:render-periods-place
+                                   periods-each-days row period)))
     periods-each-days))
 
 (defun cfw:render-columns (day-columns param)
@@ -1539,39 +1741,10 @@ algorithm defined at `cfw:render-line-breaker'."
 
 (defun cfw:render-calendar-cells-weeks (model param title-func)
   "[internal] Insert calendar cells for week based views."
-  (loop for week in (cfw:k 'weeks model) ; week rows loop
-        with cell-width = (cfw:k 'cell-width param) do
-        (cfw:render-columns
-         (loop for date in week ; week columns loop
-               for count from 0 below (length week)
-               for hday = (car (cfw:contents-get date (cfw:k 'holidays model)))
-               for week-day = (nth count (cfw:k 'headers  model))
-               for ant = (cfw:rt (cfw:contents-get
-                                  date (cfw:k 'annotations model))
-                                 'cfw:face-annotation)
-               for raw-periods = (cfw:contents-get
-                                  date (cfw:render-periods-stacks model))
-               for raw-contents = (cfw:render-sort-contents
-                                   (cfw:model-get-contents-by-date date model)
-                                   (cfw:model-get-sorter model))
-               for prs-contents = (cfw:render-rows-prop
-                                   (append
-                                    (cfw:render-periods
-                                     date week-day raw-periods cell-width)
-                                    (mapcar 'cfw:render-default-content-face raw-contents)))
-               for num-label = (if prs-contents
-                                   (format "(%s)"
-                                           (+ (length raw-contents)
-                                              (length raw-periods))) "")
-               for tday = (concat
-                           " " ; margin
-                           (funcall title-func date week-day hday)
-                           (if num-label (concat " " num-label))
-                           (if hday (concat " " (cfw:rt (substring hday 0)
-                                                        'cfw:face-holiday))))
-               collect
-               (cons date (cons (cons tday ant) prs-contents)))
-         param)))
+  (loop for week in (cfw:k 'weeks model) do
+        (cfw:render-calendar-cells-days model param title-func week
+                                        'cfw:render-event-overview-content
+                                        t)))
 
 (defun cfw:render-rows-prop (rows)
   "[internal] Put a marker as a text property for TAB navigation."
@@ -1581,6 +1754,27 @@ algorithm defined at `cfw:render-line-breaker'."
         (prog1
             (cfw:tp line 'cfw:row-count i)
           (if (< 0 (length line)) (incf i)))))
+
+(defun cfw:render-map-event-content (lst event-fun)
+  "[internal] `lst' is a list of contents and `cfw:event's. Map over `lst',
+where `event-fun' is applied if the element is a `cfw:event'."
+  (mapcar #'(lambda (evt)
+              (if (cfw:event-p evt)
+                  (funcall event-fun evt)
+                evt))
+          lst))
+
+(defun cfw:render-event-overview-content (lst)
+  "[internal] Apply `cfw:event-overview' on `cfw:event's in `lst'."
+  (cfw:render-map-event-content lst 'cfw:event-overview))
+
+(defun cfw:render-event-days-overview-content (lst)
+  "[internal] Apply `cfw:event-days-overview' on `cfw:event's in `lst'."
+  (cfw:render-map-event-content lst 'cfw:event-days-overview))
+
+(defun cfw:render-event-details-content (lst)
+  "[internal] Apply `cfw:event-detail' on `cfw:event's in `lst'."
+  (cfw:render-map-event-content lst 'cfw:event-detail))
 
 
 
@@ -1971,28 +2165,39 @@ return an alist of rendering parameters."
     ;; footer
     (insert (cfw:render-footer total-width (cfw:model-get-contents-sources model)))))
 
-(defun cfw:render-calendar-cells-days (model param title-func)
+(defun cfw:render-calendar-cells-days (model param title-func &optional
+                                             days content-fun do-weeks)
   "[internal] Insert calendar cells for the linear views."
   (cfw:render-columns
-   (loop with cell-width = (cfw:k 'cell-width param)
-         with days = (cfw:k 'days model)
+   (loop with cell-width      = (cfw:k 'cell-width param)
+         with days            = (or days (cfw:k 'days model))
+         with content-fun     = (or content-fun
+                                    'cfw:render-event-days-overview-content)
+         with holidays        = (cfw:k 'holidays model)
+         with annotations     = (cfw:k 'annotations model)
+         with headers         = (cfw:k 'headers  model)
+         with raw-periods-all = (cfw:render-periods-stacks model)
+         with sorter          = (cfw:model-get-sorter model)
+
          for date in days ; days columns loop
          for count from 0 below (length days)
-         for hday = (car (cfw:contents-get date (cfw:k 'holidays model)))
-         for week-day = (nth count (cfw:k 'headers  model))
-         for ant = (cfw:rt (cfw:contents-get
-                            date (cfw:k 'annotations model))
-                           'cfw:face-annotation)
-         for raw-periods = (cfw:contents-get
-                            date (cfw:render-periods-stacks model))
+         for hday         = (car (cfw:contents-get date holidays))
+         for week-day     = (nth count headers)
+         for ant          = (cfw:rt (cfw:contents-get date annotations)
+                                    'cfw:face-annotation)
+         for raw-periods  = (cfw:contents-get date raw-periods-all)
          for raw-contents = (cfw:render-sort-contents
-                             (cfw:model-get-contents-by-date date model)
-                             (cfw:model-get-sorter model))
+                             (funcall content-fun
+                                      (cfw:model-get-contents-by-date date model))
+                             sorter)
          for prs-contents = (cfw:render-rows-prop
-                             (append
-                              (cfw:render-periods-days
-                               date raw-periods cell-width)
-                              (mapcar 'cfw:render-default-content-face raw-contents)))
+                             (append (if do-weeks
+                                         (cfw:render-periods
+                                          date week-day raw-periods cell-width)
+                                       (cfw:render-periods-days
+                                        date raw-periods cell-width))
+                                     (mapcar 'cfw:render-default-content-face
+                                             raw-contents)))
          for num-label = (if prs-contents
                              (format "(%s)"
                                      (+ (length raw-contents)
@@ -2418,7 +2623,8 @@ DATE is a date to show. MODEL is model object."
          (annotation (cfw:model-get-annotation-by-date date model))
          (periods (cfw:model-get-periods-by-date date model))
          (contents (cfw:render-sort-contents
-                    (cfw:model-get-contents-by-date date model)
+                    (cfw:render-event-details-content
+                     (cfw:model-get-contents-by-date date model))
                     (cfw:model-get-sorter model)))
          (row-count -1))
     (concat
@@ -2441,6 +2647,7 @@ DATE is a date to show. MODEL is model object."
                          'cfw:row-count (incf row-count))
            concat
            (concat prefix " " summary EOL))
+
      (loop for i in contents
            for f = (cfw:render-get-face-content i 'cfw:face-default-content)
            concat
@@ -2579,14 +2786,14 @@ KEYMAP is the keymap that is put to the text property `keymap'. If KEYMAP is nil
              (cp (cfw:cp-new dest model view date))
              (after-update-func
               (lexical-let ((keymap keymap) (cp cp))
-                           (lambda ()
-                             (cfw:dest-with-region (cfw:component-dest cp)
-                                                   (let (buffer-read-only)
-                                                     (put-text-property (point-min) (1- (point-max))
-                                                                        'cfw:component cp)
-                                                     (cfw:fill-keymap-property
-                                                      (point-min) (1- (point-max))
-                                                      (or keymap cfw:calendar-mode-map))))))))
+                (lambda ()
+                  (cfw:dest-with-region (cfw:component-dest cp)
+                    (let (buffer-read-only)
+                      (put-text-property (point-min) (1- (point-max))
+                                         'cfw:component cp)
+                      (cfw:fill-keymap-property
+                       (point-min) (1- (point-max))
+                       (or keymap cfw:calendar-mode-map))))))))
         (setf (cfw:dest-after-update-func dest) after-update-func)
         (funcall after-update-func)
         cp))))
@@ -2684,10 +2891,51 @@ DATE is initial focus date. If it is nil, today is selected initially."
                ((1 20 2011) . "AN3")
                ((1 28 2011) . "AN4")
                ))))
+         (event-source
+          (make-cfw:source
+           :name "Events"
+           :color "DarkOrange"
+           :data
+           (lambda (b e)
+             `(,(make-cfw:event :title       "Shopping"
+                                :start-date  '(1 17 2011))
+               ,(make-cfw:event :title       "Other Thing"
+                                :start-date  '(1 17 2011))
+               ,(make-cfw:event :title       "Spring cleaning"
+                                :start-date  '(1 15 2011)
+                                :location    "Home"
+                                :description "Oh what a joy!!")
+               ,(make-cfw:event :title       "Meeting"
+                                :start-date  '(1 16 2011)
+                                :start-time  '(15 00)
+                                :location    "Office"
+                                :description "Important talk")
+               ,(make-cfw:event :title       "Lunch"
+                                :start-date  '(1 15 2011)
+                                :start-time  '(13 15)
+                                :end-time    '(14 30)
+                                :location    "Fancy place"
+                                :description "Omnomnom")
+               ,(make-cfw:event :title       "Long one"
+                                :start-date  '(1 17 2011)
+                                :description "This is a multiline description.
+
+Some text here.
+
+But also some here.
+
+And here.")
+               (periods
+                ,(make-cfw:event :title      "Vacation bla bli blubb very long"
+                                 :start-date '(1 13 2011)
+                                 :end-date   '(1 20 2011)
+                                 :location    "Beach"
+                                 :description "Enjoy the sun!"))
+               ))))
          (cp (cfw:create-calendar-component-buffer
               :date (cfw:date 1 10 2011)
               :view 'two-weeks
-              :contents-sources (list source1 source2)
+              :contents-sources (list source1 source2 event-source)
               :annotation-sources (list asource1 asource2))))
     (cfw:cp-add-update-hook cp (lambda () (message "CFW: UPDATE HOOK")))
     (cfw:cp-add-click-hook cp (lambda () (message "CFW: CLICK HOOK %S" (cfw:cursor-to-nearest-date))))
