@@ -29,7 +29,7 @@
 ;; If you are using Elscreen, here is useful.
 ;; (define-key howm-mode-map (kbd "M-C") 'cfw:elscreen-open-howm-calendar)
 
-;; One can open a standalone calendar buffer by 
+;; One can open a standalone calendar buffer by
 ;; M-x cfw:open-howm-calendar
 
 ;; You can display a calendar in your howm menu.
@@ -46,7 +46,7 @@
   "clear cache for howm schedule items."
   (setq cfw:howm-schedule-cache nil))
 
-(defvar cfw:howm-schedule-hook nil 
+(defvar cfw:howm-schedule-hook nil
   "Hook which is called after retrieval of howm schedule items.")
 
 (defun cfw:howm-schedule-get ()
@@ -62,8 +62,8 @@ data exists, this function uses the cache."
 (defun cfw:to-howm-date (date)
   "[internal] Convert a date format from the Emacs calendar list
 to the number of howm encoded days."
-  (apply 'howm-encode-day 
-         (mapcar 'number-to-string 
+  (apply 'howm-encode-day
+         (mapcar 'number-to-string
                  (list (calendar-extract-day date)
                        (calendar-extract-month date)
                        (calendar-extract-year date)))))
@@ -80,7 +80,7 @@ to the number of howm encoded days."
                     (cfw:howm-schedule-get))))
     (howm-schedule-sort-items filtered)))
 
-(defvar cfw:howm-schedule-summary-transformer 
+(defvar cfw:howm-schedule-summary-transformer
   (lambda (line) line)
   "Transformation function which transforms the howm summary string to calendar title.
 If this function splits into a list of string, the calfw displays those string in multi-lines.")
@@ -88,7 +88,7 @@ If this function splits into a list of string, the calfw displays those string i
 (defun cfw:howm-schedule-parse-line (line)
   "[internal] Parse the given string and return a result list, (date num type summary)."
   (when (string-match "^\\[\\([^@!]+\\)\\]\\([@!]\\)\\([0-9]*\\) \\(.*\\)$" line)
-    (list 
+    (list
      (match-string 1 line) (string-to-number (match-string 3 line))
      (match-string 2 line) (match-string 4 line))))
 
@@ -102,7 +102,7 @@ from the howm schedule data."
                     (seconds-to-time (+ 10 (* (howm-schedule-date i) 24 3600))))
         for (datestr num type summary) = (cfw:howm-schedule-parse-line (howm-item-summary i))
         for summary = (funcall cfw:howm-schedule-summary-transformer summary)
-        do 
+        do
         (cond
          ((< 0 num)
           (push (list date (cfw:date-after date (1- num)) summary) periods))
@@ -135,14 +135,14 @@ from the howm schedule data."
   (let ((cp (cfw:create-calendar-component-buffer
              :custom-map cfw:howm-schedule-map
              :view 'month
-             :contents-sources (append (list (cfw:howm-create-source)) 
+             :contents-sources (append (list (cfw:howm-create-source))
                                        cfw:howm-schedule-contents)
              :annotation-sources cfw:howm-annotation-contents)))
-  (switch-to-buffer (cfw:cp-get-buffer cp))))
+    (switch-to-buffer (cfw:cp-get-buffer cp))))
 
 (defun cfw:howm-from-calendar ()
   "Display a howm schedule summary of the date on the cursor,
-searching from the whole howm data. 
+searching from the whole howm data.
 This command should be executed on the calfw calendar."
   (interactive)
   (let* ((mdy (cfw:cursor-to-nearest-date))
@@ -191,8 +191,8 @@ This command should be executed on the calfw calendar."
     (set-keymap-parent custom-map cfw:calendar-mode-map)
     (setq cp (cfw:create-calendar-component-region
               :width width :height (or height 10)
-              :keymap custom-map 
-              :contents-sources (append (list (cfw:howm-create-source)) 
+              :keymap custom-map
+              :contents-sources (append (list (cfw:howm-create-source))
                                         cfw:howm-schedule-contents)
               :annotation-sources cfw:howm-annotation-contents
               :view (or view 'month))))

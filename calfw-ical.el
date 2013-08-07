@@ -56,7 +56,7 @@ events have not been supported yet."
                       (icalendar--get-event-property-attributes event 'DTSTART) zone-map))
        (dtstart-dec (icalendar--decode-isodatetime dtstart nil dtstart-zone))
        (start-d (cfw:decode-to-calendar dtstart-dec))
-       (start-t (icalendar--datetime-to-colontime dtstart-dec))
+       (start-t (cfw:time (nth 2 dtstart-dec) (nth 1 dtstart-dec)))
 
        (dtend (icalendar--get-event-property event 'DTEND))
        (dtend-zone (icalendar--find-time-zone
@@ -99,58 +99,50 @@ events have not been supported yet."
                             (icalendar--get-event-property-attributes
                              event 'DTEND))
                            "DATE")))
-                    (icalendar--datetime-to-colontime dtend-dec)
+                    (cfw:time (nth 2 dtend-dec) (nth 1 dtend-dec))
                   start-t))
     (cond
      ((and start-t (equal start-d end-d))
       (list 'time start-d start-t end-t))
      ((equal start-d end-1-d)
-      (list 'time start-d "" ""))
+      (list 'time start-d nil nil))
      (t
       (list 'period start-d nil end-1-d)))))
 
-(defun cfw:ical-convert-ical-to-calfw (ical-list)
-  (let* ((event-list (icalendar--all-events ical-list))
-         (error-string "") (event-ok t) (found-error nil)
-         (zone-map (icalendar--convert-all-timezones ical-list))
-         periods contents)
+(defun cfw:ical-sanitize-string (string)
+  (when (and string
+             (> (length string) 0))
+    (replace-regexp-in-string "\\\\n" "\n"
+                              (replace-regexp-in-string "\\\\," "," string))))
 
-    (loop for e in event-list 
-          for (dtag date start end) = (cfw:ical-event-get-dates e)
-          for event-ok = nil
-          do
-          (condition-case error-val
-              (progn
-                (cond
-                 ;; recurring event
-                 ;; TODO...
-                 
-                 ;; non-recurring event
-                 ;; period event
-                 ((eq dtag 'period)
-                  (push (list date end (icalendar--format-ical-event e)) periods)
-                  (setq event-ok t))
-                 ;; time event
-                 ((eq dtag 'time)
-                  (let ((prv (cfw:contents-get-internal date contents))
-                        (line 
-                         (format "%s %s" start
-                                 (icalendar--format-ical-event e))))
-                    (if prv (nconc prv (list line))
-                      (push (list date line) contents)))
-                  (setq event-ok t)))
-                
-                ;; add all other elements unless the user doesn't want to have
-                ;; them
-                (unless event-ok
-                  (message "Ignoring event \"%S\"" e)))
-            (error
-             (message "Ignoring event \"%s\"" e)
-             (setq found-error t)
-             (setq error-string (format "%s\n%s\nCannot handle this event: %s"
-                                        error-val error-string e))
-             (message "%s" error-string))))
-    (append contents (list (cons 'periods periods)))))
+(defun cfw:ical-convert-event (event)
+  (destructuring-bind (dtag date start end) (cfw:ical-event-get-dates event)
+    (make-cfw:event
+     :start-date  date
+     :start-time  start
+     :end-date    (when (equal dtag 'period) end)
+     :end-time    (when (equal dtag 'time)   end)
+     :title       (cfw:ical-sanitize-string
+                   (icalendar--get-event-property event 'SUMMARY))
+     :location    (cfw:ical-sanitize-string
+                   (icalendar--get-event-property event 'LOCATION))
+     :description (cfw:ical-sanitize-string
+                   (icalendar--get-event-property event 'DESCRIPTION)))))
+
+(defun cfw:ical-convert-ical-to-calfw (ical-list)
+  (loop with zone-map = (icalendar--convert-all-timezones ical-list)
+        for e in (icalendar--all-events ical-list)
+        for event = (cfw:ical-convert-event e)
+        if event
+        if (cfw:event-end-date event)
+        collect event into periods
+        else
+        collect event into contents
+        else do
+        (progn
+          (message "Ignoring event \"%s\"" e)
+          (message "Cannot handle this event, tag: %s" e))
+        finally (return `((periods ,periods) ,@contents))))
 
 (defun cfw:ical-debug (f)
   (interactive)
@@ -174,7 +166,7 @@ events have not been supported yet."
     (buffer-disable-undo buf)
     (with-current-buffer buf
       (erase-buffer))
-    (call-process-shell-command 
+    (call-process-shell-command
      cfw:ical-calendar-external-shell-command nil buf nil url)
     buf))
 
@@ -189,7 +181,7 @@ events have not been supported yet."
           (with-current-buffer dbuf
             (erase-buffer)
             (decode-coding-string
-             (with-current-buffer buf 
+             (with-current-buffer buf
                (buffer-substring (1+ pos) (point-max)))
              'utf-8 nil dbuf)))
       (kill-buffer buf))
@@ -219,12 +211,12 @@ events have not been supported yet."
 (defun cfw:ical-normalize-buffer ()
   (save-excursion
     (goto-char (point-min))
-     (while (re-search-forward "\n " nil t)
-       (replace-match "")))
+    (while (re-search-forward "\n " nil t)
+      (replace-match "")))
   (save-excursion
     (goto-char (point-min))
-     (while (re-search-forward "DT\\(START\\|END\\);VALUE=DATE:" nil t)
-       (replace-match "DT\\1:")))
+    (while (re-search-forward "DT\\(START\\|END\\);VALUE=DATE:" nil t)
+      (replace-match "DT\\1:")))
   (set-buffer-modified-p nil))
 
 (defvar cfw:ical-data-cache nil "a list of (url . ics-data)")
@@ -243,30 +235,29 @@ events have not been supported yet."
 (defun cfw:ical-get-data (url)
   (let ((data (assoc url cfw:ical-data-cache)))
     (unless data
-      (setq data 
-            (let ((cal-list 
-                   (cfw:ical-with-buffer url 
-                     (cfw:ical-normalize-buffer)
-                     (cfw:ical-convert-ical-to-calfw
-                      (icalendar--read-element nil nil))))
-                   contents)
-              (loop for (date . lst) in cal-list do
-                    (setq contents (cfw:contents-add date lst contents)))
-              (cons url contents)))
+      (setq data (let ((cal-list
+                        (cfw:ical-with-buffer url
+                          (cfw:ical-normalize-buffer)
+                          (cfw:ical-convert-ical-to-calfw
+                           (icalendar--read-element nil nil)))))
+                   (cons url cal-list)))
       (push data cfw:ical-data-cache))
     (cdr data)))
 
 (defun cfw:ical-to-calendar (url begin end)
-  (loop for (date . lst) in (cfw:ical-get-data url)
-        if (eq 'periods date)
+  (loop for event in (cfw:ical-get-data url)
+        if (and (listp event)
+                (equal 'periods (car event)))
         collect
-        (cons 'periods 
-              (loop for (rstart rend title) in lst
-                    if (and (cfw:date-less-equal-p begin rend)
-                            (cfw:date-less-equal-p rstart end))
-                    collect (list rstart rend title)))
-        else if (cfw:date-between begin end date)
-        collect (cons date lst)))
+        (cons
+         'periods
+         (loop for evt in (cadr event)
+               if (and
+                   (cfw:date-less-equal-p begin (cfw:event-end-date evt))
+                   (cfw:date-less-equal-p (cfw:event-start-date evt) end))
+               collect evt))
+        else if (cfw:date-between begin end (cfw:event-start-date event))
+        collect event))
 
 (defun cfw:ical-create-source (name url color)
   (lexical-let ((url url))
@@ -274,7 +265,7 @@ events have not been supported yet."
      :name (concat "iCal:" name)
      :color color
      :update (lambda () (cfw:ical-data-cache-clear url))
-     :data (lambda (begin end) 
+     :data (lambda (begin end)
              (cfw:ical-to-calendar url begin end)))))
 
 (defun cfw:open-ical-calendar (url)
@@ -291,4 +282,3 @@ calendar source."
 
 (provide 'calfw-ical)
 ;;; calfw-ical.el ends here
-

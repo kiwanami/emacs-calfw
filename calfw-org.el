@@ -21,11 +21,11 @@
 ;;; Commentary:
 
 ;; Display org-agenda items in the calfw buffer.
-;; (Because I don't use the org-agenda mainly, 
+;; (Because I don't use the org-agenda mainly,
 ;; I hope someone continue integration with the org.)
 
 ;; (require 'calfw-org)
-;; 
+;;
 ;; M-x cfw:open-org-calendar
 
 ;;; Code:
@@ -56,8 +56,8 @@ different agenda files from the default agenda ones.")
                 append
                 (progn
                   (org-check-agenda-file file)
-                  (apply 'org-agenda-get-day-entries 
-                         file date 
+                  (apply 'org-agenda-get-day-entries
+                         file date
                          cfw:org-agenda-schedule-args))))))
 
 (defun cfw:org-onclick ()
@@ -73,7 +73,7 @@ different agenda files from the default agenda ones.")
         (org-reveal)))))
 
 
-(defvar cfw:org-text-keymap 
+(defvar cfw:org-text-keymap
   (let ((map (make-sparse-keymap)))
     (define-key map [mouse-1] 'cfw:org-onclick)
     (define-key map (kbd "RET") 'cfw:org-onclick)
@@ -96,7 +96,7 @@ different agenda files from the default agenda ones.")
   "Format an item. (How should be displayed?)"
   (let* ((time (cfw:org-tp item 'time))
          (time-of-day (cfw:org-tp item 'time-of-day))
-         (time-str (and time-of-day 
+         (time-str (and time-of-day
                         (format "%02i:%02i " (/ time-of-day 100) (% time-of-day 100))))
          (category (cfw:org-tp item 'org-category))
          (tags (cfw:org-tp item 'tags))
@@ -105,7 +105,7 @@ different agenda files from the default agenda ones.")
          (text (cfw:org-extract-summary item))
          (props (cfw:extract-text-props item 'face 'keymap)))
     (propertize
-     (concat 
+     (concat
       (if time-str (apply 'propertize time-str props)) text " "
       (and buffer (buffer-name buffer)))
      'keymap cfw:org-text-keymap
@@ -134,13 +134,13 @@ If TEXT does not have a range, return nil."
                 (s2 (match-string 2 dotime))
                 (d1 (time-to-days (org-time-string-to-time s1)))
                 (d2 (time-to-days (org-time-string-to-time s2))))
-           (list (calendar-gregorian-from-absolute d1) 
+           (list (calendar-gregorian-from-absolute d1)
                  (calendar-gregorian-from-absolute d2) text)))))
 
 (defun cfw:org-schedule-period-to-calendar (begin end)
   "[internal] Return calfw calendar items between BEGIN and END
 from the org schedule data."
-  (loop 
+  (loop
    with cfw:org-todo-keywords-regexp = (regexp-opt org-todo-keywords-for-agenda) ; dynamic bind
    with contents = nil with periods = nil
    for i in (cfw:org-collect-schedules-period begin end)
@@ -165,7 +165,7 @@ TEXT1 < TEXT2."
         (cond
          ((and time1 time2) (< time1 time2))
          (time1 t)   ; time object is moved to upper
-         (time2 nil) ; 
+         (time2 nil) ;
          (t (string-lessp text1 text2))))
     (error (string-lessp text1 text2))))
 
@@ -178,7 +178,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
         (cond
          ((and time1 time2) (< time1 time2))
          (time1 nil) ; time object is moved to upper
-         (time2 t)   ; 
+         (time2 t)   ;
          (t (string-lessp text1 text2))))
     (error (string-lessp text1 text2))))
 
