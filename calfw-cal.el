@@ -41,16 +41,16 @@
 
 (defun cfw:cal-modify-diary-entry-string (string)
   "[internal] Add text properties to string, allowing calfw to act on it."
-  (propertize string 
+  (propertize string
               'mouse-face 'highlight
               'help-echo string
               'cfw-marker (copy-marker (point-at-bol))))
 
 (defun cfw:cal-collect-schedules-period (begin end)
   "[internal] Return diary schedule items between BEGIN and END."
-  (let ((diary-modify-entry-list-string-function 
+  (let ((diary-modify-entry-list-string-function
          'cfw:cal-modify-diary-entry-string))
-    (loop for date in (cfw:enumerate-days begin end) 
+    (loop for date in (cfw:enumerate-days begin end)
           append
           (diary-list-entries date 1 t))))
 
@@ -77,8 +77,8 @@ from the diary schedule data."
    for (date line . rest)  = i
    with contents = nil
    do
-   (setq contents (cfw:contents-add 
-                   date (propertize line 'keymap cfw:cal-text-keymap) 
+   (setq contents (cfw:contents-add
+                   date (propertize line 'keymap cfw:cal-text-keymap)
                    contents))
    finally return contents))
 

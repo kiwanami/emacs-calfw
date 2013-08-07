@@ -115,7 +115,7 @@ events have not been supported yet."
          (zone-map (icalendar--convert-all-timezones ical-list))
          periods contents)
 
-    (loop for e in event-list 
+    (loop for e in event-list
           for (dtag date start end) = (cfw:ical-event-get-dates e)
           for event-ok = nil
           do
@@ -124,7 +124,7 @@ events have not been supported yet."
                 (cond
                  ;; recurring event
                  ;; TODO...
-                 
+
                  ;; non-recurring event
                  ;; period event
                  ((eq dtag 'period)
@@ -133,13 +133,13 @@ events have not been supported yet."
                  ;; time event
                  ((eq dtag 'time)
                   (let ((prv (cfw:contents-get-internal date contents))
-                        (line 
+                        (line
                          (format "%s %s" start
                                  (icalendar--format-ical-event e))))
                     (if prv (nconc prv (list line))
                       (push (list date line) contents)))
                   (setq event-ok t)))
-                
+
                 ;; add all other elements unless the user doesn't want to have
                 ;; them
                 (unless event-ok
@@ -174,7 +174,7 @@ events have not been supported yet."
     (buffer-disable-undo buf)
     (with-current-buffer buf
       (erase-buffer))
-    (call-process-shell-command 
+    (call-process-shell-command
      cfw:ical-calendar-external-shell-command nil buf nil url)
     buf))
 
@@ -189,7 +189,7 @@ events have not been supported yet."
           (with-current-buffer dbuf
             (erase-buffer)
             (decode-coding-string
-             (with-current-buffer buf 
+             (with-current-buffer buf
                (buffer-substring (1+ pos) (point-max)))
              'utf-8 nil dbuf)))
       (kill-buffer buf))
@@ -219,12 +219,12 @@ events have not been supported yet."
 (defun cfw:ical-normalize-buffer ()
   (save-excursion
     (goto-char (point-min))
-     (while (re-search-forward "\n " nil t)
-       (replace-match "")))
+    (while (re-search-forward "\n " nil t)
+      (replace-match "")))
   (save-excursion
     (goto-char (point-min))
-     (while (re-search-forward "DT\\(START\\|END\\);VALUE=DATE:" nil t)
-       (replace-match "DT\\1:")))
+    (while (re-search-forward "DT\\(START\\|END\\);VALUE=DATE:" nil t)
+      (replace-match "DT\\1:")))
   (set-buffer-modified-p nil))
 
 (defvar cfw:ical-data-cache nil "a list of (url . ics-data)")
@@ -243,13 +243,13 @@ events have not been supported yet."
 (defun cfw:ical-get-data (url)
   (let ((data (assoc url cfw:ical-data-cache)))
     (unless data
-      (setq data 
-            (let ((cal-list 
-                   (cfw:ical-with-buffer url 
-                     (cfw:ical-normalize-buffer)
-                     (cfw:ical-convert-ical-to-calfw
-                      (icalendar--read-element nil nil))))
-                   contents)
+      (setq data
+            (let ((cal-list
+                   (cfw:ical-with-buffer url
+                                         (cfw:ical-normalize-buffer)
+                                         (cfw:ical-convert-ical-to-calfw
+                                          (icalendar--read-element nil nil))))
+                  contents)
               (loop for (date . lst) in cal-list do
                     (setq contents (cfw:contents-add date lst contents)))
               (cons url contents)))
@@ -260,7 +260,7 @@ events have not been supported yet."
   (loop for (date . lst) in (cfw:ical-get-data url)
         if (eq 'periods date)
         collect
-        (cons 'periods 
+        (cons 'periods
               (loop for (rstart rend title) in lst
                     if (and (cfw:date-less-equal-p begin rend)
                             (cfw:date-less-equal-p rstart end))
@@ -270,12 +270,12 @@ events have not been supported yet."
 
 (defun cfw:ical-create-source (name url color)
   (lexical-let ((url url))
-    (make-cfw:source
-     :name (concat "iCal:" name)
-     :color color
-     :update (lambda () (cfw:ical-data-cache-clear url))
-     :data (lambda (begin end) 
-             (cfw:ical-to-calendar url begin end)))))
+               (make-cfw:source
+                :name (concat "iCal:" name)
+                :color color
+                :update (lambda () (cfw:ical-data-cache-clear url))
+                :data (lambda (begin end)
+                        (cfw:ical-to-calendar url begin end)))))
 
 (defun cfw:open-ical-calendar (url)
   "Simple calendar interface. This command displays just one
@@ -291,4 +291,3 @@ calendar source."
 
 (provide 'calfw-ical)
 ;;; calfw-ical.el ends here
-
