@@ -41,10 +41,11 @@
 
 (defun cfw:cal-modify-diary-entry-string (string)
   "[internal] Add text properties to string, allowing calfw to act on it."
-  (propertize string 
-              'mouse-face 'highlight
-              'help-echo string
-              'cfw-marker (copy-marker (point-at-bol))))
+  (let ((title (replace-regexp-in-string "[\t ]+" " " (cfw:trim string))))
+    (propertize title
+                'mouse-face 'highlight
+                'help-echo title
+                'cfw-marker (copy-marker (point-at-bol)))))
 
 (defun cfw:cal-collect-schedules-period (begin end)
   "[internal] Return diary schedule items between BEGIN and END."
