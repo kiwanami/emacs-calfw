@@ -1,11 +1,9 @@
-;;; -*- coding: utf-8 -*-
-;;;
-;;; calfw-org.el --- calendar view for org-agenda
+;;; calfw-org.el --- calendar view for org-agenda     -*- coding: utf-8 -*-
 
 ;; Copyright (C) 2011  SAKURAI Masashi
 
 ;; Author: SAKURAI Masashi <m.sakurai at kiwanami.net>
-;; Keywords: calendar
+;; Keywords: calendar, org
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -68,7 +66,11 @@ different agenda files from the default agenda ones.")
 (defun cfw:org-onclick ()
   "Jump to the clicked org item."
   (interactive)
-  (let ((marker (get-text-property (point) 'org-marker)))
+  (let (
+    (marker (get-text-property (point) 'org-marker))
+    (link (get-text-property (point) 'org-link)))
+    (when link
+      (org-open-link-from-string link))
     (when (and marker (marker-buffer marker))
       (org-mark-ring-push)
       (switch-to-buffer (marker-buffer marker))
@@ -76,7 +78,6 @@ different agenda files from the default agenda ones.")
       (goto-char (marker-position marker))
       (when (eq major-mode 'org-mode)
         (org-reveal)))))
-
 
 (defvar cfw:org-text-keymap
   (let ((map (make-sparse-keymap)))
@@ -89,8 +90,8 @@ different agenda files from the default agenda ones.")
 (defun cfw:org-extract-summary (org-item)
   "[internal] Remove some strings."
   (let ((item org-item))
-    (when (string-match cfw:org-todo-keywords-regexp item) ; dynamic bind
-      (setq item (replace-match "" nil nil item)))
+    ;; (when (string-match cfw:org-todo-keywords-regexp item) ; dynamic bind
+    ;;   (setq item (replace-match "" nil nil item)))
     (when (string-match "^ +" item)
       (setq item (replace-match "" nil nil item)))
     (when (= 0 (length item))
@@ -111,19 +112,56 @@ different agenda files from the default agenda ones.")
          (props (cfw:extract-text-props item 'face 'keymap))
          (extra (cfw:org-tp item 'extra))
          (i 0))
-    (setq text (replace-regexp-in-string "[0-9]+:[0-9]+\\(-[0-9]+:[0-9]+\\)?[\t ]+" "" text))
+    ;;; ------------------------------------------------------------------------
+    ;;; set title color as default agenda color
+    ;;; ------------------------------------------------------------------------
+    (setq text (if (string-match "^Deadline:.*" extra)
+        text
+        (apply 'propertize (substring-no-properties text) props)))
+    ;;; ------------------------------------------------------------------------
+    ;;; skip time related string
+    ;;; ------------------------------------------------------------------------
+    (setq text (replace-regexp-in-string "[0-9]\\{2\\}:[0-9]\\{2\\}\\(-[0-9]\\{2\\}:[0-9]\\{2\\}\\)?[\t ]+" "" text))
+    ;;; ------------------------------------------------------------------------
+    ;;; skip tags
+    ;;; ------------------------------------------------------------------------
     (if tags
-      (while (< i (length tags))
-        (setq text (replace-regexp-in-string (concat ":" (elt tags i) ":") "" text))
-        (setq i (+ i 1))))
-    (setq text (replace-regexp-in-string "[\t ]+:?$" "" text))
+      (progn
+        (while (< i (length tags))
+          (setq text (replace-regexp-in-string (concat ":" (elt tags i) ":") "" text))
+          (setq i (+ i 1)))
+        (setq text (replace-regexp-in-string "[\t ]*:?$" "" text))))
+    ;;; ------------------------------------------------------------------------
+    ;;; act for org link
+    ;;; ------------------------------------------------------------------------
+    (setq text (replace-regexp-in-string "%[0-9A-F]\\{2\\}" " " text))
+    (if (string-match org-bracket-link-regexp text)
+      (progn
+        (setq desc (if (match-end 3) (org-match-string-no-properties 3 text)))
+        (setq link (org-link-unescape (org-match-string-no-properties 1 text)))
+        (setq help (concat "LINK: " link))
+        (setq link-props
+           (list
+                 'face 'org-link
+                 'mouse-face 'highlight
+                 'help-echo help
+                 'org-link link
+                 ))
+        (if desc
+          (progn
+            (setq desc (apply 'propertize desc link-props))
+            (setq text (replace-match desc nil nil text)))
+          (setq link (apply 'propertize link link-props))
+          (setq text (replace-match link nil nil text)))
+        ))
     (propertize
       (concat
         (if time-str
           (apply 'propertize time-str props))
-        (if (string-match "^Deadline:.*" extra)
-          text
-          (substring-no-properties text)))
+        text
+        ;; include org filename
+        ;; (and buffer (concat " " (buffer-name buffer)))
+        )
       'keymap cfw:org-text-keymap
       ;; Delete the display property, since displaying images will break our
       ;; table layout.
