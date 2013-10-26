@@ -79,6 +79,13 @@ different agenda files from the default agenda ones.")
       (when (eq major-mode 'org-mode)
         (org-reveal)))))
 
+(defun cfw:org-clean-exit ()
+  "Close buffers opened by calfw-org before closing Calendar Framework."
+  (interactive)
+  (org-release-buffers org-agenda-new-buffers)
+  (setq org-agenda-new-buffers nil)
+  (bury-buffer))
+
 (defvar cfw:org-text-keymap
   (let ((map (make-sparse-keymap)))
     (define-key map [mouse-1] 'cfw:org-onclick)
