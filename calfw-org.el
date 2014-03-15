@@ -305,10 +305,12 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
      :end-time    (cfw:org-filter-datetime t-obj etime)
      :title       (cfw:org-format-title file h-obj t-obj h-beg)
      :location    (org-element-property :LOCATION h-obj)
-     :description (replace-regexp-in-string
-                   " *:PROPERTIES:\n  \\(.*\\(?:\n.*\\)*?\\) :END:\n" ""
-                   (buffer-substring (org-element-property :contents-begin h-obj)
-                                     (org-element-property :contents-end h-obj))))))
+     :description (if (org-element-property :contents-begin h-obj)
+                      (replace-regexp-in-string
+                       " *:PROPERTIES:\n  \\(.*\\(?:\n.*\\)*?\\) :END:\n" ""
+                       (buffer-substring (org-element-property :contents-begin h-obj)
+                                         (org-element-property :contents-end h-obj)))
+                    nil))))
 
 (defun cfw:org-convert-org-to-calfw (file)
   (save-excursion
