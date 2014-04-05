@@ -43,7 +43,7 @@
   :group 'cfw)
 
 (defcustom cfw:org-capture-template
-  '("c" "calfw2org" entry (file nil)  "*  %?\n %(cfw:org-capture-day)")
+  '("c" "calfw2org" entry (file nil)  "* %?\n %(cfw:org-capture-day)")
   "org-capture template."
   :group 'cfw-org
   :version "24.1"
