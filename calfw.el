@@ -198,6 +198,11 @@ for example `cfw:read-date-command-simple' or `cfw:org-read-date-command'."
   :group 'cfw
   :type 'string)
 
+(defcustom cfw:display-calendar-holidays t
+  "If not-nil, calfw displays holidays."
+  :group 'cfw
+  :type 'boolean)
+
 ;;; Faces
 
 (defface cfw:face-title
@@ -1831,9 +1836,10 @@ where `event-fun' is applied if the element is a `cfw:event'."
 
 (defun cfw:view-model-make-holidays (date)
   "[internal] Return an alist of holidays around DATE."
-  (let ((displayed-month (calendar-extract-month date))
-        (displayed-year (calendar-extract-year date)))
-    (calendar-holiday-list)))
+  (if cfw:display-calendar-holidays
+      (let ((displayed-month (calendar-extract-month date))
+            (displayed-year (calendar-extract-year date)))
+        (calendar-holiday-list))))
 
 (defun cfw:view-model-make-common-data (model begin-date end-date &optional lst)
   "[internal] Return an alist of common data for the model."
