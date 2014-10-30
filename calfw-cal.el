@@ -89,11 +89,33 @@
 (defun cfw:cal-schedule-period-to-calendar (begin end)
   "[internal] Return calfw calendar items between BEGIN and END
 from the diary schedule data."
-  (loop
-   for (date string . rest) in (diary-list-entries
-                                begin
-                                (1+ (cfw:days-diff begin end)) t)
-   collect (cfw:cal-entry-to-event date string)))
+  (let ((all (diary-list-entries
+	      begin
+	      (1+ (cfw:days-diff begin end)) t))
+	non-periods
+	periods)
+    (while all
+      (let ((date-spec (caddar all)))
+	(if (string-match "%%(diary-block" date-spec)
+	    (or (assoc date-spec periods)
+		(setq periods (acons date-spec (cadar all) periods)))
+	  (setq non-periods (cons (car all) non-periods))))
+      (setq all (cdr all)))
+    (append
+     (loop
+      for (date string . rest) in non-periods
+      collect (cfw:cal-entry-to-event date string))
+     (list (cons 'periods
+		 (map 'list (function (lambda (period)
+				       (let ((spec (read (substring (car period) 2))))
+					 (list (list (nth 1 spec)
+						     (nth 2 spec)
+						     (nth 3 spec))
+					       (list (nth 4 spec)
+						     (nth 5 spec)
+						     (nth 6 spec))
+					       (cdr period)))))
+		      periods))))))
 
 (defvar cfw:cal-schedule-map
   (cfw:define-keymap
