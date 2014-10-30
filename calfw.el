@@ -1165,10 +1165,6 @@ contents list."
 calling functions `:data' function."
   (cond
    ((null sources) nil)
-   ((= 1 (length sources))
-    (cfw:contents-put-source
-     (funcall (cfw:source-data (car sources)) begin end)
-     (car sources)))
    (t
     (loop for s in sources
           for f = (cfw:source-data s)
