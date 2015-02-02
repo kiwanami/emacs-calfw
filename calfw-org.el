@@ -331,7 +331,9 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
         (loop for pos in pos-lst
               do (goto-char pos)
               for t-obj =  (org-element-timestamp-parser)
-              for h-obj = (org-element-headline-parser nil t)
+              for h-obj = (progn
+                            (org-back-to-heading t)
+                            (org-element-headline-parser (point-max) t))
               for h-beg  = (cfw:org-get-head-beg)
               for event = (cfw:org-convert-event file h-obj t-obj h-beg)
               for ts-type = (org-element-property :type t-obj)
