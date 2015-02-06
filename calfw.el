@@ -2736,17 +2736,18 @@ this function returns nil."
 ;; buffer
 
 (defun* cfw:open-calendar-buffer
-  (&key date buffer custom-map contents-sources annotation-sources view sorter)
+    (&key date buffer custom-map contents-sources annotation-sources view sorter)
   "Open a calendar buffer simply.
 DATE is initial focus date. If it is nil, today is selected
 initially.  This function uses the function
 `cfw:create-calendar-component-buffer' internally."
-  (interactive)
-  (let ((cp (cfw:create-calendar-component-buffer
-             :date date :buffer buffer :custom-map custom-map
-             :contents-sources contents-sources
-             :annotation-sources annotation-sources :view view :sorter sorter)))
-    (switch-to-buffer (cfw:cp-get-buffer cp))))
+  (save-excursion
+    (interactive)
+    (let ((cp (cfw:create-calendar-component-buffer
+               :date date :buffer buffer :custom-map custom-map
+               :contents-sources contents-sources
+               :annotation-sources annotation-sources :view view :sorter sorter)))
+      (switch-to-buffer (cfw:cp-get-buffer cp)))))
 
 (defun* cfw:create-calendar-component-buffer
   (&key date buffer custom-map contents-sources annotation-sources view sorter)
