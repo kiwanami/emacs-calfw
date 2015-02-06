@@ -134,8 +134,8 @@ from the diary schedule data."
 
 (defun cfw:open-diary-calendar ()
   "Open the diary schedule calendar in the new buffer."
+  (interactive)
   (save-excursion
-    (interactive)
     (let* ((source1 (cfw:cal-create-source))
            (cp (cfw:create-calendar-component-buffer
                 :view 'month

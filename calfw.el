@@ -2741,8 +2741,8 @@ this function returns nil."
 DATE is initial focus date. If it is nil, today is selected
 initially.  This function uses the function
 `cfw:create-calendar-component-buffer' internally."
+  (interactive)
   (save-excursion
-    (interactive)
     (let ((cp (cfw:create-calendar-component-buffer
                :date date :buffer buffer :custom-map custom-map
                :contents-sources contents-sources
