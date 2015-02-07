@@ -418,13 +418,14 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
 (defun cfw:open-org-calendar ()
   "Open an org schedule calendar in the new buffer."
   (interactive)
-  (let* ((source1 (cfw:org-create-source))
-         (cp (cfw:create-calendar-component-buffer
-              :view 'month
-              :contents-sources (list source1)
-              :custom-map cfw:org-schedule-map
-              :sorter 'cfw:org-schedule-sorter)))
-    (switch-to-buffer (cfw:cp-get-buffer cp))))
+  (save-excursion
+    (let* ((source1 (cfw:org-create-source))
+           (cp (cfw:create-calendar-component-buffer
+                :view 'month
+                :contents-sources (list source1)
+                :custom-map cfw:org-schedule-map
+                :sorter 'cfw:org-schedule-sorter)))
+      (switch-to-buffer (cfw:cp-get-buffer cp)))))
 
 (defun cfw:org-from-calendar ()
   "Do something. This command should be executed on the calfw calendar."

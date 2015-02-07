@@ -272,10 +272,11 @@ events have not been supported yet."
   "Simple calendar interface. This command displays just one
 calendar source."
   (interactive)
-  (let ((cp (cfw:create-calendar-component-buffer
-             :view 'month
-             :contents-sources
-             (list (cfw:ical-create-source "ical" url "#2952a3")))))
+  (save-excursion
+    (let ((cp (cfw:create-calendar-component-buffer
+               :view 'month
+               :contents-sources
+               (list (cfw:ical-create-source "ical" url "#2952a3"))))))
     (switch-to-buffer (cfw:cp-get-buffer cp))))
 
 ;; (progn (eval-current-buffer) (cfw:open-ical-calendar "./ics/test.ics"))

@@ -135,12 +135,13 @@ from the diary schedule data."
 (defun cfw:open-diary-calendar ()
   "Open the diary schedule calendar in the new buffer."
   (interactive)
-  (let* ((source1 (cfw:cal-create-source))
-         (cp (cfw:create-calendar-component-buffer
-              :view 'month
-              :custom-map cfw:cal-schedule-map
-              :contents-sources (list source1))))
-    (switch-to-buffer (cfw:cp-get-buffer cp))))
+  (save-excursion
+    (let* ((source1 (cfw:cal-create-source))
+           (cp (cfw:create-calendar-component-buffer
+                :view 'month
+                :custom-map cfw:cal-schedule-map
+                :contents-sources (list source1))))
+      (switch-to-buffer (cfw:cp-get-buffer cp)))))
 
 (defun cfw:cal-from-calendar ()
   "Insert a new item. This command should be executed on the calfw calendar."

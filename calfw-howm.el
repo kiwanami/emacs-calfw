@@ -132,13 +132,14 @@ from the howm schedule data."
 (defun cfw:open-howm-calendar ()
   "Open a howm schedule calendar in the new buffer."
   (interactive)
-  (let ((cp (cfw:create-calendar-component-buffer
-             :custom-map cfw:howm-schedule-map
-             :view 'month
-             :contents-sources (append (list (cfw:howm-create-source))
-                                       cfw:howm-schedule-contents)
-             :annotation-sources cfw:howm-annotation-contents)))
-    (switch-to-buffer (cfw:cp-get-buffer cp))))
+  (save-excursion
+    (let ((cp (cfw:create-calendar-component-buffer
+               :custom-map cfw:howm-schedule-map
+               :view 'month
+               :contents-sources (append (list (cfw:howm-create-source))
+                                         cfw:howm-schedule-contents)
+               :annotation-sources cfw:howm-annotation-contents)))
+      (switch-to-buffer (cfw:cp-get-buffer cp)))))
 
 (defun cfw:howm-from-calendar ()
   "Display a howm schedule summary of the date on the cursor,
