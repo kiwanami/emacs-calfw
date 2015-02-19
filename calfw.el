@@ -1901,7 +1901,7 @@ this function re-calculate and return the adjusted width."
    ((eql (char-width cfw:fchar-horizontal-line) 1) width)
    (t (- width (% width (char-width cfw:fchar-horizontal-line))))))
 
-(defun cfw:view-month-calc-param (dest)
+(defun cfw:view-month-calc-param (dest total-weeks)
   "[internal] Calculate cell size from the reference size and
 return an alist of rendering parameters."
   (let*
@@ -1911,7 +1911,7 @@ return an alist of rendering parameters."
        (junctions-width (* (char-width cfw:fchar-junction) 8)) ; weekdays+1
        (cell-width  (cfw:round-cell-width
                      (max 5 (/ (- win-width junctions-width) 7)))) ; weekdays
-       (cell-height (max 2 (/ win-height 6))) ; max weeks = 6
+       (cell-height (max 2 (/ win-height total-weeks))) ; max weeks = 6
        (total-width (+ (* cell-width cfw:week-days) junctions-width)))
     `((cell-width . ,cell-width)
       (cell-height . ,cell-height)
@@ -1921,11 +1921,13 @@ return an alist of rendering parameters."
 (defun cfw:view-month (component)
   "[internal] Render monthly calendar view."
   (let* ((dest (cfw:component-dest component))
-         (param (cfw:render-append-parts (cfw:view-month-calc-param dest)))
+         (model (cfw:view-month-model (cfw:component-model component)))
+         (total-weeks (length (cfw:k 'weeks model)))
+         (param (cfw:render-append-parts
+                 (cfw:view-month-calc-param dest total-weeks)))
          (total-width (cfw:k 'total-width param))
          (EOL (cfw:k 'eol param)) (VL (cfw:k 'vl param))
-         (hline (cfw:k 'hline param)) (cline (cfw:k 'cline param))
-         (model (cfw:view-month-model (cfw:component-model component))))
+         (hline (cfw:k 'hline param)) (cline (cfw:k 'cline param)))
     ;; update model
     (setf (cfw:component-model component) model)
     ;; header
