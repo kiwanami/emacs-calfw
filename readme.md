@@ -22,7 +22,9 @@ Many informations are displayed in the Emacs buffer.
 To use this program, locate this file to load-path directory,
 and add the following code to your .emacs.
 
-    (require 'calfw)
+```el
+(require 'calfw)
+```
 
 Executing the command `cfw:open-calendar-buffer', switch to the calendar buffer.
 You can navigate the date like calendar.el.
@@ -40,32 +42,35 @@ This program gets the holidays using the function
 
 In the calendar buffer and region, you can use following key bindings:
 
-<table>
-  <tr><th>Navigation             </th><th></th></tr>
-  <tr><td>  [left], b, h         </td><td> Previous day</td></tr>
-  <tr><td>  [right], f, l        </td><td> Next day</td></tr>
-  <tr><td>  [up], p, k           </td><td> Previous week</td></tr>
-  <tr><td>  [down], n, j         </td><td> Next week</td></tr>
-  <tr><td>  ^                    </td><td> Week begin</td></tr>
-  <tr><td>  $                    </td><td> Week end</td></tr>
-  <tr><td>  [home]               </td><td> First date in this month</td></tr>
-  <tr><td>  [end]                </td><td> Last date in this month</td></tr>
-  <tr><td>  M-v, [PgUp], &lt;    </td><td> Previous month</td></tr>
-  <tr><td>  C-v, [PgDown], &gt;  </td><td> Next month</td></tr>
-  <tr><td>  t                    </td><td> Today</td></tr>
-  <tr><td>  g                    </td><td> Absolute date (YYYY/MM/DD)</td></tr>
-  <tr><td>  TAB                  </td><td> Next item in a day</td></tr>
-  <tr><th>Changing View          </th><th></th></tr>
-  <tr><td>  M                    </td><td> Month view</td></tr>
-  <tr><td>  W                    </td><td> 1 Week view</td></tr>
-  <tr><td>  T                    </td><td> 2 Week view</td></tr>
-  <tr><td>  D                    </td><td> Day view</td></tr>
-  <tr><th>Operation              </th><th></th></tr>
-  <tr><td>  r                    </td><td> Refresh data and re-draw contents</td></tr>
-  <tr><td>  SPC                  </td><td> Pop-up detail buffer (like Quicklook in Mac)</td></tr>
-  <tr><td>  RET, [click]         </td><td> Jump (howm, orgmode)</td></tr>
-  <tr><td>  q                    </td><td> Bury buffer</td></tr>
-</table>
+| Navigation          |                                              | 
+|---------------------|----------------------------------------------| 
+| [left], b, h        | Previous day                                 |
+| [right], f, l       | Next day                                     |
+| [up], p, k          | Previous week                                |
+| [down], n, j        | Next week                                    |
+| ^                   | Week begin                                   |
+| $                   | Week end                                     |
+| [home]              | First date in this month                     |
+| [end]               | Last date in this month                      |
+| M-v, [PgUp], &lt;   | Previous month                               |
+| C-v, [PgDown], &gt; | Next month                                   |
+| t                   | Today                                        |
+| g                   | Absolute date (YYYY/MM/DD)                   |
+| TAB                 | Next item in a day                           |
+
+| Changing View       |                                              |
+|---------------------|----------------------------------------------|
+| M                   | Month view                                   |
+| W                   | 1 Week view                                  |
+| T                   | 2 Week view                                  |
+| D                   | Day view                                     |
+
+| Operation           |                                              |
+|---------------------|----------------------------------------------|
+| r                   | Refresh data and re-draw contents            |
+| SPC                 | Pop-up detail buffer (like Quicklook in Mac) |
+| RET, [click]        | Jump (howm, orgmode)                         |
+| q                   | Bury buffer                                  |
 
 The buttons on the toolbar can be clicked.
 
@@ -82,20 +87,25 @@ Following programs are also useful:
 
 ### For howm users:
 
-    (eval-after-load "howm-menu" '(progn
-      (require 'calfw-howm)
-      (cfw:install-howm-schedules)
-      (define-key howm-mode-map (kbd "M-C") 'cfw:open-howm-calendar)
-    ))
-
+```el
+(eval-after-load "howm-menu" '(progn
+  (require 'calfw-howm)
+  (cfw:install-howm-schedules)
+  (define-key howm-mode-map (kbd "M-C") 'cfw:open-howm-calendar)
+))
+```
 
 If you are using Elscreen, here is useful.
 
-    (define-key howm-mode-map (kbd "M-C") 'cfw:elscreen-open-howm-calendar)
+```el
+(define-key howm-mode-map (kbd "M-C") 'cfw:elscreen-open-howm-calendar)
+```
 
 You can display a calendar in your howm menu file.
 
-    %here%(cfw:howm-schedule-inline)
+```
+%here%(cfw:howm-schedule-inline)
+```
 
 ![howm menu embedding](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-1F941.png?width=450)
 
@@ -111,9 +121,10 @@ Then, M-x cfw:open-org-calendar.
 
 Here is a minimum sample code:
 
-
-    (require 'calfw-ical)
-    (cfw:open-ical-calendar "http://www.google.com/calendar/ical/.../basic.ics")
+```el
+(require 'calfw-ical)
+(cfw:open-ical-calendar "http://www.google.com/calendar/ical/.../basic.ics")
+```
 
 ![Google Calendar and calfw-ical](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-5E808.png?width=450)
 
@@ -121,7 +132,9 @@ Here is a minimum sample code:
 
 Here is a minimum sample code:
 
-    (require 'calfw-cal)
+```el
+(require 'calfw-cal)
+```
 
 Then, M-x cfw:open-diary-calendar.
 
@@ -132,22 +145,24 @@ Using the function `cfw:open-calendar-buffer` is the general way to display the 
 
 Here is the sample code:
 
-    (require 'calfw-cal)
-    (require 'calfw-ical)
-    (require 'calfw-howm)
-    (require 'calfw-org)
-    
-    (defun my-open-calendar ()
-      (interactive)
-      (cfw:open-calendar-buffer
-       :contents-sources
-       (list
-        (cfw:org-create-source "Green")  ; orgmode source
-        (cfw:howm-create-source "Blue")  ; howm source
-        (cfw:cal-create-source "Orange") ; diary source
-        (cfw:ical-create-source "Moon" "~/moon.ics" "Gray")  ; ICS source1
-        (cfw:ical-create-source "gcal" "https://..../basic.ics" "IndianRed") ; google calendar ICS
-       ))) 
+```el
+(require 'calfw-cal)
+(require 'calfw-ical)
+(require 'calfw-howm)
+(require 'calfw-org)
+
+(defun my-open-calendar ()
+  (interactive)
+  (cfw:open-calendar-buffer
+   :contents-sources
+   (list
+    (cfw:org-create-source "Green")  ; orgmode source
+    (cfw:howm-create-source "Blue")  ; howm source
+    (cfw:cal-create-source "Orange") ; diary source
+    (cfw:ical-create-source "Moon" "~/moon.ics" "Gray")  ; ICS source1
+    (cfw:ical-create-source "gcal" "https://..../basic.ics" "IndianRed") ; google calendar ICS
+   ))) 
+```
 
 The function `cfw:open-calendar-buffer` receives schedules sources via
 the named argument `:contents-sources`.
@@ -170,17 +185,19 @@ The calfw uses some customization variables in the calendar.el.
 
 Here is a customization code:
 
-    ;; Month
-    (setq calendar-month-name-array
-      ["January" "February" "March"     "April"   "May"      "June"
-       "July"    "August"   "September" "October" "November" "December"])
-    
-    ;; Week days
-    (setq calendar-day-name-array
-          ["Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday"])
-    
-    ;; First day of the week
-    (setq calendar-week-start-day 0) ; 0:Sunday, 1:Monday
+```el
+;; Month
+(setq calendar-month-name-array
+  ["January" "February" "March"     "April"   "May"      "June"
+   "July"    "August"   "September" "October" "November" "December"])
+
+;; Week days
+(setq calendar-day-name-array
+      ["Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday"])
+
+;; First day of the week
+(setq calendar-week-start-day 0) ; 0:Sunday, 1:Monday
+```
 
 ### Faces
 
@@ -188,25 +205,27 @@ One can customize the faces.
 
 Here is a template code for face customization:
 
-    (custom-set-faces
-     '(cfw:face-title ((t (:foreground "#f0dfaf" :weight bold :height 2.0 :inherit variable-pitch))))
-     '(cfw:face-header ((t (:foreground "#d0bf8f" :weight bold))))
-     '(cfw:face-sunday ((t :foreground "#cc9393" :background "grey10" :weight bold)))
-     '(cfw:face-saturday ((t :foreground "#8cd0d3" :background "grey10" :weight bold)))
-     '(cfw:face-holiday ((t :background "grey10" :foreground "#8c5353" :weight bold)))
-     '(cfw:face-grid ((t :foreground "DarkGrey")))
-     '(cfw:face-default-content ((t :foreground "#bfebbf")))
-     '(cfw:face-periods ((t :foreground "cyan")))
-     '(cfw:face-day-title ((t :background "grey10")))
-     '(cfw:face-default-day ((t :weight bold :inherit cfw:face-day-title)))
-     '(cfw:face-annotation ((t :foreground "RosyBrown" :inherit cfw:face-day-title)))
-     '(cfw:face-disable ((t :foreground "DarkGray" :inherit cfw:face-day-title)))
-     '(cfw:face-today-title ((t :background "#7f9f7f" :weight bold)))
-     '(cfw:face-today ((t :background: "grey10" :weight bold)))
-     '(cfw:face-select ((t :background "#2f2f2f")))
-     '(cfw:face-toolbar ((t :foreground "Steelblue4" :background "Steelblue4")))
-     '(cfw:face-toolbar-button-off ((t :foreground "Gray10" :weight bold)))
-     '(cfw:face-toolbar-button-on ((t :foreground "Gray50" :weight bold))))
+```el
+(custom-set-faces
+ '(cfw:face-title ((t (:foreground "#f0dfaf" :weight bold :height 2.0 :inherit variable-pitch))))
+ '(cfw:face-header ((t (:foreground "#d0bf8f" :weight bold))))
+ '(cfw:face-sunday ((t :foreground "#cc9393" :background "grey10" :weight bold)))
+ '(cfw:face-saturday ((t :foreground "#8cd0d3" :background "grey10" :weight bold)))
+ '(cfw:face-holiday ((t :background "grey10" :foreground "#8c5353" :weight bold)))
+ '(cfw:face-grid ((t :foreground "DarkGrey")))
+ '(cfw:face-default-content ((t :foreground "#bfebbf")))
+ '(cfw:face-periods ((t :foreground "cyan")))
+ '(cfw:face-day-title ((t :background "grey10")))
+ '(cfw:face-default-day ((t :weight bold :inherit cfw:face-day-title)))
+ '(cfw:face-annotation ((t :foreground "RosyBrown" :inherit cfw:face-day-title)))
+ '(cfw:face-disable ((t :foreground "DarkGray" :inherit cfw:face-day-title)))
+ '(cfw:face-today-title ((t :background "#7f9f7f" :weight bold)))
+ '(cfw:face-today ((t :background: "grey10" :weight bold)))
+ '(cfw:face-select ((t :background "#2f2f2f")))
+ '(cfw:face-toolbar ((t :foreground "Steelblue4" :background "Steelblue4")))
+ '(cfw:face-toolbar-button-off ((t :foreground "Gray10" :weight bold)))
+ '(cfw:face-toolbar-button-on ((t :foreground "Gray50" :weight bold))))
+```
 
 ### Grid frame
 
@@ -214,35 +233,37 @@ Users can have nice unicode grid frame. However, in the some environment, the Em
 
 Grid setting example:
 
-    ;; Default setting
-    (setq cfw:fchar-junction ?+
-          cfw:fchar-vertical-line ?|
-          cfw:fchar-horizontal-line ?-
-          cfw:fchar-left-junction ?+
-          cfw:fchar-right-junction ?+
-          cfw:fchar-top-junction ?+
-          cfw:fchar-top-left-corner ?+
-          cfw:fchar-top-right-corner ?+ )
-    
-    ;; Unicode characters
-    (setq cfw:fchar-junction ?╋
-          cfw:fchar-vertical-line ?┃
-          cfw:fchar-horizontal-line ?━
-          cfw:fchar-left-junction ?┣
-          cfw:fchar-right-junction ?┫
-          cfw:fchar-top-junction ?┯
-          cfw:fchar-top-left-corner ?┏
-          cfw:fchar-top-right-corner ?┓)
-          
-    ;; Another unicode chars
-    (setq cfw:fchar-junction ?╬
-          cfw:fchar-vertical-line ?║
-          cfw:fchar-horizontal-line ?═
-          cfw:fchar-left-junction ?╠
-          cfw:fchar-right-junction ?╣
-          cfw:fchar-top-junction ?╦
-          cfw:fchar-top-left-corner ?╔
-          cfw:fchar-top-right-corner ?╗)
+```el
+;; Default setting
+(setq cfw:fchar-junction ?+
+      cfw:fchar-vertical-line ?|
+      cfw:fchar-horizontal-line ?-
+      cfw:fchar-left-junction ?+
+      cfw:fchar-right-junction ?+
+      cfw:fchar-top-junction ?+
+      cfw:fchar-top-left-corner ?+
+      cfw:fchar-top-right-corner ?+ )
+
+;; Unicode characters
+(setq cfw:fchar-junction ?╋
+      cfw:fchar-vertical-line ?┃
+      cfw:fchar-horizontal-line ?━
+      cfw:fchar-left-junction ?┣
+      cfw:fchar-right-junction ?┫
+      cfw:fchar-top-junction ?┯
+      cfw:fchar-top-left-corner ?┏
+      cfw:fchar-top-right-corner ?┓)
+      
+;; Another unicode chars
+(setq cfw:fchar-junction ?╬
+      cfw:fchar-vertical-line ?║
+      cfw:fchar-horizontal-line ?═
+      cfw:fchar-left-junction ?╠
+      cfw:fchar-right-junction ?╣
+      cfw:fchar-top-junction ?╦
+      cfw:fchar-top-left-corner ?╔
+      cfw:fchar-top-right-corner ?╗)
+```
 
 ### Line breaking
 
@@ -268,39 +289,18 @@ Defining the `cfw:source` object, one can extend calfw calendar source.
 
 The struct `cfw:source` is a simple data type defined by cl-defstruct.
 
-Here is the details of the slot members of cfw:source.
+Here is the details of the slot members of `cfw:source`.
 
-<table>
-<tr><th> slot name       </th><th> 
-   description </th></tr>
-<tr><td> name            </td><td>
-   [required] Source name. This name is shown at the status bar.
-</td></tr>
-<tr><td> data            </td><td>
-   [required] Data function which returns calendar contents.
-   The function details are described in the next section.
-</td></tr>
-<tr><td> update          </td><td>
-   [option] Update function. Calfw calls this function when this source needs to refresh the data.
-</td></tr>
-<tr><td> color           </td><td>
-   [option] Color string for this source. 
-   Color names those are shown by `M-x list-colors-display` or RGB hex format like "#abcdef".
-</td></tr>
-<tr><td> period-fgcolor  </td><td>
-   [option] Foreground color for period items. The default color is white or black.
-</td></tr>
-<tr><td> period-bgcolor  </td><td>
-   [option] Background color for period items. The default color is `cfw:source-color`.
-</td></tr>
-<tr><td> opt-face        </td><td>
-   [option] Additional options for the normal item face.
-   Ex. `:opt-face '(:weight bold)`
-</td></tr>
-<tr><td> opt-period-face </td><td> 
-  [option] Additional options for the period item face.
-</td></tr>
-</table>
+| slot name       | description                                                                                                                        |
+|-----------------|------------------------------------------------------------------------------------------------------------------------------------ |
+| name            | [required] Source name. This name is shown at the status bar.                                                                      |
+| data            | [required] Data function which returns calendar contents. The function details are described in the next section.                  |
+| update          | [option] Update function. Calfw calls this function when this source needs to refresh the data.                                    |
+| color           | [option] Color string for this source.  Color names those are shown by `M-x list-colors-display` or RGB hex format like "#abcdef". |
+| period-fgcolor  | [option] Foreground color for period items. The default color is white or black.                                                   |
+| period-bgcolor  | [option] Background color for period items. The default color is `cfw:source-color`.                                               |
+| opt-face        | [option] Additional options for the normal item face.  Ex. `:opt-face '(:weight bold)`                                             |
+| opt-period-face | [option] Additional options for the period item face.                                                                              |
 
 Only `name` and `data` slots are essential. Many slots are visual options.
 
@@ -316,19 +316,21 @@ Here is a simple example.
 
 cfw:source-data example1:
 
-    ;; cfw:source-data example
-    (defun sample-data1 (b e)
-      '(
-        ((1  1 2011) . ("item1"))
-        ((1 10 2011) . ("item2-1" "item2-2"))
-        ))
-    
-    (cfw:open-calendar-buffer
-      :date (cfw:date 1 1 2011)
-      :contents-sources
-       (list 
-         (make-cfw:source
-          :name "test1" :data 'sample-data1)))
+```el
+;; cfw:source-data example
+(defun sample-data1 (b e)
+  '(
+    ((1  1 2011) . ("item1"))
+    ((1 10 2011) . ("item2-1" "item2-2"))
+    ))
+
+(cfw:open-calendar-buffer
+  :date (cfw:date 1 1 2011)
+  :contents-sources
+   (list 
+     (make-cfw:source
+      :name "test1" :data 'sample-data1)))
+```
 
 Evaluating this code in the scratch buffer, following result is displayed.
 
@@ -342,22 +344,24 @@ Period items are little different. One period item is specified by `([start date
 
 cfw:source-data example2:
 
-    ;; cfw:source-data period items
-    (defun sample-data2 (b e)
-      '(
-        ((1  8 2011) . ("item1"))
-         (periods
-          ((1 8 2011) (1 9 2011) "period item")
-          ((1 11 2011) (1 12 2011) "next item"))
-        ))
-    ;; (A . (B C) ) is equivalent to (A B C)
-    
-    (cfw:open-calendar-buffer
-      :date (cfw:date 1 1 2011)
-      :contents-sources
-       (list 
-         (make-cfw:source
-          :name "test2" :data 'sample-data2)))
+```el
+;; cfw:source-data period items
+(defun sample-data2 (b e)
+  '(
+    ((1  8 2011) . ("item1"))
+     (periods
+      ((1 8 2011) (1 9 2011) "period item")
+      ((1 11 2011) (1 12 2011) "next item"))
+    ))
+;; (A . (B C) ) is equivalent to (A B C)
+
+(cfw:open-calendar-buffer
+  :date (cfw:date 1 1 2011)
+  :contents-sources
+   (list 
+     (make-cfw:source
+      :name "test2" :data 'sample-data2)))
+```
 
 Evaluating this code in the scratch buffer, following result is displayed.
 
@@ -405,9 +409,11 @@ Let's try a demonstration. Evaluate this code in your scratch buffer.
 
 Region destination example:
 
-    ;; Evaluate this code in the scratch buffer
-    (require 'calfw)
-    (cfw:create-calendar-component-region :height 10)
+```el
+;; Evaluate this code in the scratch buffer
+(require 'calfw)
+(cfw:create-calendar-component-region :height 10)
+```
 
 Then, the calendar view will be embedded in the scratch buffer like the following screenshot. You can navigate the calfw view in the buffer. Undoing for the some times, you can remove the calfw view.
 
@@ -550,4 +556,4 @@ See the calfw-howm.el code for more details.
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2011-10-10 17:08:30 sakurai>
+Time-stamp: <2015-02-25 11:50:26 sakurai>
