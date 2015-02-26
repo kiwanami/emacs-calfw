@@ -404,7 +404,7 @@ In the above examples, the dates of the schedule items are fixed. The actual sou
 The `cfw:event` struct:
 
 | slot name     | description                                 |
-|---------------+---------------------------------------------|
+|---------------|---------------------------------------------|
 | `title`       | event title [string]                        |
 | `start-date`  | start date of the event [cfw:date]          |
 | `start-time`  | start time of the event (optional)          |
@@ -420,7 +420,7 @@ The framework has several formatting functions for `cfw:event` instances.
 The functions are used by the calfw plugins (cal,ical, etc) to display in a common way.
 
 | Format function             | Description                                                 |
-|-----------------------------+-------------------------------------------------------------|
+|-----------------------------|-------------------------------------------------------------|
 | `cfw:event-overview`        | To get an overview of the event (month, 2-week & week view) |
 | `cfw:event-days-overview`   | Overview in day-view.                                       |
 | `cfw:event-period-overview` | Overview of periods (same for all views)                    |
@@ -439,6 +439,13 @@ The formatting can be customized by the user with several formatting strings:
 - `cfw:event-format-end-time`
 - `cfw:event-format-location`
 - `cfw:event-format-description`
+
+#### Examples
+
+- [calfw-git.el](https://gist.github.com/kiwanami/d77d9669440f3336bb9d)
+    - Displaying git commit history items in calfw calendar view
+- [calfw-syobocal.el](https://gist.github.com/kiwanami/1fd257fc1e8907d4d92e)
+    - Retrieving schedule items via Web API and displaying them in calfw calendar view
 
 #### Another way to define schedule items (legacy method)
 
@@ -670,4 +677,4 @@ See the calfw-howm.el code for more details.
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2015-02-26 12:44:30 sakurai>
+Time-stamp: <2015-02-26 22:10:37 sakurai>
