@@ -1,9 +1,11 @@
 ;;; calfw.el --- Calendar view framework on Emacs
 
-;; Copyright (C) 2011  SAKURAI Masashi
+;; Copyright (C) 2011,2012,2013,2014,2015  SAKURAI Masashi
 
 ;; Author: SAKURAI Masashi <m.sakurai at kiwanami.net>
+;; Version: 1.4
 ;; Keywords: calendar
+;; URL: https://github.com/kiwanami/emacs-calfw
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -44,10 +46,10 @@
 
 ;;; Add-ons:
 
-;; Following programs are also useful:
 ;; - calfw-howm.el : Display howm schedules.
 ;; - calfw-ical.el : Display schedules of the iCalendar format.
 ;; - calfw-org.el  : Display orgmode schedules.
+;; - calfw-cal.el  : Display emacs diary schedules.
 
 ;;; Code:
 
