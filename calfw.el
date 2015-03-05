@@ -336,6 +336,7 @@ for example `cfw:read-date-command-simple' or `cfw:org-read-date-command'."
 
 (defun cfw:tp (text prop value)
   "[internal] Put a text property to the entire text string."
+  (unless (stringp text) (setq text (format "%s" text)))
   (when (< 0 (length text))
     (put-text-property 0 (length text) prop value text))
   text)
@@ -371,6 +372,14 @@ KEYMAP-LIST is a source list like ((key . command) ... )."
   (if (string-match "^[ \t\n\r]*\\(.*?\\)[ \t\n\r]*$" str)
       (match-string 1 str)
     str))
+
+(defun cfw:flatten (lst &optional revp)
+  (loop with ret = nil
+        for i in lst
+        do (setq ret (if (consp i)
+                         (nconc (cfw:flatten i t) ret)
+                       (cons i ret)))
+        finally return (if revp ret (nreverse ret))))
 
 
 
@@ -1192,7 +1201,7 @@ calling functions `:data' function."
           (destructuring-bind (begin end . summaries) period
             (list begin end
                   (cfw:tp (if (listp summaries)
-                              (mapconcat 'identity summaries " ")
+                              (mapconcat 'identity (cfw:flatten summaries) " ")
                             summaries)
                           'cfw:source source)))))))
 
