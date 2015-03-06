@@ -276,8 +276,8 @@ calendar source."
     (let ((cp (cfw:create-calendar-component-buffer
                :view 'month
                :contents-sources
-               (list (cfw:ical-create-source "ical" url "#2952a3"))))))
-    (switch-to-buffer (cfw:cp-get-buffer cp))))
+               (list (cfw:ical-create-source "ical" url "#2952a3")))))
+      (switch-to-buffer (cfw:cp-get-buffer cp)))))
 
 ;; (progn (eval-current-buffer) (cfw:open-ical-calendar "./ics/test.ics"))
 
