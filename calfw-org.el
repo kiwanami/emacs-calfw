@@ -35,6 +35,7 @@
 (require 'org-agenda)
 (require 'org-element)
 (require 'org-capture)
+(require 'google-maps nil t)
 
 (defgroup cfw-org nil
   "Options about calfw-org."
@@ -86,7 +87,8 @@ different agenda files from the default agenda ones.")
     (marker (get-text-property (point) 'org-marker))
     (link   (get-text-property (point) 'org-link))
     (file   (get-text-property (point) 'cfw:org-file))
-    (beg    (get-text-property (point) 'cfw:org-h-beg)))
+    (beg    (get-text-property (point) 'cfw:org-h-beg))
+    (loc    (get-text-property (point) 'cfw:org-loc)))
     (when link
       (org-open-link-from-string link))
     (when (and marker (marker-buffer marker))
@@ -101,6 +103,13 @@ different agenda files from the default agenda ones.")
       (goto-char beg)
       (org-cycle))))
 
+(defun cfw:org-jump-map ()
+  "Jump to the clicked org item."
+  (interactive)
+  (let ((loc    (get-text-property (point) 'cfw:org-loc)))
+    (when loc
+      (google-maps loc))))
+
 (defun cfw:org-clean-exit ()
   "Close buffers opened by calfw-org before closing Calendar Framework."
   (interactive)
@@ -113,6 +122,7 @@ different agenda files from the default agenda ones.")
     (define-key map [mouse-1] 'cfw:org-onclick)
     (define-key map (kbd "RET") 'cfw:org-onclick)
     (define-key map (kbd "C-c C-o") 'cfw:org-onclick)
+    (define-key map (kbd "m") 'cfw:org-jump-map)
     map)
   "key map on the calendar item text.")
 
@@ -265,7 +275,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
          (t (string-lessp text1 text2))))
     (error (string-lessp text1 text2))))
 
-(defun cfw:org-format-title (file h-obj t-obj h-beg)
+(defun cfw:org-format-title (file h-obj t-obj h-beg loc)
   (propertize
   (concat
    (when  (org-element-property :hour-start t-obj)
@@ -276,7 +286,8 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
   'keymap cfw:org-text-keymap
   'display nil
   'cfw:org-file file
-  'cfw:org-h-beg h-beg ))
+  'cfw:org-h-beg h-beg
+  'cfw:org-loc loc))
 
 (defun cfw:org-format-date (t-obj lst)
   (mapcar
@@ -297,14 +308,15 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
   (let ((sdate '(:month-start :day-start :year-start))
         (stime '(:hour-start :minute-start))
         (edate '(:month-end :day-end :year-end))
-        (etime '(:hour-end :minute-end)))
+        (etime '(:hour-end :minute-end))
+        (loc (org-element-property :LOCATION h-obj)))
     (make-cfw:event
      :start-date  (cfw:org-format-date t-obj sdate)
      :start-time  (cfw:org-filter-datetime t-obj stime)
      :end-date    (cfw:org-filter-datetime t-obj edate)
      :end-time    (cfw:org-filter-datetime t-obj etime)
-     :title       (cfw:org-format-title file h-obj t-obj h-beg)
-     :location    (org-element-property :LOCATION h-obj)
+     :title       (cfw:org-format-title file h-obj t-obj h-beg loc)
+     :location    loc
      :description (if (org-element-property :contents-begin h-obj)
                       (replace-regexp-in-string
                        " *:PROPERTIES:\n  \\(.*\\(?:\n.*\\)*?\\) :END:\n" ""
