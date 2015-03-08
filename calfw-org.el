@@ -288,11 +288,6 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
       (cfw:org-format-date t-obj lst)
     nil))
 
-(defun cfw:org-get-head-beg ()
-(save-excursion
-  (re-search-backward org-heading-regexp nil t nil)
-  (point)))
-
 (defun cfw:org-convert-event (file h-obj t-obj h-beg)
   (let ((sdate '(:month-start :day-start :year-start))
         (stime '(:hour-start :minute-start))
@@ -334,7 +329,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
               for h-obj = (progn
                             (org-back-to-heading t)
                             (org-element-headline-parser (point-max) t))
-              for h-beg  = (cfw:org-get-head-beg)
+              for h-beg  = (point)
               for event = (cfw:org-convert-event file h-obj t-obj h-beg)
               for ts-type = (org-element-property :type t-obj)
               if (eq 'active-range ts-type)
