@@ -225,18 +225,18 @@ If TEXT does not have a range, return nil."
 	 (let ((date-string  (match-string 1 dotime))
 	       (extra (cfw:org-tp text 'extra)))
 	   (if (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra)
-	       (let* ((cur_day (string-to-int
+	       (let* ((cur-day (string-to-int
 				(match-string 1 extra)))
-		      (total_days (string-to-int
+		      (total-days (string-to-int
 				   (match-string 2 extra)))
-		      (start_date (time-subtract
+		      (start-date (time-subtract
 				   (org-read-date nil t date-string)
-				   (seconds-to-time (* 3600 24 (- cur_day 1)))))
-		      (end_date (time-add
+				   (seconds-to-time (* 3600 24 (- cur-day 1)))))
+		      (end-date (time-add
 				 (org-read-date nil t date-string)
-				 (seconds-to-time (* 3600 24 (- total_days cur_day))))))
-		 (list (calendar-gregorian-from-absolute (time-to-days start_date))
-		       (calendar-gregorian-from-absolute (time-to-days end_date)) text))
+				 (seconds-to-time (* 3600 24 (- total-days cur-day))))))
+		 (list (calendar-gregorian-from-absolute (time-to-days start-date))
+		       (calendar-gregorian-from-absolute (time-to-days end-date)) text))
 	     )))))
 
 (defun cfw:org-schedule-period-to-calendar (begin end)
