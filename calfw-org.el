@@ -221,7 +221,7 @@ If this function splits into a list of string, the calfw displays those string i
   "Return a range object (begin end text).
 If TEXT does not have a range, return nil."
   (let* ((dotime (cfw:org-tp text 'dotime)))
-    (and dotime	(string-match org-ts-regexp dotime)
+    (and (stringp dotime) (string-match org-ts-regexp dotime)
 	 (let ((date-string  (match-string 1 dotime))
 	       (extra (cfw:org-tp text 'extra)))
 	   (if (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra)
