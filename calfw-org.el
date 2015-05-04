@@ -220,15 +220,24 @@ If this function splits into a list of string, the calfw displays those string i
 (defun cfw:org-get-timerange (text)
   "Return a range object (begin end text).
 If TEXT does not have a range, return nil."
-  (let* ((dotime (cfw:org-tp text 'dotime))
-         (ps (and dotime (stringp dotime) (string-match org-tr-regexp dotime))))
-    (and ps
-         (let* ((s1 (match-string 1 dotime))
-                (s2 (match-string 2 dotime))
-                (d1 (time-to-days (org-time-string-to-time s1)))
-                (d2 (time-to-days (org-time-string-to-time s2))))
-           (list (calendar-gregorian-from-absolute d1)
-                 (calendar-gregorian-from-absolute d2) text)))))
+  (let* ((dotime (cfw:org-tp text 'dotime)))
+    (and (stringp dotime) (string-match org-ts-regexp dotime)
+	 (let ((date-string  (match-string 1 dotime))
+	       (extra (cfw:org-tp text 'extra)))
+	   (if (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra)
+	       (let* ((cur-day (string-to-int
+				(match-string 1 extra)))
+		      (total-days (string-to-int
+				   (match-string 2 extra)))
+		      (start-date (time-subtract
+				   (org-read-date nil t date-string)
+				   (seconds-to-time (* 3600 24 (- cur-day 1)))))
+		      (end-date (time-add
+				 (org-read-date nil t date-string)
+				 (seconds-to-time (* 3600 24 (- total-days cur-day))))))
+		 (list (calendar-gregorian-from-absolute (time-to-days start-date))
+		       (calendar-gregorian-from-absolute (time-to-days end-date)) text))
+	     )))))
 
 (defun cfw:org-schedule-period-to-calendar (begin end)
   "[internal] Return calfw calendar items between BEGIN and END
@@ -244,9 +253,11 @@ from the org schedule data."
    (unless (member range periods)
      (push range periods))
    else do
-   (setq contents (cfw:contents-add
-                   (cfw:org-normalize-date date)
-                   line contents))
+   ; dotime is not present if this event was already added as a timerange
+   (if (cfw:org-tp i 'dotime)
+       (setq contents (cfw:contents-add
+		       (cfw:org-normalize-date date)
+		       line contents)))
    finally return (nconc contents (list (cons 'periods periods)))))
 
 (defun cfw:org-schedule-sorter (text1 text2)
