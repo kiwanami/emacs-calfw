@@ -90,32 +90,36 @@
   "[internal] Return calfw calendar items between BEGIN and END
 from the diary schedule data."
   (let ((all (diary-list-entries
-	      begin
-	      (1+ (cfw:days-diff begin end)) t))
-	non-periods
-	periods)
-    (while all
-      (let ((date-spec (caddar all)))
-	(if (string-match "%%(diary-block" date-spec)
-	    (or (assoc date-spec periods)
-		(setq periods (acons date-spec (cadar all) periods)))
-	  (setq non-periods (cons (car all) non-periods))))
-      (setq all (cdr all)))
+              begin
+              (1+ (cfw:days-diff begin end)) t))
+        non-periods
+        periods)
+    (loop for i in all
+          for date = (car i)
+          for title = (nth 1 i)
+          for date-spec = (nth 2 i)
+          for dmarker = (nth 3 i)
+          for pspec = (cons date-spec title)
+          do
+          (if (string-match "%%(diary-block" date-spec)
+              (unless (member pspec periods)
+                (push pspec periods))
+            (push i non-periods)))
     (append
      (loop
       for (date string . rest) in non-periods
       collect (cfw:cal-entry-to-event date string))
      (list (cons 'periods
-		 (map 'list (function (lambda (period)
-				       (let ((spec (read (substring (car period) 2))))
-					 (list (list (nth 1 spec)
-						     (nth 2 spec)
-						     (nth 3 spec))
-					       (list (nth 4 spec)
-						     (nth 5 spec)
-						     (nth 6 spec))
-					       (cdr period)))))
-		      periods))))))
+                 (map 'list (function (lambda (period)
+                                        (let ((spec (read (substring (car period) 2))))
+                                          (list (list (nth 1 spec)
+                                                      (nth 2 spec)
+                                                      (nth 3 spec))
+                                                (list (nth 4 spec)
+                                                      (nth 5 spec)
+                                                      (nth 6 spec))
+                                                (cdr period)))))
+                      periods))))))
 
 (defvar cfw:cal-schedule-map
   (cfw:define-keymap
