@@ -43,9 +43,9 @@
   :group 'org
   :group 'cfw)
 
-(defcustom cfw:org-capture-template
-  '("c" "calfw2org" entry (file nil)  "* %?\n %(cfw:org-capture-day)")
-  "org-capture template."
+(defcustom cfw:org-capture-template nil
+  "org-capture template. If you use `org-capture' with `calfw', you shold set like
+'(\"c\" \"calfw2org\" entry (file nil)  \"* %?\n %(cfw:org-capture-day)\")"
   :group 'cfw-org
   :version "24.1"
   :type
@@ -400,13 +400,16 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
                                                 (calendar-extract-year pos)))
               ">"))))
 
+(when cfw:org-capture-template
 (setq org-capture-templates
-      (append org-capture-templates (list cfw:org-capture-template)))
+      (append org-capture-templates (list cfw:org-capture-template))))
 
 (defun cfw:org-capture ()
   "Open org-agenda buffer on the selected date."
   (interactive)
-  (org-capture nil (car cfw:org-capture-template)))
+  (if cfw:org-capture-template
+      (org-capture nil (car cfw:org-capture-template))
+    (message "cfw:org-capture-template is not set yet.")))
 
 (defun cfw:org-open-agenda-day ()
   "Open org-agenda buffer on the selected date."
