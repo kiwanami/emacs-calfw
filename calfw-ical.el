@@ -150,7 +150,7 @@ events have not been supported yet."
     (unwind-protect
         (pp-display-expression
          (with-current-buffer buf
-           (icalendar--normalize-buffer)
+           (cfw:ical-normalize-buffer)
            (cfw:ical-convert-ical-to-calfw
             (icalendar--read-element nil nil)))
          "*ical-debug*")
