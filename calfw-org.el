@@ -43,9 +43,9 @@
   :group 'org
   :group 'cfw)
 
-(defcustom cfw:org-capture-template
-  '("c" "calfw2org" entry (file nil)  "* %?\n %(cfw:org-capture-day)")
-  "org-capture template."
+(defcustom cfw:org-capture-template nil
+  "org-capture template. If you use `org-capture' with `calfw', you shold set like
+'(\"c\" \"calfw2org\" entry (file nil)  \"* %?\n %(cfw:org-capture-day)\")"
   :group 'cfw-org
   :version "24.1"
   :type
@@ -175,24 +175,20 @@ different agenda files from the default agenda ones.")
     ;;; ------------------------------------------------------------------------
     (setq text (replace-regexp-in-string "%[0-9A-F]\\{2\\}" " " text))
     (if (string-match org-bracket-link-regexp text)
-      (progn
-        (setq desc (if (match-end 3) (org-match-string-no-properties 3 text)))
-        (setq link (org-link-unescape (org-match-string-no-properties 1 text)))
-        (setq help (concat "LINK: " link))
-        (setq link-props
-           (list
-                 'face 'org-link
-                 'mouse-face 'highlight
-                 'help-echo help
-                 'org-link link
-                 ))
+      (let* ((desc (if (match-end 3) (org-match-string-no-properties 3 text)))
+             (link (org-link-unescape (org-match-string-no-properties 1 text)))
+             (help (concat "LINK: " link))
+             (link-props (list
+                          'face 'org-link
+                          'mouse-face 'highlight
+                          'help-echo help
+                          'org-link link)))
         (if desc
-          (progn
-            (setq desc (apply 'propertize desc link-props))
-            (setq text (replace-match desc nil nil text)))
+            (progn
+              (setq desc (apply 'propertize desc link-props))
+              (setq text (replace-match desc nil nil text)))
           (setq link (apply 'propertize link link-props))
-          (setq text (replace-match link nil nil text)))
-        ))
+          (setq text (replace-match link nil nil text)))))
     (propertize
       (concat
         (if time-str
@@ -225,9 +221,9 @@ If TEXT does not have a range, return nil."
 	 (let ((date-string  (match-string 1 dotime))
 	       (extra (cfw:org-tp text 'extra)))
 	   (if (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra)
-	       (let* ((cur-day (string-to-int
+	       (let* ((cur-day (string-to-number
 				(match-string 1 extra)))
-		      (total-days (string-to-int
+		      (total-days (string-to-number
 				   (match-string 2 extra)))
 		      (start-date (time-subtract
 				   (org-read-date nil t date-string)
@@ -400,13 +396,16 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
                                                 (calendar-extract-year pos)))
               ">"))))
 
+(when cfw:org-capture-template
 (setq org-capture-templates
-      (append org-capture-templates (list cfw:org-capture-template)))
+      (append org-capture-templates (list cfw:org-capture-template))))
 
 (defun cfw:org-capture ()
   "Open org-agenda buffer on the selected date."
   (interactive)
-  (org-capture nil (car cfw:org-capture-template)))
+  (if cfw:org-capture-template
+      (org-capture nil (car cfw:org-capture-template))
+    (message "cfw:org-capture-template is not set yet.")))
 
 (defun cfw:org-open-agenda-day ()
   "Open org-agenda buffer on the selected date."
