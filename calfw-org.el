@@ -26,6 +26,9 @@
 
 ;; (require 'calfw-org)
 ;;
+;; ;; use org agenda buffer style keybinding.
+;; ;; (setq cfw:org-overwrite-default-keybinding t)
+;;
 ;; M-x cfw:open-org-calendar
 
 ;;; Code:
@@ -56,12 +59,23 @@
   (get-text-property 0 prop text))
 
 (defvar cfw:org-agenda-schedule-args nil
-  "Default arguments for collecting agenda entries.")
+  "Default arguments for collecting agenda entries.
+If value is nil, `org-agenda-entry-types' is used.")
 
 (defvar cfw:org-icalendars nil
   "Org buffers for exporting icalendars.
 Setting a list of the custom agenda files, one can use the
 different agenda files from the default agenda ones.")
+
+(defvar cfw:org-overwrite-default-keybinding nil
+  "Overwrites default keybinding. It needs restarting of Emacs(if not work)
+For emample,
+
+    g     cfw:refresh-calendar-buffer
+    j     cfw:org-goto-date
+    k     org-capture
+    x     cfw:org-clean-exit
+")
 
 (defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
@@ -425,6 +439,18 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
      ))
   "Key map for the calendar buffer.")
 
+(defvar cfw:org-custom-map
+  (cfw:define-keymap
+   '(
+     ("g"   . cfw:refresh-calendar-buffer)
+     ("j"   . cfw:org-goto-date)
+     ("k"   . org-capture)
+     ("q"   . bury-buffer)
+     ("x"   . cfw:org-clean-exit)
+     ("SPC" . cfw:org-open-agenda-day)
+     ))
+  "Key map for the calendar buffer.")
+
 (defun cfw:org-create-source (&optional color)
   "Create org-agenda source."
   (make-cfw:source
@@ -437,10 +463,11 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
   (interactive)
   (save-excursion
     (let* ((source1 (cfw:org-create-source))
+           (curr-keymap (if cfw:org-overwrite-default-keybinding cfw:org-custom-map cfw:org-schedule-map))
            (cp (cfw:create-calendar-component-buffer
                 :view 'month
                 :contents-sources (list source1)
-                :custom-map cfw:org-schedule-map
+                :custom-map curr-keymap
                 :sorter 'cfw:org-schedule-sorter)))
       (switch-to-buffer (cfw:cp-get-buffer cp)))))
 
@@ -458,6 +485,12 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
   "Move the cursor to the specified date."
   (interactive)
   (cfw:emacs-to-calendar (org-read-date nil 'to-time)))
+
+(defun cfw:org-goto-date ()
+  "Move the cursor to the specified date."
+  (interactive)
+  (cfw:navi-goto-date
+   (cfw:org-read-date-command)))
 
 ;; (progn (eval-current-buffer) (cfw:open-org-calendar))
 ;; (setq org-agenda-files '("./org-samples/complex.org"))
