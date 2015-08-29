@@ -69,13 +69,20 @@ different agenda files from the default agenda ones.")
 
 (defvar cfw:org-overwrite-default-keybinding nil
   "Overwrites default keybinding. It needs restarting of Emacs(if not work)
-For emample,
+For example,
 
-    g     cfw:refresh-calendar-buffer
-    j     cfw:org-goto-date
-    k     org-capture
-    x     cfw:org-clean-exit
-")
+ ------------------------------------------------
+  key   | function
+ ------------------------------------------------
+    g   | cfw:refresh-calendar-buffer
+    j   | cfw:org-goto-date
+    k   | org-capture
+    x   | cfw:org-clean-exit
+    d   | cfw:change-view-day
+    v d | cfw:change-view-day
+    v w | cfw:change-view-week
+    v m | cfw:change-view-month
+ ------------------------------------------------")
 
 (defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
@@ -142,9 +149,14 @@ For emample,
 
 (defun cfw:org-extract-summary (org-item)
   "[internal] Remove some strings."
-  (let ((item org-item))
+  (let* ((item org-item) (tags (cfw:org-tp item 'tags)))
     ;; (when (string-match cfw:org-todo-keywords-regexp item) ; dynamic bind
     ;;   (setq item (replace-match "" nil nil item)))
+    (if tags
+      (when (string-match (concat "[\t ]*:+" (mapconcat 'identity tags ":+") ":+[\t ]*$") item)
+        (setq item (replace-match "" nil nil item))))
+    (when (string-match "[0-9]\\{2\\}:[0-9]\\{2\\}\\(-[0-9]\\{2\\}:[0-9]\\{2\\}\\)?[\t ]+" item)
+      (setq item (replace-match "" nil nil item)))
     (when (string-match "^ +" item)
       (setq item (replace-match "" nil nil item)))
     (when (= 0 (length item))
@@ -163,27 +175,13 @@ For emample,
          (buffer (and marker (marker-buffer marker)))
          (text (cfw:org-extract-summary item))
          (props (cfw:extract-text-props item 'face 'keymap))
-         (extra (cfw:org-tp item 'extra))
-         (i 0))
-    ;;; ------------------------------------------------------------------------
-    ;;; set title color as default agenda color
-    ;;; ------------------------------------------------------------------------
-    (setq text (if (string-match "^Deadline:.*" extra)
-        text
-        (apply 'propertize (substring-no-properties text) props)))
-    ;;; ------------------------------------------------------------------------
-    ;;; skip time related string
-    ;;; ------------------------------------------------------------------------
-    (setq text (replace-regexp-in-string "[0-9]\\{2\\}:[0-9]\\{2\\}\\(-[0-9]\\{2\\}:[0-9]\\{2\\}\\)?[\t ]+" "" text))
-    ;;; ------------------------------------------------------------------------
-    ;;; skip tags
-    ;;; ------------------------------------------------------------------------
-    (if tags
-      (progn
-        (while (< i (length tags))
-          (setq text (replace-regexp-in-string (concat ":" (elt tags i) ":") "" text))
-          (setq i (+ i 1)))
-        (setq text (replace-regexp-in-string "[\t ]*:?$" "" text))))
+         (extra (cfw:org-tp item 'extra)))
+    (setq text (substring-no-properties text))
+    (when (string-match (concat "^" org-deadline-string ".*") extra)
+      (add-text-properties 0 (length text) (list 'face (org-agenda-deadline-face 1.0)) text))
+    (if org-todo-keywords-for-agenda
+      (when (string-match (concat "^[\t ]*\\<\\(" (mapconcat 'identity org-todo-keywords-for-agenda "\\|") "\\)\\>") text)
+        (add-text-properties (match-beginning 1) (match-end 1) (list 'face (org-get-todo-face (match-string 1 text))) text)))
     ;;; ------------------------------------------------------------------------
     ;;; act for org link
     ;;; ------------------------------------------------------------------------
@@ -446,6 +444,10 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
      ("j"   . cfw:org-goto-date)
      ("k"   . org-capture)
      ("q"   . bury-buffer)
+     ("d"   . cfw:change-view-day)
+     ("v d" . cfw:change-view-day)
+     ("v w" . cfw:change-view-week)
+     ("v m" . cfw:change-view-month)
      ("x"   . cfw:org-clean-exit)
      ("SPC" . cfw:org-open-agenda-day)
      ))
@@ -469,7 +471,9 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
                 :contents-sources (list source1)
                 :custom-map curr-keymap
                 :sorter 'cfw:org-schedule-sorter)))
-      (switch-to-buffer (cfw:cp-get-buffer cp)))))
+      (switch-to-buffer (cfw:cp-get-buffer cp))
+      (when (not org-todo-keywords-for-agenda)
+        (message "Warn : open org-agenda buffer first.")))))
 
 (defun cfw:org-from-calendar ()
   "Do something. This command should be executed on the calfw calendar."
