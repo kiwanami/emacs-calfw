@@ -961,7 +961,7 @@ SOURCES is a list of content sources."
   "Set annotation sources for the component.
 SOURCES is a list of annotation sources."
   (cfw:model-set-annotation-sources
-   (cfw:component-model component) sources))
+   sources (cfw:component-model component)))
 
 (defun cfw:cp-set-view (component view)
   "Change the view type of the component and re-draw the content.
