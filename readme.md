@@ -117,6 +117,42 @@ Then, M-x `cfw:open-org-calendar`.
 
 ![org-agenda and calfw-org](https://cacoo.com/diagrams/S6aJntG6giGs44Yn-89CB2.png?width=450)
 
+#### Filtering agenda items
+
+You can choose agenda items with `cfw:org-agenda-schedule-args`, like following code:
+
+```el
+(setq cfw:org-agenda-schedule-args '(:timestamp))
+```
+
+This setting restricts items containing a date stamp or date range matching the selected date.
+If `cfw:org-agenda-schedule-args` is `nil`, the default customize variable `org-agenda-entry-types` is used. For the further information, please refer the orgmode document.
+
+- [Worg: Speeding up custom agenda commands](http://orgmode.org/worg/org-tutorials/org-custom-agenda-commands.html#sec-5)
+
+#### Orgmode like key bindng
+
+You can use another key binding like org agenda buffer, setting `cfw:org-overwrite-default-keybinding` to non-nil, like following code:
+
+```el
+(setq cfw:org-overwrite-default-keybinding t)
+```
+
+Then, following key bindings are overwritten:
+
+| key   | function
+|-------|----------------------------------------
+|   g   | Refresh data and re-draw contents (cfw:refresh-calendar-buffer)
+|   j   | Goto the specified date (cfw:org-goto-date)
+|   k   | org-capture
+|   x   | Close calfw and other buffers opened by calfw-org (cfw:org-clean-exit)
+|   d   | Day view (cfw:change-view-day)
+|   v d | Day view (cfw:change-view-day)
+|   v w | 1 Week view (cfw:change-view-week)
+|   v m | Month View (cfw:change-view-month)
+
+#### Synchronization with google calendar
+
 Here is the program which helps synchronization schedule items between org and google calendar, and also collaborates with calfw.
 
 - https://github.com/myuhe/org-gcal.el
@@ -678,4 +714,4 @@ See the calfw-howm.el code for more details.
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2015-02-27 20:24:56 sakurai>
+Time-stamp: <2015-09-01 11:45:47 sakurai>
