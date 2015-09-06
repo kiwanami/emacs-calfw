@@ -54,6 +54,16 @@
   :type
   '(list string string symbol (list symbol (choice file (const nil))) string))
 
+(defcustom cfw:org-agenda-remove-tags-if-view t
+  "Skip tags according to view.
+Value can be t (Always), nil (Never), 'week-or-month (Week or month view only)."
+  :group 'cfw-org
+  :version "24.1"
+  :type '(choice
+	  (const :tag "Never" nil)
+	  (const :tag "Always" t)
+	  (const :tag "Week or month view" week-or-month)))
+
 (defsubst cfw:org-tp (text prop)
   "[internal] Return text property at position 0."
   (get-text-property 0 prop text))
@@ -83,6 +93,9 @@ For example,
     v w | cfw:change-view-week
     v m | cfw:change-view-month
  ------------------------------------------------")
+
+(defvar cfw:org-face-agenda-item-foreground-color "Seagreen4"
+  "Color for org agenda item foreground color.")
 
 (defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
@@ -149,12 +162,15 @@ For example,
 
 (defun cfw:org-extract-summary (org-item)
   "[internal] Remove some strings."
-  (let* ((item org-item) (tags (cfw:org-tp item 'tags)))
+  (let ((item org-item) tags curr-view)
     ;; (when (string-match cfw:org-todo-keywords-regexp item) ; dynamic bind
     ;;   (setq item (replace-match "" nil nil item)))
-    (if tags
-      (when (string-match (concat "[\t ]*:+" (mapconcat 'identity tags ":+") ":+[\t ]*$") item)
-        (setq item (replace-match "" nil nil item))))
+    (when cfw:org-agenda-remove-tags-if-view
+      (setq tags (cfw:org-tp item 'tags))
+      (setq curr-view (if (ignore-errors (cfw:cp-get-component)) (cfw:cp-get-view (cfw:cp-get-component)) 'month))
+      (when (and tags (not (eq curr-view 'day)))
+        (when (string-match (concat "[\t ]*:+" (mapconcat 'identity tags ":+") ":+[\t ]*$") item)
+          (setq item (replace-match "" nil nil item)))))
     (when (string-match "[0-9]\\{2\\}:[0-9]\\{2\\}\\(-[0-9]\\{2\\}:[0-9]\\{2\\}\\)?[\t ]+" item)
       (setq item (replace-match "" nil nil item)))
     (when (string-match "^ +" item)
@@ -457,7 +473,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
   "Create org-agenda source."
   (make-cfw:source
    :name "org-agenda"
-   :color (or color "Seagreen4")
+   :color (or color cfw:org-face-agenda-item-foreground-color)
    :data 'cfw:org-schedule-period-to-calendar))
 
 (defun cfw:open-org-calendar ()
