@@ -84,6 +84,9 @@ For example,
     v m | cfw:change-view-month
  ------------------------------------------------")
 
+(defvar cfw:org-face-agenda-item-foreground-color "Seagreen4"
+  "Variable for org agenda item foreground color.")
+
 (defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
   (let ((org-agenda-prefix-format " ")
@@ -457,7 +460,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
   "Create org-agenda source."
   (make-cfw:source
    :name "org-agenda"
-   :color (or color "Seagreen4")
+   :color (or color cfw:org-face-agenda-item-foreground-color)
    :data 'cfw:org-schedule-period-to-calendar))
 
 (defun cfw:open-org-calendar ()
