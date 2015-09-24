@@ -703,6 +703,7 @@ See the calfw-howm.el code for more details.
 
 ## History
 
+- 2015/09/24 ver 1.5 : Fixed bugs and added some customize variables.
 - 2015/02/27 ver 1.4 : Introduced cfw:event struct, improved some functions, fixed some bugs.
 - 2011/10/10 ver 1.3 : Improved visual and navigation: multi-line, moving items in a day, diary mode and so on.
 - 2011/07/20 ver 1.2 : Merged many patches and improved many and bug fixed.
@@ -714,4 +715,4 @@ See the calfw-howm.el code for more details.
 SAKURAI, Masashi
 m.sakurai atmark kiwanami.net
 
-Time-stamp: <2015-09-01 11:45:47 sakurai>
+Time-stamp: <2015-09-24 11:47:57 sakurai>
