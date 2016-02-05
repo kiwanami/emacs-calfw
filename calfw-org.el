@@ -425,6 +425,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
 (defun cfw:org-open-agenda-day ()
   "Open org-agenda buffer on the selected date."
   (interactive)
+  (if (get-buffer "*Org Agenda(a)*") (kill-buffer "*Org Agenda(a)*"))
   (let ((date (cfw:cursor-to-nearest-date)))
     (when date
       (org-agenda-list nil (calendar-absolute-from-gregorian date) 'day))))
