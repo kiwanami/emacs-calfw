@@ -955,7 +955,7 @@ this function updates the view to display the date."
   "Set content sources for the component.
 SOURCES is a list of content sources."
   (cfw:model-set-contents-sources
-   (cfw:component-model component) sources))
+   sources (cfw:component-model component)))
 
 (defun cfw:cp-set-annotation-sources (component sources)
   "Set annotation sources for the component.
