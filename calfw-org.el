@@ -204,18 +204,16 @@ For example,
               (setq text (replace-match desc nil nil text)))
           (setq link (apply 'propertize link link-props))
           (setq text (replace-match link nil nil text)))))
+    (when time-str
+      (setq text (concat time-str text)))
     (propertize
-      (concat
-        (if time-str
-          (apply 'propertize time-str props))
-        text
-        ;; include org filename
-        ;; (and buffer (concat " " (buffer-name buffer)))
-        )
-      'keymap cfw:org-text-keymap
-      ;; Delete the display property, since displaying images will break our
-      ;; table layout.
-      'display nil)))
+     (apply 'propertize text props)
+     ;; include org filename
+     ;; (and buffer (concat " " (buffer-name buffer)))
+     'keymap cfw:org-text-keymap
+     ;; Delete the display property, since displaying images will break our
+     ;; table layout.
+     'display nil)))
 
 (defvar cfw:org-schedule-summary-transformer 'cfw:org-summary-format
   "Transformation function which transforms the org item string to calendar title.
