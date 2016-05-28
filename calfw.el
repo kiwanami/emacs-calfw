@@ -504,15 +504,6 @@ ones of DATE2. Otherwise is `nil'."
                           ((<= cfw:week-days num) (- num cfw:week-days))
                           (t num)))))
 
-(defun cfw:month-day-year (date)
-  "Transform a diary DATE list to a month day year list."
-  (cond
-   ((eq calendar-date-style 'american) date)
-   ((eq calendar-date-style 'european)
-    (list (nth 1 date) (nth 0 date) (nth 2 date)))
-   ((eq calendar-date-style 'iso)
-    (list (nth 1 date) (nth 2 date) (nth 0 date)))))
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1557,8 +1548,7 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
 BEGIN and END from the PERIODS-EACH-DAYS."
   (loop for row-num from 0 below 30 ; assuming the number of stacked periods is less than 30
         unless
-        (loop for d in (cfw:enumerate-days
-                        (cfw:month-day-year begin) (cfw:month-day-year end))
+        (loop for d in (cfw:enumerate-days begin end)
               for periods-stack = (cfw:contents-get d periods-each-days)
               if (and periods-stack (assq row-num periods-stack))
               return t)
@@ -1567,15 +1557,13 @@ BEGIN and END from the PERIODS-EACH-DAYS."
 (defun cfw:render-periods-place (periods-each-days row period)
   "[internal] Assign PERIOD content to the ROW-th row on the days of the period,
 and append the result to periods-each-days."
-  (let ((begin (cfw:month-day-year (car period)))
-        (end (cfw:month-day-year (cadr period))))
-    (loop for d in (cfw:enumerate-days begin end)
-          for periods-stack = (cfw:contents-get-internal d periods-each-days)
-          if periods-stack
-          do (setcdr periods-stack (append (cdr periods-stack)
-                                           (list (list row period))))
-          else
-          do (push (cons d (list (list row period))) periods-each-days)))
+  (loop for d in (cfw:enumerate-days (car period) (cadr period))
+        for periods-stack = (cfw:contents-get-internal d periods-each-days)
+        if periods-stack
+        do (setcdr periods-stack (append (cdr periods-stack)
+                                         (list (list row period))))
+        else
+        do (push (cons d (list (list row period))) periods-each-days))
   periods-each-days)
 
 (defun cfw:render-periods-stacks (model)
