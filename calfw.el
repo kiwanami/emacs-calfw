@@ -4,7 +4,7 @@
 
 ;; Author: SAKURAI Masashi <m.sakurai at kiwanami.net>
 ;; Version: 1.5
-;; Package-Requires: ((google-maps "20130412.230"))
+;; Package-Requires: ((google-maps "1.0.0"))
 ;; Keywords: calendar
 ;; URL: https://github.com/kiwanami/emacs-calfw
 
