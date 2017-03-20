@@ -112,13 +112,34 @@ from the diary schedule data."
      (list (cons 'periods
                  (map 'list (function (lambda (period)
                                         (let ((spec (read (substring (car period) 2))))
-                                          (list (list (nth 1 spec)
-                                                      (nth 2 spec)
-                                                      (nth 3 spec))
-                                                (list (nth 4 spec)
-                                                      (nth 5 spec)
-                                                      (nth 6 spec))
-                                                (cdr period)))))
+                                          (cond
+                                           ((eq calendar-date-style 'american)
+                                            (list
+                                             (list (nth 1 spec)
+                                                   (nth 2 spec)
+                                                   (nth 3 spec))
+                                             (list (nth 4 spec)
+                                                   (nth 5 spec)
+                                                   (nth 6 spec))
+                                             (cdr period)))
+                                           ((eq calendar-date-style 'european)
+                                            (list
+                                             (list (nth 2 spec)
+                                                   (nth 1 spec)
+                                                   (nth 3 spec))
+                                             (list (nth 5 spec)
+                                                   (nth 4 spec)
+                                                   (nth 6 spec))
+                                             (cdr period)))
+                                           ((eq calendar-date-style 'iso)
+                                            (list
+                                             (list (nth 2 spec)
+                                                   (nth 3 spec)
+                                                   (nth 1 spec))
+                                             (list (nth 5 spec)
+                                                   (nth 6 spec)
+                                                   (nth 4 spec))
+                                             (cdr period)))))))
                       periods))))))
 
 (defvar cfw:cal-schedule-map
