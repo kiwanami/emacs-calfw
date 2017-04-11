@@ -56,6 +56,7 @@
 (require 'cl)
 (require 'calendar)
 (require 'holidays)
+(require 'format-spec)
 
 
 
