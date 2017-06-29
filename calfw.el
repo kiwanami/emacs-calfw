@@ -440,6 +440,11 @@ ones of DATE2. Otherwise is `nil'."
   (calendar-gregorian-from-absolute
    (+ (calendar-absolute-from-gregorian date) num)))
 
+(defun cfw:date-before (date num)
+  "Return the date before NUM days from DATE."
+  (calendar-gregorian-from-absolute
+   (- (calendar-absolute-from-gregorian date) num)))
+
 (defun cfw:strtime-emacs (time)
   "Format emacs time value TIME to the string form YYYY/MM/DD."
   (format-time-string "%Y/%m/%d" time))
