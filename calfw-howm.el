@@ -72,7 +72,7 @@ to the number of howm encoded days."
   "[internal] Return howm schedule items between BEGIN and END."
   (let* ((from (cfw:to-howm-date begin))
          (to (cfw:to-howm-date end))
-         (filtered (howm-cl-remove-if
+         (filtered (cl-remove-if
                     (lambda (item)
                       (let ((s (howm-schedule-date item)))
                         (or (< s from)
@@ -104,8 +104,10 @@ from the howm schedule data."
         for summary = (funcall cfw:howm-schedule-summary-transformer summary)
         do
         (cond
-         ((< 0 num)
+         ((and (string= type "@") (< 0 num))
           (push (list date (cfw:date-after date (1- num)) summary) periods))
+         ((and (string= type "!") (< 0 num))
+          (push (list (cfw:date-before date (1- num)) date summary) periods))
          (t
           (setq contents (cfw:contents-add date summary contents))))
         finally return (nconc contents (list (cons 'periods periods)))))
