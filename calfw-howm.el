@@ -72,8 +72,8 @@ to the number of howm encoded days."
 
 (defun cfw-howm-schedule-period (begin end)
   "[internal] Return howm schedule items between BEGIN and END."
-  (let* ((from (cfw-to-howm-date begin))
-         (to (cfw-to-howm-date end))
+  (let* ((from (cfw-howm-convert-to-howm-date begin))
+         (to (cfw-howm-convert-to-howm-date end))
          (filtered (cl-remove-if
                     (lambda (item)
                       (let ((s (howm-schedule-date item)))
