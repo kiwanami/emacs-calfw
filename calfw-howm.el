@@ -41,6 +41,7 @@
 (require 'cl-lib)
 (require 'howm)
 (require 'calfw)
+(require 'elscreen)
 
 (defvar cfw:howm-schedule-cache nil "[internal] Cache data for schedule items of howm.")
 
@@ -215,23 +216,22 @@ schedule data and set up inline calendar function for the howm menu."
 
 ;;; for Elscreen
 
-(when (featurep 'elscreen-howm)
-  (defun cfw:elscreen-open-howm-calendar ()
-    "Open the calendar in the new screen."
-    (interactive)
-    (save-current-buffer
-      (elscreen-create))
-    (cfw:open-howm-calendar))
+(defun cfw:elscreen-open-howm-calendar ()
+  "Open the calendar in the new screen."
+  (interactive)
+  (save-current-buffer
+    (elscreen-create))
+  (cfw:open-howm-calendar))
 
-  (defun cfw:elscreen-kill-calendar ()
-    "Kill the calendar buffer and the screen."
-    (interactive)
-    (kill-buffer nil)
-    (unless (elscreen-one-screen-p)
-      (elscreen-kill)))
+(defun cfw:elscreen-kill-calendar ()
+  "Kill the calendar buffer and the screen."
+  (interactive)
+  (kill-buffer nil)
+  (unless (elscreen-one-screen-p)
+    (elscreen-kill)))
 
-  (define-key cfw:howm-schedule-map (kbd "q") 'cfw:elscreen-kill-calendar)
-  )
+(define-key cfw:howm-schedule-map (kbd "q") 'cfw:elscreen-kill-calendar)
+
 
 (provide 'calfw-howm)
 ;;; calfw-howm.el ends here
