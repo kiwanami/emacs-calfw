@@ -182,9 +182,14 @@ events have not been supported yet."
   (let ((buf (url-retrieve-synchronously url))
         (dbuf (get-buffer-create cfw:ical-calendar-tmpbuf))
         pos)
+    ;; FIXME: The origin is:
+    ;;  (setq pos (url-http-symbol-value-in-buffer
+    ;;             'url-http-end-of-headers buf)
+    ;; but I can not find `url-http-symbol-value-in-buffer'
+    ;; function, so I just set pos to 0, this may not work
+    ;; properly.
     (unwind-protect
-        (when (setq pos (url-http-symbol-value-in-buffer
-                         'url-http-end-of-headers buf))
+        (when (setq pos 0)
           (with-current-buffer dbuf
             (erase-buffer)
             (decode-coding-string
