@@ -51,17 +51,17 @@
 
 (defun cfw-cal-entry-to-event (date string)
   "[internal] Add text properties to string, allowing calfw to act on it."
-  (let* ((lines      (split-string
-                      (replace-regexp-in-string
-                       "[\t ]+" " " (cfw-trim string))
-                      "\n"))
-         (first      (car lines))
-         (desc       (mapconcat 'identity (cdr lines) "\n"))
-         (title      (progn
-                       (string-match cfw-cal-diary-regex first)
-                       (match-string 3 first)))
-         (start      (match-string 1 first))
-         (end        (match-string 2 first))
+  (let* ((lines (split-string
+                 (replace-regexp-in-string
+                  "[\t ]+" " " (cfw-trim string))
+                 "\n"))
+         (first (car lines))
+         (desc  (mapconcat 'identity (cdr lines) "\n"))
+         (title (progn
+                  (string-match cfw-cal-diary-regex first)
+                  (match-string 3 first)))
+         (start (match-string 1 first))
+         (end   (match-string 2 first))
          (properties (list 'mouse-face 'highlight
                            'help-echo string
                            'cfw-marker (copy-marker (point-at-bol)))))
@@ -147,10 +147,8 @@ from the diary schedule data."
 
 (defvar cfw-cal-schedule-map
   (cfw-define-keymap
-   '(
-     ("q" . kill-buffer)
-     ("i" . cfw-cal-from-calendar)
-     ))
+   '(("q" . kill-buffer)
+     ("i" . cfw-cal-from-calendar)))
   "Key map for the calendar buffer.")
 
 (defun cfw-cal-create-source (&optional color)
@@ -178,10 +176,8 @@ from the diary schedule data."
          (m (calendar-extract-month mdy))
          (d (calendar-extract-day   mdy))
          (y (calendar-extract-year  mdy)))
-    (diary-make-entry (calendar-date-string (cfw-date m d y) t t))
-    ))
-
-;; (progn (eval-current-buffer) (cfw-cal-open-calendar))
+    (diary-make-entry (calendar-date-string (cfw-date m d y) t t))))
 
 (provide 'calfw-cal)
+
 ;;; calfw-cal.el ends here
