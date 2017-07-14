@@ -182,9 +182,6 @@ This command should be executed on the calfw calendar."
                          items (list key))
       (howm-view-summary-check t)))))
 
-;; (define-key cfw-howm-schedule-map (kbd "RET") 'cfw-howm-from-calendar-fast)
-;; (define-key cfw-howm-schedule-inline-keymap (kbd "RET") 'cfw-howm-from-calendar-fast)
-
 ;;; Region
 
 (defvar cfw-howm-schedule-inline-keymap
