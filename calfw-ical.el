@@ -1,4 +1,4 @@
-;;; calfw-ical.el --- calendar view for ical format
+;;; calfw-ical.el --- calendar view for ical format -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2011  SAKURAI Masashi
 
@@ -199,7 +199,7 @@ events have not been supported yet."
         buf)))))
 
 (defmacro cfw:ical-with-buffer (url &rest body)
-  (let (($buf (gensym)))
+  (let (($buf (cl-gensym)))
     `(let ((,$buf (cfw:ical-url-to-buffer ,url)))
        (unwind-protect
            (with-current-buffer ,$buf

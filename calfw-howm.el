@@ -1,4 +1,4 @@
-;;; calfw-howm.el --- calendar view for howm
+;;; calfw-howm.el --- calendar view for howm -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2011  SAKURAI Masashi
 
@@ -100,8 +100,8 @@ from the howm schedule data."
         for i in (cfw:howm-schedule-period begin end)
         for date = (cfw:emacs-to-calendar
                     (seconds-to-time (+ 10 (* (howm-schedule-date i) 24 3600))))
-        for (datestr num type summary) = (cfw:howm-schedule-parse-line (howm-item-summary i))
-        for summary = (funcall cfw:howm-schedule-summary-transformer summary)
+        for (_datestr num type summary) = (cfw:howm-schedule-parse-line (howm-item-summary i))
+        for _summary = (funcall cfw:howm-schedule-summary-transformer summary)
         do
         (cond
          ((and (string= type "@") (< 0 num))
@@ -190,15 +190,15 @@ This command should be executed on the calfw calendar."
 
 (defun cfw:howm-schedule-inline (&optional width height view)
   "Inline function for the howm menu. See the comment text on the top of this file for the usage."
-  (let ((custom-map (copy-keymap cfw:howm-schedule-inline-keymap)) cp)
+  (let ((custom-map (copy-keymap cfw:howm-schedule-inline-keymap)))
     (set-keymap-parent custom-map cfw:calendar-mode-map)
-    (setq cp (cfw:create-calendar-component-region
-              :width width :height (or height 10)
-              :keymap custom-map
-              :contents-sources (append (list (cfw:howm-create-source))
-                                        cfw:howm-schedule-contents)
-              :annotation-sources cfw:howm-annotation-contents
-              :view (or view 'month))))
+    (cfw:create-calendar-component-region
+     :width width :height (or height 10)
+     :keymap custom-map
+     :contents-sources (append (list (cfw:howm-create-source))
+                               cfw:howm-schedule-contents)
+     :annotation-sources cfw:howm-annotation-contents
+     :view (or view 'month)))
   "") ; for null output
 
 ;;; Installation
@@ -212,24 +212,23 @@ schedule data and set up inline calendar function for the howm menu."
 
 ;;; for Elscreen
 
-(eval-after-load "elscreen-howm"
-  '(progn
-     (defun cfw:elscreen-open-howm-calendar ()
-       "Open the calendar in the new screen."
-       (interactive)
-       (save-current-buffer
-         (elscreen-create))
-       (cfw:open-howm-calendar))
+(when (featurep 'elscreen-howm)
+  (defun cfw:elscreen-open-howm-calendar ()
+    "Open the calendar in the new screen."
+    (interactive)
+    (save-current-buffer
+      (elscreen-create))
+    (cfw:open-howm-calendar))
 
-     (defun cfw:elscreen-kill-calendar ()
-       "Kill the calendar buffer and the screen."
-       (interactive)
-       (kill-buffer nil)
-       (unless (elscreen-one-screen-p)
-         (elscreen-kill)))
+  (defun cfw:elscreen-kill-calendar ()
+    "Kill the calendar buffer and the screen."
+    (interactive)
+    (kill-buffer nil)
+    (unless (elscreen-one-screen-p)
+      (elscreen-kill)))
 
-     (define-key cfw:howm-schedule-map (kbd "q") 'cfw:elscreen-kill-calendar)
-     ))
+  (define-key cfw:howm-schedule-map (kbd "q") 'cfw:elscreen-kill-calendar)
+  )
 
 (provide 'calfw-howm)
 ;;; calfw-howm.el ends here
