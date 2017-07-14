@@ -41,6 +41,8 @@
 (require 'icalendar)
 (require 'url)
 
+(defvar cfw:ical-zone-map nil)
+
 (defun cfw:decode-to-calendar (dec)
   (cfw:date
    (nth 4 dec) (nth 3 dec) (nth 5 dec)))
@@ -52,23 +54,24 @@ event (list 'time date start-time end-time).  The period includes
 end-date.  This function is copied from
 `icalendar--convert-ical-to-diary' and modified.  Recursive
 events have not been supported yet."
-  (let*
-      ((dtstart (icalendar--get-event-property event 'DTSTART))
-       (dtstart-zone (icalendar--find-time-zone
-                      (icalendar--get-event-property-attributes event 'DTSTART) zone-map))
-       (dtstart-dec (icalendar--decode-isodatetime dtstart nil dtstart-zone))
-       (start-d (cfw:decode-to-calendar dtstart-dec))
-       (start-t (cfw:time (nth 2 dtstart-dec) (nth 1 dtstart-dec)))
+  (let* ((dtstart (icalendar--get-event-property event 'DTSTART))
+         (dtstart-zone (icalendar--find-time-zone
+                        (icalendar--get-event-property-attributes event 'DTSTART)
+                        cfw:ical-zone-map))
+         (dtstart-dec (icalendar--decode-isodatetime dtstart nil dtstart-zone))
+         (start-d (cfw:decode-to-calendar dtstart-dec))
+         (start-t (cfw:time (nth 2 dtstart-dec) (nth 1 dtstart-dec)))
 
-       (dtend (icalendar--get-event-property event 'DTEND))
-       (dtend-zone (icalendar--find-time-zone
-                    (icalendar--get-event-property-attributes event 'DTEND) zone-map))
-       (dtend-dec (icalendar--decode-isodatetime dtend nil dtend-zone))
-       (dtend-1-dec (icalendar--decode-isodatetime dtend -1 dtend-zone))
+         (dtend (icalendar--get-event-property event 'DTEND))
+         (dtend-zone (icalendar--find-time-zone
+                      (icalendar--get-event-property-attributes event 'DTEND)
+                      cfw:ical-zone-map))
+         (dtend-dec (icalendar--decode-isodatetime dtend nil dtend-zone))
+         (dtend-1-dec (icalendar--decode-isodatetime dtend -1 dtend-zone))
 
-       (duration (icalendar--get-event-property event 'DURATION))
+         (duration (icalendar--get-event-property event 'DURATION))
 
-       end-d end-1-d end-t)
+         end-d end-1-d end-t)
 
     (when (and dtstart
                (string=
@@ -132,7 +135,7 @@ events have not been supported yet."
                    (icalendar--get-event-property event 'DESCRIPTION)))))
 
 (defun cfw:ical-convert-ical-to-calfw (ical-list)
-  (cl-loop with zone-map = (icalendar--convert-all-timezones ical-list)
+  (cl-loop with cfw:ical-zone-map = (icalendar--convert-all-timezones ical-list)
            for e in (icalendar--all-events ical-list)
            for event = (cfw:ical-convert-event e)
            if event
