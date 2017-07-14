@@ -2975,7 +2975,5 @@ And here.")
     ))
 
 (provide 'calfw)
-;;; calfw.el ends here
 
-;; (progn (eval-current-buffer) (cfw-open-debug-calendar))
-;; (progn (eval-current-buffer) (cfw-open-calendar-buffer))
+;;; calfw.el ends here
