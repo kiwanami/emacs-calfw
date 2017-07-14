@@ -53,8 +53,8 @@
   "Hook which is called after retrieval of howm schedule items.")
 
 (defun cfw-howm-schedule-get ()
-  "[internal] Return all schedule items in the whole howm data. If cache
-data exists, this function uses the cache."
+  "[internal] Return all schedule items in the whole howm data.
+If cache data exists, this function uses the cache."
   (unless cfw-howm-schedule-cache
     (let* ((howm-schedule-types howm-schedule-menu-types)
            (raw (howm-reminder-search howm-schedule-types)))
@@ -83,10 +83,10 @@ to the number of howm encoded days."
                     (cfw-howm-schedule-get))))
     (howm-schedule-sort-items filtered)))
 
-(defvar cfw-howm-schedule-summary-transformer
-  (lambda (line) line)
-  "Transformation function which transforms the howm summary string to calendar title.
-If this function splits into a list of string, the calfw displays those string in multi-lines.")
+(defvar cfw-howm-schedule-summary-transformer (lambda (line) line)
+  "Transformation function which transforms the howm summary
+string to calendar title. If this function splits into a list of string,
+the calfw displays those string in multi-lines.")
 
 (defun cfw-howm-schedule-parse-line (line)
   "[internal] Parse the given string and return a result list, (date num type summary)."
@@ -163,8 +163,9 @@ This command should be executed on the calfw calendar."
 
 (defun cfw-howm-from-calendar-fast ()
   "Display a howm schedule summary of the date on the cursor,
-searching from the cache. So, this command is faster than `cfw-howm-from-calendar'.
-This command should be executed on the calfw calendar."
+searching from the cache. So, this command is faster than
+`cfw-howm-from-calendar'. This command should be executed
+on the calfw calendar."
   (interactive)
   (let* ((mdy (cfw-cursor-to-nearest-date))
          (m (calendar-extract-month mdy))
@@ -190,7 +191,8 @@ This command should be executed on the calfw calendar."
   "Key map for the howm inline calendar.")
 
 (defun cfw-howm-schedule-inline (&optional width height view)
-  "Inline function for the howm menu. See the comment text on the top of this file for the usage."
+  "Inline function for the howm menu. See the comment text
+on the top of this file for the usage."
   (let ((custom-map (copy-keymap cfw-howm-schedule-inline-keymap)))
     (set-keymap-parent custom-map cfw-calendar-mode-map)
     (cfw-create-calendar-component-region
