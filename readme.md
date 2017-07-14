@@ -91,7 +91,7 @@ Following programs are also useful:
 (eval-after-load "howm-menu" '(progn
   (require 'calfw-howm)
   (cfw-install-howm-schedules)
-  (define-key howm-mode-map (kbd "M-C") 'cfw-open-howm-calendar)
+  (define-key howm-mode-map (kbd "M-C") 'cfw-howm-open-calendar)
 ))
 ```
 

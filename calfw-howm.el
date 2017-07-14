@@ -24,14 +24,14 @@
 ;; (eval-after-load "howm-menu" '(progn
 ;;   (require 'calfw-howm)
 ;;   (cfw-install-howm-schedules)
-;;   (define-key howm-mode-map (kbd "M-C") 'cfw-open-howm-calendar)
+;;   (define-key howm-mode-map (kbd "M-C") 'cfw-howm-open-calendar)
 ;; ))
 
 ;; If you are using Elscreen, here is useful.
 ;; (define-key howm-mode-map (kbd "M-C") 'cfw-elscreen-open-howm-calendar)
 
 ;; One can open a standalone calendar buffer by
-;; M-x cfw-open-howm-calendar
+;; M-x cfw-howm-open-calendar
 
 ;; You can display a calendar in your howm menu.
 ;; %here%(cfw-howm-schedule-inline)
@@ -134,7 +134,7 @@ from the howm schedule data."
 (defvar cfw-howm-annotation-contents nil
   "A list of cfw-source objects for annotations.")
 
-(defun cfw-open-howm-calendar ()
+(defun cfw-howm-open-calendar ()
   "Open a howm schedule calendar in the new buffer."
   (interactive)
   (save-excursion
