@@ -411,7 +411,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
   (interactive)
   (if cfw-org-capture-template
       (org-capture nil (car cfw-org-capture-template))
-    (message "cfw-org-capture-template is not set yet.")))
+    (message "The variable `cfw-org-capture-template' is not set yet.")))
 
 (defun cfw-org-open-agenda-day ()
   "Open org-agenda buffer on the selected date."
