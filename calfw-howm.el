@@ -4,7 +4,7 @@
 
 ;; Author: SAKURAI Masashi <m.sakurai at kiwanami.net>
 ;; Keywords: calendar
-;; Package-Requires: ((cl-lib "0.5")(calfw "1.6")(howm "1.4.4")(elscreen "0.1"))
+;; Package-Requires: ((cl-lib "0.5")(calfw "1.6")(howm "1.4.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -41,7 +41,6 @@
 (require 'cl-lib)
 (require 'howm)
 (require 'calfw)
-(require 'elscreen)
 
 (defvar cfw:howm-schedule-cache nil "[internal] Cache data for schedule items of howm.")
 
@@ -214,24 +213,6 @@ schedule data and set up inline calendar function for the howm menu."
   (add-hook 'howm-after-save-hook 'cfw:howm-schedule-cache-clear)
   (add-to-list 'howm-menu-allow 'cfw:howm-schedule-inline))
 
-;;; for Elscreen
-
-(defun cfw:elscreen-open-howm-calendar ()
-  "Open the calendar in the new screen."
-  (interactive)
-  (save-current-buffer
-    (elscreen-create))
-  (cfw:open-howm-calendar))
-
-(defun cfw:elscreen-kill-calendar ()
-  "Kill the calendar buffer and the screen."
-  (interactive)
-  (kill-buffer nil)
-  (unless (elscreen-one-screen-p)
-    (elscreen-kill)))
-
-(define-key cfw:howm-schedule-map (kbd "q") 'cfw:elscreen-kill-calendar)
-
-
 (provide 'calfw-howm)
+
 ;;; calfw-howm.el ends here
