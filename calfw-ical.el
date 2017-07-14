@@ -287,7 +287,6 @@ calendar source."
                (list (cfw-ical-create-source "ical" url "#2952a3")))))
       (switch-to-buffer (cfw-cp-get-buffer cp)))))
 
-;; (progn (eval-current-buffer) (cfw-ical-open-calendar "./ics/test.ics"))
-
 (provide 'calfw-ical)
+
 ;;; calfw-ical.el ends here
