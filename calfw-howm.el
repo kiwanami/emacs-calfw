@@ -37,6 +37,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'howm)
 (require 'calfw)
 
@@ -95,22 +96,22 @@ If this function splits into a list of string, the calfw displays those string i
 (defun cfw:howm-schedule-period-to-calendar (begin end)
   "[internal] Return calfw calendar items between BEGIN and END
 from the howm schedule data."
-  (loop with contents = nil
-        with periods = nil
-        for i in (cfw:howm-schedule-period begin end)
-        for date = (cfw:emacs-to-calendar
-                    (seconds-to-time (+ 10 (* (howm-schedule-date i) 24 3600))))
-        for (_datestr num type summary) = (cfw:howm-schedule-parse-line (howm-item-summary i))
-        for _summary = (funcall cfw:howm-schedule-summary-transformer summary)
-        do
-        (cond
-         ((and (string= type "@") (< 0 num))
-          (push (list date (cfw:date-after date (1- num)) summary) periods))
-         ((and (string= type "!") (< 0 num))
-          (push (list (cfw:date-before date (1- num)) date summary) periods))
-         (t
-          (setq contents (cfw:contents-add date summary contents))))
-        finally return (nconc contents (list (cons 'periods periods)))))
+  (cl-loop with contents = nil
+           with periods = nil
+           for i in (cfw:howm-schedule-period begin end)
+           for date = (cfw:emacs-to-calendar
+                       (seconds-to-time (+ 10 (* (howm-schedule-date i) 24 3600))))
+           for (_datestr num type summary) = (cfw:howm-schedule-parse-line (howm-item-summary i))
+           for _summary = (funcall cfw:howm-schedule-summary-transformer summary)
+           do
+           (cond
+            ((and (string= type "@") (< 0 num))
+             (push (list date (cfw:date-after date (1- num)) summary) periods))
+            ((and (string= type "!") (< 0 num))
+             (push (list (cfw:date-before date (1- num)) date summary) periods))
+            (t
+             (setq contents (cfw:contents-add date summary contents))))
+           finally return (nconc contents (list (cons 'periods periods)))))
 
 (defun cfw:howm-create-source (&optional color)
   "Create a howm source."
@@ -122,14 +123,15 @@ from the howm schedule data."
 
 (defvar cfw:howm-schedule-map
   (cfw:define-keymap
-   '(
-     ("RET" . cfw:howm-from-calendar)
-     ("q"   . kill-buffer)
-     ))
+   '(("RET" . cfw:howm-from-calendar)
+     ("q"   . kill-buffer)))
   "Key map for the howm calendar mode.")
 
-(defvar cfw:howm-schedule-contents nil  "A list of cfw:source objects for schedule contents.")
-(defvar cfw:howm-annotation-contents nil  "A list of cfw:source objects for annotations.")
+(defvar cfw:howm-schedule-contents nil
+  "A list of cfw:source objects for schedule contents.")
+
+(defvar cfw:howm-annotation-contents nil
+  "A list of cfw:source objects for annotations.")
 
 (defun cfw:open-howm-calendar ()
   "Open a howm schedule calendar in the new buffer."
