@@ -61,7 +61,7 @@ data exists, this function uses the cache."
     (run-hooks 'cfw-howm-schedule-hook))
   cfw-howm-schedule-cache)
 
-(defun cfw-to-howm-date (date)
+(defun cfw-howm-convert-to-howm-date (date)
   "[internal] Convert a date format from the Emacs calendar list
 to the number of howm encoded days."
   (apply 'howm-encode-day
