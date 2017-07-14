@@ -4,6 +4,7 @@
 
 ;; Author: SAKURAI Masashi <m.sakurai at kiwanami.net>
 ;; Keywords: calendar
+;; Package-Requires: ((cl-lib "0.5")(calfw "1.6")(howm "1.4.4")(elscreen "0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

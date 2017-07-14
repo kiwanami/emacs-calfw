@@ -6,6 +6,7 @@
 ;; Version: 1.6
 ;; Keywords: calendar
 ;; URL: https://github.com/kiwanami/emacs-calfw
+;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
