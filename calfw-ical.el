@@ -44,10 +44,6 @@
 
 (defvar cfw-ical-zone-map nil)
 
-(defun cfw-decode-to-calendar (dec)
-  (cfw-date
-   (nth 4 dec) (nth 3 dec) (nth 5 dec)))
-
 (defun cfw-ical-event-get-dates (event)
   "Return date-time information from iCalendar event object:
 period event (list 'period start-date end-date), time span
@@ -249,9 +245,9 @@ events have not been supported yet."
     (unless data
       (setq data (let ((cal-list
                         (cfw-ical-with-buffer url
-                          (cfw-ical-normalize-buffer)
-                          (cfw-ical-convert-ical-to-calfw
-                           (icalendar--read-element nil nil)))))
+                                              (cfw-ical-normalize-buffer)
+                                              (cfw-ical-convert-ical-to-calfw
+                                               (icalendar--read-element nil nil)))))
                    (cons url cal-list)))
       (push data cfw-ical-data-cache))
     (cdr data)))

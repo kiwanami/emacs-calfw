@@ -510,6 +510,10 @@ ones of DATE2. Otherwise is `nil'."
                           ((<= cfw-week-days num) (- num cfw-week-days))
                           (t num)))))
 
+(defun cfw-decode-to-calendar (dec)
+  (cfw-date
+   (nth 4 dec) (nth 3 dec) (nth 5 dec)))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
