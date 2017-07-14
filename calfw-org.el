@@ -420,8 +420,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
     (when date
       (org-agenda-list nil (calendar-absolute-from-gregorian date) 'day))))
 
-(define-key
-  cfw-calendar-mode-map "c" 'cfw-org-capture)
+(define-key cfw-calendar-mode-map "c" 'cfw-org-capture)
 
 (defvar cfw-org-schedule-map
   (cfw-define-keymap
