@@ -2396,7 +2396,10 @@ calendar view."
      ("t" . cfw:navi-goto-today-command)
      ("." . cfw:navi-goto-today-command)
 
-     ("TAB" . cfw:navi-next-item-command)
+     ("TAB"       . cfw:navi-next-item-command)
+     ("C-i"       . cfw:navi-next-item-command)
+     ("<backtab>"   . cfw:navi-prev-item-command)
+     ("S-TAB"       . cfw:navi-prev-item-command)
 
      ("r"   . cfw:refresh-calendar-buffer)
      ("SPC" . cfw:show-details-command)
@@ -2481,6 +2484,17 @@ calendar view."
         (count (or (get-text-property (point) 'cfw:row-count) -1)))
     (when (and cp date)
       (let ((next (cfw:find-item (cfw:component-dest cp) date (1+ count))))
+        (if next (goto-char next)
+          (cfw:navi-goto-date date))))))
+
+(defun cfw:navi-prev-item-command ()
+  "Move the cursor to the previous item."
+  (interactive)
+  (let ((cp (cfw:cp-get-component))
+        (date (cfw:cursor-to-date))
+        (count (or (get-text-property (point) 'cfw:row-count) -1)))
+    (when (and cp date)
+      (let ((next (cfw:find-item (cfw:component-dest cp) date (1- count))))
         (if next (goto-char next)
           (cfw:navi-goto-date date))))))
 
@@ -2688,6 +2702,9 @@ DATE is a date to show. MODEL is model object."
      ("b"       . cfw:details-navi-prev-command)
      ("<left>"  . cfw:details-navi-prev-command)
      ("TAB"     . cfw:details-navi-next-item-command)
+     ("C-i"     . cfw:details-navi-next-item-command)
+     ("<backtab>" . cfw:details-navi-prev-item-command)
+     ("S-TAB"     . cfw:details-navi-prev-item-command)
      ))
   "Default key map for the details buffer.")
 
@@ -2735,6 +2752,12 @@ DATE is a date to show. MODEL is model object."
   (interactive)
   (let* ((count (or (get-text-property (point) 'cfw:row-count) -1))
          (next (cfw:details-find-item (1+ count))))
+    (goto-char (or next (point-min)))))
+
+(defun cfw:details-navi-prev-item-command ()
+  (interactive)
+  (let* ((count (or (get-text-property (point) 'cfw:row-count) -1))
+         (next (cfw:details-find-item (1- count))))
     (goto-char (or next (point-min)))))
 
 (defun cfw:details-find-item (row-count)
