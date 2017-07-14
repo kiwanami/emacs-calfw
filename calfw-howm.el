@@ -23,7 +23,7 @@
 
 ;; (eval-after-load "howm-menu" '(progn
 ;;   (require 'calfw-howm)
-;;   (cfw-install-howm-schedules)
+;;   (cfw-howm-install-howm-schedules)
 ;;   (define-key howm-mode-map (kbd "M-C") 'cfw-howm-open-calendar)
 ;; ))
 
@@ -206,7 +206,7 @@ This command should be executed on the calfw calendar."
 
 ;;; Installation
 
-(defun cfw-install-howm-schedules ()
+(defun cfw-howm-install-howm-schedules ()
   "Add a schedule collection function to the calfw for the howm
 schedule data and set up inline calendar function for the howm menu."
   (interactive)

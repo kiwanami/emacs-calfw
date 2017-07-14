@@ -90,7 +90,7 @@ Following programs are also useful:
 ```el
 (eval-after-load "howm-menu" '(progn
   (require 'calfw-howm)
-  (cfw-install-howm-schedules)
+  (cfw-howm-install-howm-schedules)
   (define-key howm-mode-map (kbd "M-C") 'cfw-howm-open-calendar)
 ))
 ```
