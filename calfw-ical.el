@@ -40,6 +40,7 @@
 (require 'calfw)
 (require 'icalendar)
 (require 'url)
+(require 'pp)
 
 (defvar cfw:ical-zone-map nil)
 
