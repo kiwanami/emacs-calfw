@@ -173,7 +173,8 @@ events have not been supported yet."
     (with-current-buffer buf
       (erase-buffer))
     (call-process-shell-command
-     cfw:ical-calendar-external-shell-command nil buf nil url)
+     (concat cfw:ical-calendar-external-shell-command " " url)
+     nil buf nil)
     buf))
 
 (defun cfw:ical-url-to-buffer-internal (url)
