@@ -42,7 +42,8 @@
 (require 'howm)
 (require 'calfw)
 
-(defvar cfw-howm-schedule-cache nil "[internal] Cache data for schedule items of howm.")
+(defvar cfw-howm-schedule-cache nil
+  "[internal] Cache data for schedule items of howm.")
 
 (defun cfw-howm-schedule-cache-clear ()
   "clear cache for howm schedule items."
