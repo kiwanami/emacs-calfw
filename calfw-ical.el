@@ -29,7 +29,7 @@
 ;; Here is a minimum sample code:
 ;; (require 'calfw-ical)
 ;; To open a calendar buffer, execute the following function.
-;; (cfw-open-ical-calendar "http://www.google.com/calendar/ical/.../basic.ics")
+;; (cfw-ical-open-calendar "http://www.google.com/calendar/ical/.../basic.ics")
 
 ;; Executing the following command, this program clears caches to refresh the ICS data.
 ;; (cfw-ical-data-cache-clear-all)
@@ -276,7 +276,7 @@ events have not been supported yet."
      :data (lambda (begin end)
              (cfw-ical-to-calendar url begin end)))))
 
-(defun cfw-open-ical-calendar (url)
+(defun cfw-ical-open-calendar (url)
   "Simple calendar interface. This command displays just one
 calendar source."
   (interactive)
@@ -287,7 +287,7 @@ calendar source."
                (list (cfw-ical-create-source "ical" url "#2952a3")))))
       (switch-to-buffer (cfw-cp-get-buffer cp)))))
 
-;; (progn (eval-current-buffer) (cfw-open-ical-calendar "./ics/test.ics"))
+;; (progn (eval-current-buffer) (cfw-ical-open-calendar "./ics/test.ics"))
 
 (provide 'calfw-ical)
 ;;; calfw-ical.el ends here

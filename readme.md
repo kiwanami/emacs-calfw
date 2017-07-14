@@ -165,7 +165,7 @@ Here is a minimum sample code:
 
 ```el
 (require 'calfw-ical)
-(cfw-open-ical-calendar "http://www.google.com/calendar/ical/.../basic.ics")
+(cfw-ical-open-calendar "http://www.google.com/calendar/ical/.../basic.ics")
 ```
 
 ![Google Calendar and calfw-ical](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-5E808.png?width=450)
