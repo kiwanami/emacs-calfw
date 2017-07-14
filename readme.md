@@ -183,7 +183,7 @@ Here is a minimum sample code:
 (require 'calfw-cal)
 ```
 
-Then, M-x `cfw-open-diary-calendar`.
+Then, M-x `cfw-cal-open-calendar`.
 
 If you see a blank entry for each day, set the variable `diary-list-include-blanks` to nil.
 

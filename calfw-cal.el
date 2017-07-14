@@ -25,7 +25,7 @@
 
 ;; (require 'calfw-cal)
 ;;
-;; M-x cfw-open-diary-calendar
+;; M-x cfw-cal-open-calendar
 
 ;; Key binding
 ;; i : insert an entry on the date
@@ -160,7 +160,7 @@ from the diary schedule data."
    :color (or color "SaddleBrown")
    :data 'cfw-cal-schedule-period-to-calendar))
 
-(defun cfw-open-diary-calendar ()
+(defun cfw-cal-open-calendar ()
   "Open the diary schedule calendar in the new buffer."
   (interactive)
   (save-excursion
@@ -181,7 +181,7 @@ from the diary schedule data."
     (diary-make-entry (calendar-date-string (cfw-date m d y) t t))
     ))
 
-;; (progn (eval-current-buffer) (cfw-open-diary-calendar))
+;; (progn (eval-current-buffer) (cfw-cal-open-calendar))
 
 (provide 'calfw-cal)
 ;;; calfw-cal.el ends here
