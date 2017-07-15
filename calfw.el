@@ -1474,20 +1474,22 @@ function called by clicking.  If STATE is non-nil, the face
 WIDTH is width of the toolbar.
 CURRENT-VIEW is a symbol of the current view type. This symbol is used to select the button faces on the toolbar.
 PREV-CMD and NEXT-CMD are the moving view command, such as `cfw-navi-previous(next)-month-command' and `cfw-navi-previous(next)-week-command'."
-  (let* ((prev (cfw-render-button " < " prev-cmd))
-         (today (cfw-render-button "Today" 'cfw-navi-goto-today-command))
-         (next (cfw-render-button " > " next-cmd))
+  (let* ((prev (cfw-render-button (cfw-gettext " < ") prev-cmd))
+         (today (cfw-render-button
+                 (cfw-gettext "Today")
+                 'cfw-navi-goto-today-command))
+         (next (cfw-render-button (cfw-gettext " > ") next-cmd))
          (month (cfw-render-button
-                 "Month" 'cfw-change-view-month
+                 (cfw-gettext "Month") 'cfw-change-view-month
                  (eq current-view 'month)))
          (tweek (cfw-render-button
-                 "Two Weeks" 'cfw-change-view-two-weeks
+                 (cfw-gettext "Two Weeks") 'cfw-change-view-two-weeks
                  (eq current-view 'two-weeks)))
          (week (cfw-render-button
-                "Week" 'cfw-change-view-week
+                (cfw-gettext "Week") 'cfw-change-view-week
                 (eq current-view 'week)))
          (day (cfw-render-button
-               "Day" 'cfw-change-view-day
+               (cfw-gettext "Day") 'cfw-change-view-day
                (eq current-view 'day)))
          (sp  " ")
          (toolbar-text
