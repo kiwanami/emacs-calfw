@@ -207,6 +207,12 @@ for example `cfw-read-date-command-simple' or `cfw-org-read-date-command'."
   :group 'cfw
   :type 'boolean)
 
+(defcustom cfw-gettext-alist nil
+  "Calfw gettext database used to translate string in calfw's UI."
+  :group 'cfw
+  :type '(alist :key-type (string :tag "Origin string")
+                :value-type (string :tag "Translated string")))
+
 ;;; Faces
 
 (defface cfw-face-title
@@ -382,6 +388,11 @@ KEYMAP-LIST is a source list like ((key . command) ... )."
                             (nconc (cfw-flatten i t) ret)
                           (cons i ret)))
            finally return (if revp ret (nreverse ret))))
+
+(defun cfw-gettext (string)
+  "Return the translate of STRING."
+  (or (cdr (assoc string cfw-gettext-alist))
+      string))
 
 
 
