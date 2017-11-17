@@ -206,6 +206,15 @@ for example `cfw:read-date-command-simple' or `cfw:org-read-date-command'."
   :group 'cfw
   :type 'boolean)
 
+(defcustom cfw:fix-rtl-content nil
+  "If not-nil, calfw fixes right-to-left content in cells.
+When using rtl content without this enabled, the order
+of cells can be ruined e.g. the 2nd appears before the 1st.
+This fixes it by adding a \"Left-to-right Embedding\" unicode
+character to column separators."
+  :group 'cfw
+  :type 'boolean)
+
 ;;; Faces
 
 (defface cfw:face-title
@@ -1729,15 +1738,17 @@ algorithm defined at `cfw:render-line-breaker'."
          (cell-width (cfw:k 'cell-width param))
          (columns (cfw:k 'columns param))
          (num-cell-char
-          (/ cell-width (char-width cfw:fchar-horizontal-line))))
+          (/ cell-width (char-width cfw:fchar-horizontal-line)))
+         (left-to-right-enforce-char "\x202a")
+         (rtl-column-fix (if cfw:fix-rtl-content left-to-right-enforce-char "")))
     (append
      param
-     `((eol . ,EOL) (vl . ,(cfw:rt (make-string 1 cfw:fchar-vertical-line) 'cfw:face-grid))
+     `((eol . ,EOL) (vl . ,(cfw:rt (concat (make-string 1 cfw:fchar-vertical-line) rtl-column-fix ) 'cfw:face-grid))
        (hline . ,(cfw:rt
                   (concat
                    (loop for i from 0 below columns concat
                          (concat
-                          (make-string 1 (if (= i 0) cfw:fchar-top-left-corner cfw:fchar-top-junction))
+                          (make-string 1 (if (= i 0) cfw:fchar-top-left-corner cfw:fchar-top-junction)) rtl-column-fix
                           (make-string num-cell-char cfw:fchar-horizontal-line)))
                    (make-string 1 cfw:fchar-top-right-corner) EOL)
                   'cfw:face-grid))
@@ -1745,7 +1756,7 @@ algorithm defined at `cfw:render-line-breaker'."
                   (concat
                    (loop for i from 0 below columns concat
                          (concat
-                          (make-string 1 (if (= i 0) cfw:fchar-left-junction cfw:fchar-junction))
+                          (make-string 1 (if (= i 0) cfw:fchar-left-junction cfw:fchar-junction)) rtl-column-fix
                           (make-string num-cell-char cfw:fchar-horizontal-line)))
                    (make-string 1 cfw:fchar-right-junction) EOL) 'cfw:face-grid))))))
 
