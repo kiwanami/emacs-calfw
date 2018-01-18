@@ -2343,14 +2343,22 @@ mainly used at functions for putting overlays."
 this function returns nil."
   (loop with pos = (cfw:dest-point-min dest)
         with end = (cfw:dest-point-max dest)
+        with last-found = nil
         for next = (next-single-property-change pos 'cfw:date nil end)
         for text-date = (and next (cfw:cursor-to-date next))
         for text-row-count = (and next (get-text-property next 'cfw:row-count))
         while (and next (< next end)) do
         (when (and text-date (equal date text-date)
                    (eql row-count text-row-count))
+          ;; this is needed item
           (return next))
-        (setq pos next)))
+        (when (and text-date (equal date text-date)
+                   text-row-count)
+          ;; keep it to search bottom item
+          (setq last-found next))
+        (setq pos next)
+        finally (if (and last-found (< row-count 0))
+                    (return last-found))))
 
 (defun cfw:navi-goto-date (date)
   "Move the cursor to DATE and put selection. If DATE is not
