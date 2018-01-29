@@ -326,6 +326,17 @@ In the current implementation, the Calfw has 3 strategies: none, simple and word
 - `cfw:render-line-breaker-wordwrap`
     - This strategy breaks lines with the emacs function `fill-region`. Although, the line breaking algorithm of the Emacs is not so smart as more complicated ones, such as Knuth/Plass algorithm, this strategy is better than the simple one.
 
+### Right-to-left text
+
+Right-to-left events can disorder the cells' texts between columns.
+If this happens you can fix it using:
+
+```el
+(setq cfw:fix-rtl-content t)
+```
+
+(The fix adds a "Left-to-right Embedding" unicode character to column breaks)
+
 ## Calfw framework details
 
 In this section, I would explain how to add a new calendar source and how to embed the calfw component in the other applications.
