@@ -111,7 +111,7 @@ from the diary schedule data."
       collect (cfw:cal-entry-to-event date string))
      (list (cons 'periods
                  (map 'list (function (lambda (period)
-                                        (let ((spec (read (substring (car period) 2))))
+                                        (let ((spec (read (string-trim-left (car period) "[%&]+"))))
                                           (cond
                                            ((eq calendar-date-style 'american)
                                             (list
