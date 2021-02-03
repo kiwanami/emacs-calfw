@@ -251,12 +251,10 @@ If TEXT does not have a range, return nil."
 				(match-string 1 extra)))
 		      (total-days (string-to-number
 				   (match-string 2 extra)))
-		      (start-date (time-subtract
-				   (org-read-date nil t date-string)
-				   (seconds-to-time (* 3600 24 (- cur-day 1)))))
+		      (start-date (org-read-date nil t date-string))
 		      (end-date (time-add
 				 (org-read-date nil t date-string)
-				 (seconds-to-time (* 3600 24 (- total-days cur-day))))))
+				 (seconds-to-time (* 3600 24 (- total-days 1))))))
 		 (list (calendar-gregorian-from-absolute (time-to-days start-date))
 		       (calendar-gregorian-from-absolute
                         (time-to-days end-date))
