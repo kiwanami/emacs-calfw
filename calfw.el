@@ -206,6 +206,11 @@ for example `cfw:read-date-command-simple' or `cfw:org-read-date-command'."
   :group 'cfw
   :type 'boolean)
 
+(defcustom cfw:display-item-separators t
+  "If not-nil, calfw displays separator lines between items in a day."
+  :group 'cfw
+  :type 'boolean)
+
 ;;; Faces
 
 (defface cfw:face-title
@@ -1660,7 +1665,7 @@ algorithm defined at `cfw:render-line-breaker'."
   (let ((last-line (car (last rows)))
         last-face)
     (unless (get-text-property 0 'cfw:period last-line)
-      (put-text-property 0 (length last-line) 'cfw:item-separator t last-line))
+      (put-text-property 0 (length last-line) 'cfw:item-separator cfw:display-item-separators last-line))
     rows))
 
 (defun cfw:render-line-breaker-none (line w n)
