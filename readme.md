@@ -536,6 +536,26 @@ alist collects them as a list, like the following code.
       :name "test2" :data 'sample-data2)))
 ```
 
+#### Use annotations
+
+Similar to how the legacy schedule method define scheduled events, to use annotations, let the data function create a association list.
+Notice annotations **do not support** periods items.
+
+`cfw:source-data example3:`
+
+```el
+(defun sample-data3 (b e)
+  '(((1  8 2011) . ("item1"))
+	((1 11 2011) . ("next item"))))
+
+(cfw:open-calendar-buffer
+  :date (cfw:date 1 1 2011)
+  :annotation-sources
+   (list
+     (make-cfw:source
+      :name "test3" :data 'sample-data3)))
+```
+
 ### How to embed the calfw component in the other applications?
 
 In this section, the details of calfw components would be explained so as for users to extend calfw in themselves.
