@@ -54,6 +54,11 @@
   :type
   '(list string string symbol (list symbol (choice file (const nil))) string))
 
+(defcustom cfw:org-agenda-inactive-timestamps nil
+  "Non-nil means show inactive timestamps events."
+  :group 'cfw-org
+  :type 'boolean)
+
 (defsubst cfw:org-tp (text prop)
   "[internal] Return text property at position 0."
   (get-text-property 0 prop text))
@@ -90,6 +95,8 @@ For example,
 (defun cfw:org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
   (let ((org-agenda-prefix-format " ")
+        (org-agenda-include-inactive-timestamps 
+	 cfw:org-agenda-inactive-timestamps)
         (span 'day))
     (setq org-agenda-buffer
       (when (buffer-live-p org-agenda-buffer)
