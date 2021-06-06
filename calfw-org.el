@@ -255,10 +255,11 @@ If TEXT does not have a range, return nil."
 		      (end-date (time-add
 				 start-date
 				 (seconds-to-time (* 3600 24 (- total-days 1))))))
-		 (list (calendar-gregorian-from-absolute (time-to-days start-date))
-		       (calendar-gregorian-from-absolute
-                        (time-to-days end-date))
-                       text)))))))
+     (unless (= cur-day total-days)
+             (list (calendar-gregorian-from-absolute (time-to-days start-date))
+		               (calendar-gregorian-from-absolute
+                                (time-to-days end-date))
+                               text))))))))
 
 (defun calfw-org--schedule-period-to-calendar (begin end)
   "Return calfw calendar items between BEGIN and END from org schedule data."
