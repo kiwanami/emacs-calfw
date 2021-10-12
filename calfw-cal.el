@@ -49,9 +49,9 @@
 
 (defun cfw:cal-entry-to-event (date string)
   "[internal] Add text properties to string, allowing calfw to act on it."
-  (let* ((lines      (split-string 
+  (let* ((lines      (split-string
                       (replace-regexp-in-string
-                       "[\t ]+" " " (cfw:trim string))
+                       "[\t ]+" " " string)
                       "\n"))
          (first      (car lines))
          (desc       (mapconcat 'identity (cdr lines) "\n"))
