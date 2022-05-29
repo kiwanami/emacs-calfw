@@ -104,6 +104,23 @@ For example,
                                file date
                                cfw:org-agenda-schedule-args))))))
 
+(defun cfw:org-collect-file-schedules-period (file begin end)
+  "[internal] Return org schedule items between BEGIN and END."
+  (let ((org-agenda-prefix-format " ")
+        (span 'day))
+    (setq org-agenda-buffer
+	  (when (buffer-live-p org-agenda-buffer)
+            org-agenda-buffer))
+    (org-compile-prefix-format nil)
+    (cl-loop for date in (cfw:enumerate-days begin end) append
+             (cl-loop for file in (list file)
+                      append
+                      (progn
+			(org-check-agenda-file file)
+			(apply 'org-agenda-get-day-entries
+                               file date
+                               cfw:org-agenda-schedule-args))))))
+
 (defun cfw:org-onclick ()
   "Jump to the clicked org item."
   (interactive)
@@ -269,6 +286,27 @@ from the org schedule data."
 		       line contents)))
    finally return (nconc contents (list (cons 'periods periods)))))
 
+(defun cfw:org-schedule-file-period-to-calendar (file begin end)
+  "[internal] Return calfw calendar items between BEGIN and END
+from the org schedule data."
+  (cl-loop
+   with cfw:org-todo-keywords-regexp = (regexp-opt org-todo-keywords-for-agenda) ; dynamic bind
+   with contents = nil with periods = nil
+   for i in (cfw:org-collect-file-schedules-period file begin end)
+   for date = (cfw:org-tp i 'date)
+   for line = (funcall cfw:org-schedule-summary-transformer i)
+   for range = (cfw:org-get-timerange line)
+   if range do
+   (unless (member range periods)
+     (push range periods))
+   else do
+					; dotime is not present if this event was already added as a timerange
+   (if (cfw:org-tp i 'dotime)
+       (setq contents (cfw:contents-add
+		       (cfw:org-normalize-date date)
+		       line contents)))
+   finally return (nconc contents (list (cons 'periods periods)))))
+
 (defun cfw:org-schedule-sorter (text1 text2)
   "[internal] Sorting algorithm for org schedule items.
 TEXT1 < TEXT2."
@@ -396,7 +434,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
      :name (concat "Org:" name)
      :color color
      :data (lambda (begin end)
-             (cfw:org-to-calendar file begin end)))))
+	     (cfw:org-schedule-file-period-to-calendar file begin end)))))
 
 (defun cfw:org-capture-day ()
   (with-current-buffer  (get-buffer-create cfw:calendar-buffer-name)
