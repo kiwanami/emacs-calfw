@@ -87,8 +87,8 @@ For example,
 (defvar cfw:org-face-agenda-item-foreground-color "Seagreen4"
   "Variable for org agenda item foreground color.")
 
-(defun cfw:org-collect-schedules-period (begin end)
-  "[internal] Return org schedule items between BEGIN and END."
+(defun cfw:org-collect-schedules-period (begin end &optional file)
+  "[internal] Return org schedule (or from only optional file) items between BEGIN and END."
   (let ((org-agenda-prefix-format " ")
         (span 'day))
     (setq org-agenda-buffer
@@ -96,13 +96,13 @@ For example,
             org-agenda-buffer))
     (org-compile-prefix-format nil)
     (cl-loop for date in (cfw:enumerate-days begin end) append
-             (cl-loop for file in (or cfw:org-icalendars (org-agenda-files nil 'ifmode))
-                      append
-                      (progn
+             (cl-loop for file in (or file (or cfw:org-icalendars (org-agenda-files nil 'ifmode)))
+		      append
+		      (progn
 			(org-check-agenda-file file)
 			(apply 'org-agenda-get-day-entries
-                               file date
-                               cfw:org-agenda-schedule-args))))))
+			       file date
+			       cfw:org-agenda-schedule-args))))))
 
 (defun cfw:org-onclick ()
   "Jump to the clicked org item."
@@ -248,13 +248,13 @@ If TEXT does not have a range, return nil."
 		       (calendar-gregorian-from-absolute (time-to-days end-date)) text))
 	     )))))
 
-(defun cfw:org-schedule-period-to-calendar (begin end)
+(defun cfw:org-schedule-period-to-calendar (begin end &optional file)
   "[internal] Return calfw calendar items between BEGIN and END
-from the org schedule data."
+from the org schedule data (or from only optional file)."
   (cl-loop
    with cfw:org-todo-keywords-regexp = (regexp-opt org-todo-keywords-for-agenda) ; dynamic bind
    with contents = nil with periods = nil
-   for i in (cfw:org-collect-schedules-period begin end)
+   for i in (cfw:org-collect-schedules-period begin end file)
    for date = (cfw:org-tp i 'date)
    for line = (funcall cfw:org-schedule-summary-transformer i)
    for range = (cfw:org-get-timerange line)
@@ -339,56 +339,6 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
                                          (org-element-property :contents-end h-obj)))
                     nil))))
 
-(defun cfw:org-convert-org-to-calfw (file)
-  (save-excursion
-    (with-current-buffer
-        (find-file-noselect file)
-      (let*
-          ((elem-obj (org-element-parse-buffer))
-           (pos-lst `( ,@(org-element-map elem-obj 'timestamp
-                           (lambda (hl) (org-element-property :begin hl) ))
-                       ,@(org-element-map (org-element-map elem-obj 'headline
-                                            (lambda (hl)
-					      (org-element-property :deadline hl) ) ) 'timestamp
-                           (lambda (hl) (org-element-property :begin hl) ))
-                       ,@(org-element-map (org-element-map elem-obj 'headline
-                                            (lambda (hl)
-                                              (org-element-property :scheduled hl) ) ) 'timestamp
-                           (lambda (hl) (org-element-property :begin hl) )))))
-        (cl-loop for pos in pos-lst
-		 do (goto-char pos)
-		 for t-obj =  (org-element-timestamp-parser)
-		 for h-obj = (progn
-                               (org-back-to-heading t)
-                               (org-element-headline-parser (point-max) t))
-		 for h-beg  = (point)
-		 for event = (cfw:org-convert-event file h-obj t-obj h-beg)
-		 for ts-type = (org-element-property :type t-obj)
-		 if (eq 'active-range ts-type)
-		 collect event into periods
-		 else if (eq 'active ts-type)
-		 collect event into contents
-		 ;; else do
-		 ;; (message "calfw-org: Cannot handle event")
-		 finally
-		 (kill-buffer (get-file-buffer file))
-		 (cl-return `((periods ,periods) ,@contents)))))))
-
-(defun cfw:org-to-calendar (file begin end)
-  (cl-loop for event in (cfw:org-convert-org-to-calfw file)
-           if (and (listp event)
-                   (equal 'periods (car event)))
-           collect
-           (cons
-            'periods
-            (cl-loop for evt in (cadr event)
-		     if (and
-			 (cfw:date-less-equal-p begin (cfw:event-end-date evt))
-			 (cfw:date-less-equal-p (cfw:event-start-date evt) end))
-		     collect evt))
-           else if (cfw:date-between begin end (cfw:event-start-date event))
-           collect event))
-
 (defun cfw:org-create-file-source (name file color)
   "Create org-element based source. "
   (let ((file file))
@@ -396,7 +346,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
      :name (concat "Org:" name)
      :color color
      :data (lambda (begin end)
-             (cfw:org-to-calendar file begin end)))))
+	     (cfw:org-schedule-period-to-calendar begin end (list file))))))
 
 (defun cfw:org-capture-day ()
   (with-current-buffer  (get-buffer-create cfw:calendar-buffer-name)
