@@ -113,13 +113,12 @@ For example,
             org-agenda-buffer))
     (org-compile-prefix-format nil)
     (cl-loop for date in (cfw:enumerate-days begin end) append
-             (cl-loop for file in (list file)
-                      append
-                      (progn
-			(org-check-agenda-file file)
-			(apply 'org-agenda-get-day-entries
-                               file date
-                               cfw:org-agenda-schedule-args))))))
+	     (let ((file file))
+               (progn
+		 (org-check-agenda-file file)
+		 (apply 'org-agenda-get-day-entries
+                        file date
+                        cfw:org-agenda-schedule-args))))))
 
 (defun cfw:org-onclick ()
   "Jump to the clicked org item."
