@@ -463,7 +463,7 @@ ones of DATE2. Otherwise is `nil'."
              ret))))
 
 (defun cfw:parse-str-time (str)
-  "Parsese a time string of the format HH:MM to an internal format."
+  "Parse a time string of the format HH:MM to an internal format."
   (when (string-match "\\([[:digit:]]\\{2\\}\\):\\([[:digit:]]\\{2\\}\\)" str)
     (cfw:time (string-to-number (match-string 1 str))
               (string-to-number (match-string 2 str)))))
@@ -473,7 +473,7 @@ ones of DATE2. Otherwise is `nil'."
   (cfw:emacs-to-calendar (cfw:parsetime-emacs str)))
 
 (defun cfw:read-date-command-simple (string-date)
-  "Move the cursor to the specified date."
+  "Read a date and return it as a calendar date value."
   (interactive "sInput Date (YYYY/MM/DD): ")
   (cfw:parsetime string-date))
 
@@ -582,7 +582,7 @@ white (negative color of `cfw:source-period-bgcolor') is used."
   end-date    ; end date of the event [cfw:date] (optional)
   end-time    ; end of the event (optional)
   description ; event description [string] (optional)
-  location    ; location [strting] (optional)
+  location    ; location [string] (optional)
   source      ; [internal] source of the event
   )
 
