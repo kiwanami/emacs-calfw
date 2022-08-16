@@ -1272,22 +1272,30 @@ calling functions `cfw:annotations-functions'."
   (let ((bmonth (calendar-extract-month begin-date))
 	(emonth (calendar-extract-month end-date))
 	(byear  (calendar-extract-year begin-date))
+	(eyear  (calendar-extract-year end-date))
 	(bday   (calendar-extract-day begin-date))
         (eday   (calendar-extract-day end-date)))
-    (if
-	;; TODO: handle byear /= eyear?
-	(eql bmonth emonth)
+    (cond
+     ((eql bmonth emonth)
 	(let ((month (aref calendar-month-name-array (1- bmonth))))
 	  (case calendar-date-style
 	    ('european (format "%s - %s %s %s" bday eday month byear))
 	    ('american (format "%s %s - %s %s" month bday eday byear))
-	    ('iso      (format "%s %s %s - %s" byear month bday eday))))
+	    ('iso      (format "%s %s %s - %s" byear month bday eday)))))
+     ((eql byear eyear)
       (let ((bmonth (aref calendar-month-name-array (1- bmonth)))
 	    (emonth (aref calendar-month-name-array (1- emonth))))
 	(case calendar-date-style
 	  ('european (format "%s %s - %s %s %s" bday bmonth eday emonth byear))
 	  ('american (format "%s %s - %s %s %s" bmonth bday emonth eday byear))
-	  ('iso      (format "%s %s %s - %s %s" byear bmonth bday emonth eday)))))))
+	  ('iso      (format "%s %s %s - %s %s" byear bmonth bday emonth eday)))))
+     (t
+      (let ((bmonth (aref calendar-month-name-array (1- bmonth)))
+	    (emonth (aref calendar-month-name-array (1- emonth))))
+	(case calendar-date-style
+	  ('european (format "%s %s %s - %s %s %s" bday bmonth byear eday emonth eyear))
+	  ('american (format "%s %s %s - %s %s %s" bmonth bday byear emonth eday eyear))
+	  ('iso      (format "%s %s %s - %s %s %s" byear bmonth bday eyear emonth eday))))))))
 
 (defun cfw:render-title-day (date)
   "Render the calendar title for the day view on DATE."
