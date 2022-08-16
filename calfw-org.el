@@ -487,7 +487,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
     ))
 
 (defun cfw:org-read-date-command ()
-  "Move the cursor to the specified date."
+  "Read a date and return it as a calendar date value."
   (interactive)
   (cfw:emacs-to-calendar (org-read-date nil 'to-time)))
 
