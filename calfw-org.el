@@ -96,20 +96,23 @@ For example,
   "[internal] Return org schedule items between BEGIN and END."
   (let ((org-agenda-prefix-format " ")
         (org-agenda-include-inactive-timestamps 
-	 cfw:org-agenda-inactive-timestamps)
+	     cfw:org-agenda-inactive-timestamps)
         (span 'day))
     (setq org-agenda-buffer
-      (when (buffer-live-p org-agenda-buffer)
-        org-agenda-buffer))
+          (when (buffer-live-p org-agenda-buffer)
+            org-agenda-buffer))
     (org-compile-prefix-format nil)
-    (loop for date in (cfw:enumerate-days begin end) append
-          (loop for file in (or cfw:org-icalendars (org-agenda-files nil 'ifmode))
-                append
-                (progn
-                  (org-check-agenda-file file)
-                  (apply 'org-agenda-get-day-entries
-                         file date
-                         cfw:org-agenda-schedule-args))))))
+    (delete-duplicates
+     (loop for date in (cfw:enumerate-days begin end) append
+           (loop for file in (or cfw:org-icalendars (org-agenda-files nil 'ifmode))
+                 append
+                 (progn
+                   (org-check-agenda-file file)
+                   (apply 'org-agenda-get-day-entries
+                          file date
+                          cfw:org-agenda-schedule-args))))
+     :from-end t
+     :test (lambda (x y) (equal (cfw:org-tp x 'date) (cfw:org-tp y 'date))))))
 
 (defun cfw:org-onclick ()
   "Jump to the clicked org item."
