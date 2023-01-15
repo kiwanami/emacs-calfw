@@ -112,7 +112,7 @@ For example,
                           file date
                           cfw:org-agenda-schedule-args))))
      :from-end t
-     :test (lambda (x y) (equal (cfw:org-tp x 'date) (cfw:org-tp y 'date))))))
+     :test (lambda (x y) (equal (cfw:org-tp x 'txt) (cfw:org-tp y 'txt))))))
 
 (defun cfw:org-onclick ()
   "Jump to the clicked org item."
