@@ -1014,6 +1014,9 @@ VIEW is a symbol of the view type."
    ((eq 'day       view)  'cfw:view-day)
    (t (error "Not found such view : %s" view))))
 
+(defvar cfw:highlight-today t
+  "Variable to control whether today is rendered differently than other days.")
+
 (defun cfw:cp-update (component)
   "[internal] Clear and re-draw the component content."
   (let* ((buf (cfw:cp-get-buffer component))
@@ -1028,7 +1031,8 @@ VIEW is a symbol of the view type."
                               (funcall (cfw:cp-dispatch-view-impl
                                         (cfw:component-view component))
                                        component)))
-      (cfw:dest-ol-today-set dest)
+      (when cfw:highlight-today
+        (cfw:dest-ol-today-set dest))
       (cfw:cp-set-selected-date
        component (cfw:component-selected component))
       (cfw:dest-after-update dest)
