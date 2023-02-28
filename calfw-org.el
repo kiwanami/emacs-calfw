@@ -40,6 +40,8 @@
 (require 'org-capture)
 (require 'google-maps nil t)
 
+(require 's)
+
 (defgroup cfw-org nil
   "Options about calfw-org."
   :tag "Calfw Org"
