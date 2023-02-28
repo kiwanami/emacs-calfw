@@ -231,22 +231,19 @@ If this function splits into a list of string, the calfw displays those string i
 If TEXT does not have a range, return nil."
   (let* ((dotime (cfw:org-tp text 'dotime)))
     (and (stringp dotime) (string-match org-ts-regexp dotime)
-	 (let ((date-string  (match-string 1 dotime))
+	 (let* ((matches  (s-match-strings-all org-ts-regexp dotime))
+           (start-date (nth 1 (car matches)))
+           (end-date (nth 1 (nth 1 matches)))
 	       (extra (cfw:org-tp text 'extra)))
 	   (if (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra)
-	       (let* ((cur-day (string-to-number
-				(match-string 1 extra)))
-		      (total-days (string-to-number
-				   (match-string 2 extra)))
-		      (start-date (time-subtract
-				   (org-read-date nil t date-string)
-				   (seconds-to-time (* 3600 24 (- cur-day 1)))))
-		      (end-date (time-add
-				 (org-read-date nil t date-string)
-				 (seconds-to-time (* 3600 24 (- total-days cur-day))))))
-		 (list (calendar-gregorian-from-absolute (time-to-days start-date))
-		       (calendar-gregorian-from-absolute (time-to-days end-date)) text))
-	     )))))
+       ( list( calendar-gregorian-from-absolute
+       (time-to-days
+       (org-read-date nil t start-date))
+       )
+       (calendar-gregorian-from-absolute
+       (time-to-days
+       (org-read-date nil t end-date))) text)
+	   )))))
 
 (defun cfw:org-schedule-period-to-calendar (begin end)
   "[internal] Return calfw calendar items between BEGIN and END
