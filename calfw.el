@@ -947,7 +947,7 @@ this function updates the view to display the date."
       (setf (cfw:component-selected component) date)
       (cfw:dest-before-update dest)
       (cfw:dest-ol-selection-clear dest)
-      (cfw:dest-ol-selection-set dest date)
+      ;;(cfw:dest-ol-selection-set dest date)
       (cfw:dest-after-update dest)
       (cfw:cp-move-cursor dest date force-move-cursor)
       (unless (equal last date)
