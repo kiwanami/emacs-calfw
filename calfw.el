@@ -361,12 +361,6 @@ KEYMAP-LIST is a source list like ((key . command) ... )."
      keymap-list)
     new-key-map))
 
-(defun cfw:trim (str)
-  "[internal] Trim the space char-actors."
-  (if (string-match "^[ \t\n\r]*\\(.*?\\)[ \t\n\r]*$" str)
-      (match-string 1 str)
-    str))
-
 (defun cfw:flatten (lst &optional revp)
   (cl-loop with ret = nil
            for i in lst
@@ -1284,7 +1278,7 @@ sides with the character PADDING."
                    ""))
          (llen (string-width lcnt))
          (rmargin (- width llen))
-         (right (cfw:trim right))
+         (right (string-trim right))
          (rcnt (or (and right (> rmargin 0)
                         (cfw:render-truncate right rmargin))
                    ""))
@@ -1610,7 +1604,7 @@ algorithm defined at `cfw:render-line-breaker'."
         for wsum = (+ curcol w) do
         (cond
          ((and (< i endpos) (<= max-line-num linenum))
-          (push (cfw:trim
+          (push (string-trim
                  (replace-regexp-in-string
                   "[\n\r]" " " (substring string lastpos))) ret)
           (setq i endpos))
@@ -1649,7 +1643,7 @@ algorithm defined at `cfw:render-line-breaker'."
               (when (not (eobp))
                 (push (buffer-substring last (point-max)) ret)))
              (t
-              (push (cfw:trim (buffer-substring last (1- ps))) ret)
+              (push (string-trim (buffer-substring last (1- ps))) ret)
               (when (<= max-line-num (length ret))
                 (setq cont nil))
               (setq last ps))))
