@@ -306,13 +306,6 @@ for example `cfw:read-date-command-simple' or `cfw:org-read-date-command'."
      :foreground "Cyan" :weight bold))
   "Face for today" :group 'calfw)
 
-(defface cfw:face-select
-  '((((class color) (background light))
-     :background "#c3c9f8")
-    (((class color) (background dark))
-     :background "Blue4"))
-  "Face for selection" :group 'calfw)
-
 (defvar cfw:face-item-separator-color "SlateBlue"
   "Color for the separator line of items in a day.")
 
@@ -522,14 +515,12 @@ ones of DATE2. Otherwise is `nil'."
 ;; [cfw:component]
 ;; dest                   : an object of `cfw:dest'
 ;; model                  : an object of the calendar model
-;; selected               : selected date
 ;; view                   : a symbol of view type (month, week, two-weeks, ...)
 ;; update-hooks           : a list of hook functions for update event
-;; selectoin-change-hooks : a list of hook functions for selection change event
 ;; click-hooks            : a list of hook functions for click event
 
-(cl-defstruct cfw:component dest model selected view
-              update-hooks selection-change-hooks click-hooks)
+(cl-defstruct cfw:component dest model view
+              update-hooks click-hooks)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Data Source
@@ -675,12 +666,11 @@ The following values are possible:
 ;; clear-func  : a function that clears the rendering destination.
 ;; before-update-func : a function that is called at the beginning of rendering routine.
 ;; after-update-func  : a function that is called at the end of rendering routine.
-;; select-ol   : a list of overlays for selection
 ;; today-ol    : a list of overlays for today
 
 (cl-defstruct cfw:dest
   type buffer min-func max-func width height
-  clear-func before-update-func after-update-func select-ol today-ol)
+  clear-func before-update-func after-update-func today-ol)
 
 ;; shortcut functions
 
@@ -713,30 +703,6 @@ The following values are possible:
     (funcall (cfw:dest-after-update-func c))))
 
 ;; private functions
-
-(defun cfw:dest-ol-selection-clear (dest)
-  "[internal] Clear the selection overlays on the current calendar view."
-  (cl-loop for i in (cfw:dest-select-ol dest)
-           do (delete-overlay i))
-  (setf (cfw:dest-select-ol dest) nil))
-
-(defun cfw:dest-ol-selection-set (dest date)
-  "[internal] Put a selection overlay on DATE. The selection overlay can be
- put on some days, calling this function many times.  If DATE is
- not included on the current calendar view, do nothing. This
- function does not manage the selections, just put the overlay."
-  (let (ols)
-    (cfw:dest-with-region dest
-      (cfw:find-all-by-date
-       dest date
-       (lambda (begin end)
-         (let ((overlay (make-overlay begin end)))
-           (overlay-put overlay 'face
-                        (if (eq 'cfw:face-day-title
-                                (get-text-property begin 'face))
-                            'cfw:face-select))
-           (push overlay ols)))))
-    (setf (cfw:dest-select-ol dest) ols)))
 
 (defun cfw:dest-ol-today-clear (dest)
   "[internal] Clear decoration overlays."
@@ -860,20 +826,18 @@ the calfw is responsible to manage the buffer and key maps."
 
 ;; Create
 
-(defun cfw:cp-new (dest model view &optional selected-date)
+(defun cfw:cp-new (dest model view &optional selected) ;; TODO: deal with selected
   "[internal] Create a new component object.
 DEST is a cfw:dest object.  MODEL is a model object.  VIEW is a
 symbol of the view type: month, two-weeks, week and day.
-SELECTED-DATE is a selected date initially.  This function is
-called by the initialization functions,
+This function is called by the initialization functions,
 `cfw:create-calendar-component-buffer',
 `cfw:create-calendar-component-region' and
 `cfw:get-calendar-text'."
   (let ((cp (make-cfw:component
              :dest  dest
              :model model
-             :view  (or view 'month)
-             :selected (or selected-date (calendar-current-date)))))
+             :view  (or view 'month))))
     (cfw:cp-update cp)
     cp))
 
@@ -892,10 +856,6 @@ found at the variable, return nil."
           (error "Not found cfw:component attribute...")))))
 
 ;; Getter
-
-(defun cfw:cp-get-selected-date (component)
-  "Return the selected date of the component."
-  (cfw:component-selected component))
 
 (defun cfw:cp-get-contents-sources (component)
   "Return a list of the content sources."
@@ -923,8 +883,7 @@ found at the variable, return nil."
 
 ;; Setter
 (defun cfw:cp-move-cursor (dest date &optional force)
-  "[internal] Just move the cursor onto the date. This function
-is called by `cfw:cp-set-selected-date'."
+  "[internal] Just move the cursor onto the date."
   (when (or force
             ;; Check if there's a current component, otherwise
             ;; `cfw:cursor-to-nearest-date' signals an error.
@@ -935,30 +894,6 @@ is called by `cfw:cp-set-selected-date'."
       (goto-char pos)
       (unless (eql (selected-window) (get-buffer-window (current-buffer)))
           (set-window-point (get-buffer-window (current-buffer)) pos))))))
-
-(defun cfw:cp-set-selected-date (component date &optional force-move-cursor)
-  "Select the date on the component. If the current view doesn't contain the date,
-this function updates the view to display the date."
-  (let ((last (cfw:component-selected component))
-        (dest (cfw:component-dest component))
-        (model (cfw:component-model component)))
-    (cond
-     ((cfw:cp-displayed-date-p component date)
-      (setf (cfw:component-selected component) date)
-      (cfw:dest-before-update dest)
-      (cfw:dest-ol-selection-clear dest)
-      ;;(cfw:dest-ol-selection-set dest date)
-      (cfw:dest-after-update dest)
-      (cfw:cp-move-cursor dest date force-move-cursor)
-      (unless (equal last date)
-        (cfw:cp-fire-selection-change-hooks component)))
-     (t
-      (cfw:model-set-init-date date model)
-      (setf (cfw:component-selected component) date)
-      (cfw:cp-update component)
-      (cfw:cp-fire-selection-change-hooks component)
-      ;; Because this function will be called from cfw:cp-update, do nothing here.
-      ))))
 
 (defun cfw:cp-set-contents-sources (component sources)
   "Set content sources for the component.
@@ -994,11 +929,6 @@ VIEW is a symbol of the view type."
 HOOK is a function that has no argument."
   (push hook (cfw:component-update-hooks component)))
 
-(defun cfw:cp-add-selection-change-hook (component hook)
-  "Add the selection change hook function to the component.
-HOOK is a function that has no argument."
-  (push hook (cfw:component-selection-change-hooks component)))
-
 (defun cfw:cp-add-click-hook (component hook)
   "Add the click hook function to the component.
 HOOK is a function that has no argument."
@@ -1027,7 +957,6 @@ VIEW is a symbol of the view type."
          (dest (cfw:component-dest component)))
     (with-current-buffer buf
       (cfw:dest-before-update dest)
-      (cfw:dest-ol-selection-clear dest)
       (cfw:dest-ol-today-clear dest)
       (let ((buffer-read-only nil))
         (cfw:dest-with-region dest
@@ -1037,7 +966,7 @@ VIEW is a symbol of the view type."
                                        component)))
       (when cfw:highlight-today
         (cfw:dest-ol-today-set dest))
-      (cfw:cp-set-selected-date
+      (cfw:cp-goto-date
        component (cfw:component-selected component))
       (cfw:dest-after-update dest)
       (cfw:cp-fire-update-hooks component))))
@@ -1048,13 +977,6 @@ VIEW is a symbol of the view type."
         do (condition-case err
                (funcall f)
              (nil (message "Calfw: Click / Hook error %S [%s]" f err)))))
-
-(defun cfw:cp-fire-selection-change-hooks (component)
-  "[internal] Call selection change hook functions of the component with no arguments."
-  (cl-loop for f in (cfw:component-selection-change-hooks component)
-        do (condition-case err
-               (funcall f)
-             (nil (message "Calfw: Selection change / Hook error %S [%s]" f err)))))
 
 (defun cfw:cp-fire-update-hooks (component)
   "[internal] Call update hook functions of the component with no arguments."
@@ -1437,14 +1359,14 @@ faces, the faces are remained."
   '((((class color) (background light))
      :foreground "Lightskyblue4" :background "White")
     (((class color) (background dark))
-     :foreground "Gray10" :weight bold))
+     :foreground "Gray10" :weight bold :background "Steelblue4"))
   "Face for button on toolbar" :group 'calfw)
 
 (defface cfw:face-toolbar-button-on
   '((((class color) (background light))
      :foreground "Lightpink3" :background "Gray94" )
     (((class color) (background dark))
-     :foreground "Gray50" :weight bold))
+     :foreground "Gray50" :weight bold :background "Steelblue4"))
   "Face for button on toolbar" :group 'calfw)
 
 (defun cfw:render-button (title command &optional state)
@@ -2373,13 +2295,25 @@ this function returns nil."
         finally (if (and last-found (< row-count 0))
                     (cl-return last-found))))
 
+(defun cfw:cp-goto-date (component date &optional force-move-cursor)
+  "Go to the date on the component. If the current view doesn't contain the date,
+this function updates the view to display the date."
+  (let ((dest (cfw:component-dest component))
+        (model (cfw:component-model component)))
+    (cond
+     ((cfw:cp-displayed-date-p component date)
+      (cfw:cp-move-cursor dest date force-move-cursor))
+     (t
+      (cfw:model-set-init-date date model)
+      (cfw:cp-update component)))))
+
 (defun cfw:navi-goto-date (date)
-  "Move the cursor to DATE and put selection. If DATE is not
-included on the current calendar, this function changes the
+  "Move the cursor to DATE.
+If DATE is not included on the current calendar, this function changes the
 calendar view."
   (let ((cp (cfw:cp-get-component)))
     (when cp
-      (cfw:cp-set-selected-date cp date))))
+      (cfw:cp-goto-date cp date))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Major Mode / Key bindings
@@ -2525,7 +2459,7 @@ calendar view."
   (let ((cp (cfw:cp-get-component))
         (date (cfw:cursor-to-date)))
     (when (and cp date)
-      (cfw:cp-set-selected-date cp date)
+      (cfw:cp-goto-date cp date)
       (cfw:cp-fire-click-hooks cp))))
 
 (defun cfw:refresh-calendar-buffer (no-resize)
@@ -2550,7 +2484,7 @@ With prefix arg NO-RESIZE, don't fit calendar to window size."
   (when (cfw:cp-get-component)
     (cfw:navi-goto-date
      (cfw:week-begin-date
-      (cfw:cp-get-selected-date (cfw:cp-get-component))))))
+      (cfw:cursor-to-nearest-date)))))
 
 (defun cfw:navi-goto-week-end-command ()
   "Move the cursor to the last day of the current week."
@@ -2558,7 +2492,7 @@ With prefix arg NO-RESIZE, don't fit calendar to window size."
   (when (cfw:cp-get-component)
     (cfw:navi-goto-date
      (cfw:week-end-date
-      (cfw:cp-get-selected-date (cfw:cp-get-component))))))
+      (cfw:cursor-to-nearest-date)))))
 
 (defun cfw:navi-goto-date-command ()
   "Move the cursor to the specified date."
@@ -2576,7 +2510,7 @@ Moves backward if NUM is negative."
   (interactive "p")
   (when (cfw:cp-get-component)
     (unless num (setq num 1))
-    (let* ((cursor-date (cfw:cp-get-selected-date (cfw:cp-get-component)))
+    (let* ((cursor-date (cfw:cursor-to-nearest-date))
            (new-cursor-date (cfw:date-after cursor-date num)))
       (cfw:navi-goto-date new-cursor-date))))
 
@@ -2618,7 +2552,7 @@ Movement is backward if NUM is negative."
   (interactive "p")
   (when (cfw:cp-get-component)
     (unless num (setq num 1))
-    (let* ((cursor-date (cfw:cp-get-selected-date (cfw:cp-get-component)))
+    (let* ((cursor-date (cfw:cursor-to-nearest-date))
            (month (calendar-extract-month cursor-date))
            (day   (calendar-extract-day   cursor-date))
            (year  (calendar-extract-year  cursor-date))
@@ -2638,7 +2572,7 @@ Movement is forward if NUM is negative."
 ;;; Detail popup
 
 (defun cfw:show-details-command ()
-  "Show details on the selected date."
+  "Show details on the nearest date."
   (interactive)
   (let* ((cursor-date (cfw:cursor-to-nearest-date))
          (cp  (cfw:cp-get-component))
@@ -3006,7 +2940,6 @@ And here.")
               :annotation-sources (list asource1 asource2))))
     (cfw:cp-add-update-hook cp (lambda () (message "CFW: UPDATE HOOK")))
     (cfw:cp-add-click-hook cp (lambda () (message "CFW: CLICK HOOK %S" (cfw:cursor-to-nearest-date))))
-    (cfw:cp-add-selection-change-hook cp (lambda () (message "CFW: SELECT %S" (cfw:cursor-to-nearest-date))))
     (switch-to-buffer (cfw:cp-get-buffer cp))
     ))
 
