@@ -2397,8 +2397,8 @@ calendar view."
      ;; Vi style
      ("l" . cfw:navi-next-day-command)
      ("h" . cfw:navi-previous-day-command)
-     ("j" . cfw:navi-next-week-command)
-     ("k" . cfw:navi-previous-week-command)
+     ("j" . cfw:navi-previous-week-command)
+     ("k" . cfw:navi-next-week-command)
      ("^" . cfw:navi-goto-week-begin-command)
      ("$" . cfw:navi-goto-week-end-command)
 
@@ -2411,7 +2411,7 @@ calendar view."
      ("<home>"  . cfw:navi-goto-first-date-command)
      ("<end>"   . cfw:navi-goto-last-date-command)
 
-     ("g" . cfw:navi-goto-date-command)
+     ("M-g" . cfw:navi-goto-date-command)
      ("t" . cfw:navi-goto-today-command)
      ("." . cfw:navi-goto-today-command)
 
@@ -2420,7 +2420,7 @@ calendar view."
      ("<backtab>"   . cfw:navi-prev-item-command)
      ("S-TAB"       . cfw:navi-prev-item-command)
 
-     ("r"   . cfw:refresh-calendar-buffer)
+     ("g"   . cfw:refresh-calendar-buffer)
      ("SPC" . cfw:show-details-command)
 
      ("D" . cfw:change-view-day)
