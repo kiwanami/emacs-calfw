@@ -879,18 +879,17 @@ called by the initialization functions,
 
 ;; Getting the component instance
 
-(defun cfw:cp-get-component ()
+(defun cfw:cp-get-component (&optional noerror)
   "Return the component object on the current cursor position.
 Firstly, getting a text property `cfw:component' on the current
 position. If no object is found in the text property, the buffer
 local variable `cfw:component' is tried to get. If no object is
 found at the variable, return nil."
-  (let ((component (get-text-property (point) 'cfw:component)))
-    (unless component
-      (unless (local-variable-p 'cfw:component (current-buffer))
-        (error "Not found cfw:component attribute..."))
-      (setq component (buffer-local-value 'cfw:component (current-buffer))))
-    component))
+  (or (get-text-property (point) 'cfw:component)
+      (if (local-variable-p 'cfw:component (current-buffer))
+          (buffer-local-value 'cfw:component (current-buffer))
+        (unless noerror
+          (error "Not found cfw:component attribute...")))))
 
 ;; Getter
 
@@ -923,17 +922,21 @@ found at the variable, return nil."
     (cfw:date-between begin end date)))
 
 ;; Setter
-
-(defun cfw:cp-move-cursor (dest date)
+(defun cfw:cp-move-cursor (dest date &optional force)
   "[internal] Just move the cursor onto the date. This function
 is called by `cfw:cp-set-selected-date'."
+  (when (or force
+            ;; Check if there's a current component, otherwise
+            ;; `cfw:cursor-to-nearest-date' signals an error.
+            (null (cfw:cp-get-component t))
+            (not (equal (cfw:cursor-to-nearest-date) date)))
   (let ((pos (cfw:find-by-date dest date)))
     (when pos
       (goto-char pos)
       (unless (eql (selected-window) (get-buffer-window (current-buffer)))
-        (set-window-point (get-buffer-window (current-buffer)) pos)))))
+          (set-window-point (get-buffer-window (current-buffer)) pos))))))
 
-(defun cfw:cp-set-selected-date (component date)
+(defun cfw:cp-set-selected-date (component date &optional force-move-cursor)
   "Select the date on the component. If the current view doesn't contain the date,
 this function updates the view to display the date."
   (let ((last (cfw:component-selected component))
@@ -946,7 +949,7 @@ this function updates the view to display the date."
       (cfw:dest-ol-selection-clear dest)
       (cfw:dest-ol-selection-set dest date)
       (cfw:dest-after-update dest)
-      (cfw:cp-move-cursor dest date)
+      (cfw:cp-move-cursor dest date force-move-cursor)
       (unless (equal last date)
         (cfw:cp-fire-selection-change-hooks component)))
      (t
