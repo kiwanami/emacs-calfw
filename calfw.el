@@ -1491,7 +1491,8 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
 
 (defun cfw:render-footer (width sources)
   "[internal] Return a text of the footer."
-  (let* ((whole-text
+  (let* ((spaces (make-string 5 ? ))
+         (whole-text
           (mapconcat
            'identity
            (cl-loop for s in sources
@@ -1504,9 +1505,10 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
                    "[" (cfw:rt dot (cfw:render-get-face-period dot 'cfw:face-periods))
                    " " title "]")
                   (cfw:render-get-face-content title 'cfw:face-default-content)))
-           "  ")))
-    (cfw:render-default-content-face
-     (cfw:render-left width (concat " " whole-text)) 'cfw:face-toolbar)))
+           (concat "\n" spaces))))
+    (concat
+     spaces
+     whole-text)))
 
 (defun cfw:render-periods (date week-day periods-stack cell-width)
   "[internal] This function translates PERIOD-STACK to display content on the DATE."
