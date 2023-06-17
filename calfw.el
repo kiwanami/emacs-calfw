@@ -561,12 +561,34 @@ If `cfw:source-period-bgcolor' is nil, the value of
 If `cfw:source-period-fgcolor' is nil, the black or
 white (negative color of `cfw:source-period-bgcolor') is used."
   (or (cfw:source-period-fgcolor source)
-      (let ((c (cl-destructuring-bind
-                   (r g b) (color-values (or (cfw:source-period-bgcolor-get source) "black"))
-                 (if (< 147500 (+ r g b)) "black" "white")))) ; (* 65536 3 0.75)
+      (let ((c (cfw:make-fg-color
+                (cfw:source-color source)
+                (cfw:source-period-bgcolor source))))
         (setf (cfw:source-period-fgcolor source) c)
         c)))
 
+(defun cfw:make-fg-color (src-color bg-color)
+  ;; The calfw way
+  ;; (cl-destructuring-bind
+  ;;     (r g b) (color-values (or color "black"))
+  ;;   (if (< 147500 (+ r g b)) "black" "white"))
+                                        ; (* 65536 3 0.75)
+  (cfw:composite-color src-color 0.7 (face-foreground 'default)))
+
+(defun cfw:make-bg-color (src-color fg-color)
+  ;;src-color
+  (cfw:composite-color src-color 0.3 (face-background 'default)))
+
+(defun cfw:composite-color (clr1 alpha clr2)
+  "Return the combination of CLR1 with ALPHA and CLR2.
+CLR2 is composited with 1-ALPHA transpancy."
+  (let* ((result-rgb (cl-mapcar
+                      (lambda (c1 c2)
+                        (+ (* alpha c1)
+                           (* (- 1 alpha) c2)))
+                      (color-name-to-rgb clr1)
+                      (color-name-to-rgb clr2))))
+    (apply 'color-rgb-to-hex (append result-rgb '(2)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Calendar event
 
@@ -1318,7 +1340,9 @@ sides with the character PADDING."
          (fg-color (and src (cfw:source-color src))))
     (cond
      ((or (null src) (null fg-color)) default-face)
-     (t (append (list ':foreground fg-color) (cfw:source-opt-face src))))))
+     (t (append (list ':foreground (cfw:make-fg-color fg-color fg-color)
+                      ':background (cfw:make-bg-color fg-color fg-color))
+                (cfw:source-opt-face src))))))
 
 (defun cfw:render-default-content-face (str &optional default-face)
   "[internal] Put the default content face. If STR has some
