@@ -2394,9 +2394,9 @@ calendar view."
      ("$" . cfw:navi-goto-week-end-command)
 
      ("<"   . cfw:navi-previous-month-command)
-     ("M-v" . cfw:navi-previous-month-command)
+     ;;("M-v" . cfw:navi-previous-month-command)
      (">"   . cfw:navi-next-month-command)
-     ("C-v" . cfw:navi-next-month-command)
+     ;;("C-v" . cfw:navi-next-month-command)
      ("<prior>" . cfw:navi-previous-month-command)
      ("<next>"  . cfw:navi-next-month-command)
      ("<home>"  . cfw:navi-goto-first-date-command)
