@@ -309,6 +309,14 @@ for example `cfw:read-date-command-simple' or `cfw:org-read-date-command'."
 (defvar cfw:face-item-separator-color "SlateBlue"
   "Color for the separator line of items in a day.")
 
+(defface cfw:face-calendar-hidden
+  '((((class color) (background light))
+     :foreground "grey"  :strike-through t)
+    (((class color) (background dark))
+     :foreground "grey" :strike-through t)
+    (t :foreground "grey" :strike-through t))
+  "Face for calendars when hidden." :group 'calfw)
+
 
 
 ;;; Utilities
@@ -530,20 +538,22 @@ ones of DATE2. Otherwise is `nil'."
 ;; period-bgcolor  : background color for period items (optional)
 ;; opt-face        : a plist of additional face properties for normal items (optional)
 ;; opt-period-face : a plist of additional face properties for period items (optional)
+;; hidden  :  non-nil when it should be hidden in the current view
 ;;
 ;; If `period-bgcolor' is nil, the value of `color' is used.
 ;; If `period-fgcolor' is nil, the black or white (negative color of `period-bgcolor') is used.
 
-(cl-defstruct cfw:source name data update color period-bgcolor period-fgcolor opt-face opt-period-face)
+(cl-defstruct cfw:source name data update color period-bgcolor period-fgcolor opt-face opt-period-face hidden)
 
 (defun cfw:source-period-bgcolor-get (source)
   "[internal] Return a background color for period items.
 If `cfw:source-period-bgcolor' is nil, the value of
 `cfw:source-color' is used."
   (or (cfw:source-period-bgcolor source)
-      (let ((c (cfw:source-color source)))
-        (when c
-          (setf (cfw:source-period-bgcolor source) c))
+      (let ((c (cfw:make-bg-color
+                (cfw:source-color source)
+                (cfw:source-period-fgcolor source))))
+        (setf (cfw:source-period-bgcolor source) c)
         c)))
 
 (defun cfw:source-period-fgcolor-get (source)
@@ -818,7 +828,7 @@ the calfw is responsible to manage the buffer and key maps."
 
 ;; Create
 
-(defun cfw:cp-new (dest model view &optional selected) ;; TODO: deal with selected
+(defun cfw:cp-new (dest model view &optional initial-date)
   "[internal] Create a new component object.
 DEST is a cfw:dest object.  MODEL is a model object.  VIEW is a
 symbol of the view type: month, two-weeks, week and day.
@@ -830,7 +840,7 @@ This function is called by the initialization functions,
              :dest  dest
              :model model
              :view  (or view 'month))))
-    (cfw:cp-update cp)
+    (cfw:cp-update cp initial-date)
     cp))
 
 ;; Getting the component instance
@@ -849,9 +859,10 @@ found at the variable, return nil."
 
 ;; Getter
 
-(defun cfw:cp-get-contents-sources (component)
+(defun cfw:cp-get-contents-sources (component &optional exclude-hidden)
   "Return a list of the content sources."
-  (cfw:model-get-contents-sources (cfw:component-model component)))
+  (cfw:model-get-contents-sources (cfw:component-model component)
+                                  exclude-hidden))
 
 (defun cfw:cp-get-annotation-sources (component)
   "Return a list of the annotation sources."
@@ -943,7 +954,7 @@ VIEW is a symbol of the view type."
 (defvar cfw:highlight-today t
   "Variable to control whether today is rendered differently than other days.")
 
-(defun cfw:cp-update (component)
+(defun cfw:cp-update (component &optional initial-date)
   "[internal] Clear and re-draw the component content."
   (let* ((buf (cfw:cp-get-buffer component))
          (dest (cfw:component-dest component)))
@@ -958,8 +969,8 @@ VIEW is a symbol of the view type."
                                        component)))
       (when cfw:highlight-today
         (cfw:dest-ol-today-set dest))
-      (cfw:cp-goto-date
-       component (cfw:component-selected component))
+      (when initial-date
+        (cfw:cp-goto-date component initial-date))
       (cfw:dest-after-update dest)
       (cfw:cp-fire-update-hooks component))))
 
@@ -1040,9 +1051,13 @@ ORG-MODEL is a model object to inherit."
 
 ;; private functions
 
-(defun cfw:model-get-contents-sources (model)
+(defun cfw:model-get-contents-sources (model &optional exclude-hidden)
   "[internal] Return a list of content sources of the model."
-  (cfw:k 'contents-sources model))
+  (let ((sources (cfw:k 'contents-sources model)))
+    (if exclude-hidden
+        (seq-filter (lambda (s) (not (cfw:source-hidden s)))
+                    sources)
+      sources)))
 
 (defun cfw:model-get-annotation-sources (model)
   "[internal] Return a list of annotation sources of the model."
@@ -1403,22 +1418,46 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
            (concat day sp week sp tweek sp month sp))))
     (cfw:render-default-content-face toolbar-text 'cfw:face-toolbar)))
 
+(defun cfw:event-toggle-calendar (event)
+  (interactive "e")
+  (let ((s (get-text-property
+            (posn-point (event-start event))
+            'cfw:source)))
+    (setf (cfw:source-hidden s)
+          (not (cfw:source-hidden s)))
+    (cfw:cp-update (cfw:cp-get-component))))
+
 (defun cfw:render-footer (width sources)
   "[internal] Return a text of the footer."
   (let* ((spaces (make-string 5 ? ))
          (whole-text
           (mapconcat
            'identity
-           (cl-loop for s in sources
+           (cl-loop
+            with keymap = (progn
+                            (let ((kmap (make-sparse-keymap)))
+                              (define-key kmap [mouse-1] 'cfw:event-toggle-calendar)
+                              kmap))
+            for s in sources
+            for hidden-p = (cfw:source-hidden s)
                  for title = (cfw:tp (substring (cfw:source-name s) 0)
                                      'cfw:source s)
                  for dot   = (cfw:tp (substring "(==)" 0) 'cfw:source s)
                  collect
+            (progn
+              (cfw:tp dot 'keymap keymap)
+              (cfw:tp dot 'mouse-face 'highlight)
                  (cfw:render-default-content-face
                   (concat
-                   "[" (cfw:rt dot (cfw:render-get-face-period dot 'cfw:face-periods))
+                "[" (cfw:rt dot
+                            (if hidden-p
+                                'cfw:face-calendar-hidden
+                              (cfw:render-get-face-period dot 'cfw:face-periods)))
                    " " title "]")
-                  (cfw:render-get-face-content title 'cfw:face-default-content)))
+               (if hidden-p
+                   'cfw:face-calendar-hidden
+                 (cfw:render-get-face-content title
+                                              'cfw:face-default-content)))))
            (concat "\n" spaces))))
     (concat
      spaces
@@ -1785,7 +1824,7 @@ where `event-fun' is applied if the element is a `cfw:event'."
   "[internal] Return an alist of common data for the model."
   (let* ((contents-all (cfw:contents-merge
                         begin-date end-date
-                        (cfw:model-get-contents-sources model))))
+                        (cfw:model-get-contents-sources model t))))
     (append
      `(; common data
        (begin-date . ,begin-date) (end-date . ,end-date)
@@ -2462,7 +2501,7 @@ With prefix arg NO-RESIZE, don't fit calendar to window size."
     (when cp
       (unless no-resize
         (cfw:cp-resize cp (window-width) (window-height)))
-      (cl-loop for s in (cfw:cp-get-contents-sources cp)
+      (cl-loop for s in (cfw:cp-get-contents-sources cp t)
             for f = (cfw:source-update s)
             if f do (funcall f))
       (cl-loop for s in (cfw:cp-get-annotation-sources cp)
