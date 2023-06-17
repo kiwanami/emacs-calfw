@@ -963,15 +963,18 @@ HOOK is a function that has no argument."
 
 ;;; private methods
 
+(defvar cfw:cp-dipatch-funcs
+  '((month             .  cfw:view-month)
+    (week              .  cfw:view-week)
+    (two-weeks         .  cfw:view-two-weeks)
+    (day               .  cfw:view-day))
+  "Dispatch functions for calfw views.")
+
 (defun cfw:cp-dispatch-view-impl (view)
   "[internal] Return a view function which is corresponding to the view symbol.
 VIEW is a symbol of the view type."
-  (cond
-   ((eq 'month     view)  'cfw:view-month)
-   ((eq 'week      view)  'cfw:view-week)
-   ((eq 'two-weeks view)  'cfw:view-two-weeks)
-   ((eq 'day       view)  'cfw:view-day)
-   (t (error "Not found such view : %s" view))))
+  (or (alist-get view cfw:cp-dipatch-funcs)
+      (error "Not found such view : %s" view)))
 
 (defvar cfw:highlight-today t
   "Variable to control whether today is rendered differently than other days.")
