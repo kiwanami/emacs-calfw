@@ -2358,12 +2358,10 @@ this function returns nil."
 this function updates the view to display the date."
   (let ((dest (cfw:component-dest component))
         (model (cfw:component-model component)))
-    (cond
-     ((cfw:cp-displayed-date-p component date)
-      (cfw:cp-move-cursor dest date force-move-cursor))
-     (t
+    (unless (cfw:cp-displayed-date-p component date)
       (cfw:model-set-init-date date model)
-      (cfw:cp-update component)))))
+      (cfw:cp-update component))
+    (cfw:cp-move-cursor dest date force-move-cursor)))
 
 (defun cfw:navi-goto-date (date)
   "Move the cursor to DATE.
