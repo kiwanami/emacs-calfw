@@ -667,16 +667,14 @@ The following values are possible:
   clear-func before-update-func after-update-func today-ol)
 
 ;; shortcut functions
-
-(eval-when-compile
-  (defmacro cfw:dest-with-region (dest &rest body)
+(defmacro cfw:dest-with-region (dest &rest body)
     (let (($dest (gensym)))
       `(let ((,$dest ,dest))
          (with-current-buffer (cfw:dest-buffer ,$dest)
            (save-restriction
              (narrow-to-region
               (cfw:dest-point-min ,$dest) (cfw:dest-point-max ,$dest))
-             ,@body))))))
+           ,@body)))))
 (put 'cfw:dest-with-region 'lisp-indent-function 1)
 
 (defun cfw:dest-point-min (c)
