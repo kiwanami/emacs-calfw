@@ -944,8 +944,7 @@ VIEW is a symbol of the view type."
          (buf (cfw:dest-buffer dest))
          (window (or (and buf (get-buffer-window buf)) (selected-window))))
     (setf (cfw:dest-width dest) (or width (window-width window))
-          (cfw:dest-height dest) (or height (window-height window))))
-  (cfw:cp-update component))
+          (cfw:dest-height dest) (or height (window-height window)))))
 
 ;; Hook
 
@@ -1376,7 +1375,6 @@ faces, the faces are remained."
   (if (< limit-width (string-width org))
       (let ((str (truncate-string-to-width
                   (substring org 0) limit-width 0 nil ellipsis)))
-        (cfw:tp str 'mouse-face 'highlight)
         (unless (get-text-property 0 'help-echo str)
           (cfw:tp str 'help-echo org))
         str)
@@ -1445,7 +1443,7 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
            (concat day sp week sp tweek sp month sp))))
     (cfw:render-default-content-face toolbar-text 'cfw:face-toolbar)))
 
-(defun cfw:event-toggle-calendar (event)
+(defun cfw:event-mouse-click-toggle-calendar (event)
   (interactive "e")
   (let ((s (get-text-property
             (posn-point (event-start event))
@@ -1453,6 +1451,31 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
     (setf (cfw:source-hidden s)
           (not (cfw:source-hidden s)))
     (cfw:cp-update (cfw:cp-get-component))))
+
+(defun cfw:event-toggle-calendar (source)
+  (interactive (list
+                (get-text-property (point) 'cfw:source)))
+  (setf (cfw:source-hidden source)
+        (not (cfw:source-hidden source)))
+  (cfw:cp-update (cfw:cp-get-component)))
+
+(defun cfw:event-toggle-all-calendars ()
+  "Show all calendars in the current view.
+If all calendars are already shown, hide them all."
+  (interactive)
+  (when (cfw:cp-get-component)
+    (let* ((comp (cfw:cp-get-component))
+           (sources (cfw:model-get-contents-sources
+                     (cfw:component-model comp)))
+           (all-shown (not (cl-some
+                            'identity
+                            (cl-loop for s in sources
+                                     collect
+                                     (cfw:source-hidden s))))))
+      (cl-loop for s in sources do
+               (setf (cfw:source-hidden s)
+                     all-shown))
+      (cfw:cp-update comp))))
 
 (defun cfw:render-footer (width sources)
   "[internal] Return a text of the footer."
@@ -1463,7 +1486,8 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
            (cl-loop
             with keymap = (progn
                             (let ((kmap (make-sparse-keymap)))
-                              (define-key kmap [mouse-1] 'cfw:event-toggle-calendar)
+                              (define-key kmap [mouse-1] 'cfw:event-mouse-click-toggle-calendar)
+                              (define-key kmap [13] 'cfw:event-toggle-calendar)
                               kmap))
             for s in sources
             for hidden-p = (cfw:source-hidden s)
@@ -1472,8 +1496,8 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
                  for dot   = (cfw:tp (substring "(==)" 0) 'cfw:source s)
                  collect
             (progn
-              (cfw:tp dot 'keymap keymap)
               (cfw:tp dot 'mouse-face 'highlight)
+                   (propertize
                  (cfw:render-default-content-face
                   (concat
                 "[" (cfw:rt dot
@@ -1484,7 +1508,8 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
                (if hidden-p
                    'cfw:face-calendar-hidden
                  (cfw:render-get-face-content title
-                                              'cfw:face-default-content)))))
+                                                    'cfw:face-default-content)))
+                    'keymap keymap)))
            (concat "\n" spaces))))
     (concat
      spaces
