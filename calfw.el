@@ -913,7 +913,7 @@ found at the variable, return nil."
             ;; Check if there's a current component, otherwise
             ;; `cfw:cursor-to-nearest-date' signals an error.
             (null (cfw:cp-get-component t))
-            (not (equal (cfw:cursor-to-nearest-date) date)))
+            (not (equal (cfw:cursor-to-date) date)))
   (let ((pos (cfw:find-by-date dest date)))
     (when pos
       (goto-char pos)
