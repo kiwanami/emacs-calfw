@@ -38,6 +38,25 @@ annotations like the moon phases.
 This program gets the holidays using the function
 `calendar-holiday-list`. See the document for the holidays.el and the Info text.
 
+## Fork changelog
+
+This fork has the following change
+- Applied three external pull requests (See Pull requests for more info)
+- Implement a `noerror` mode for `cp-get-compoonent`
+- Removed highlighting of selected date, preferring more subtle indication.
+- Showing calendars on separate lines and allowing showing/hiding of them
+- Removed everything to do with selecting a date, preferring instead to use
+  the point to indicate selection.
+- Changed coloring of background/foreground.
+- Removed M-v and C-v binding.
+- Cleaned up some of the code and using more standard functions, though much
+  more can be done (WIP).
+
+I use this package with
+[calfw-blocks](https://github.com/haji-ali/calfw-blocks) and
+[maccalfw](https://github.com/haji-ali/maccalfw/) and I am only testing the
+block views on a regular basis.
+
 ## Key bindings
 
 In the calendar buffer and region, you can use following key bindings:
