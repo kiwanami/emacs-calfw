@@ -602,6 +602,7 @@ CLR2 is composited with 1-ALPHA transpancy."
   description ; event description [string] (optional)
   location    ; location [strting] (optional)
   source      ; [internal] source of the event
+  data        ; reference to event data
   )
 
 (defun cfw:event-overview (event)
@@ -1445,7 +1446,7 @@ PREV-CMD and NEXT-CMD are the moving view command, such as `cfw:navi-previous(ne
 
 (defun cfw:event-mouse-click-toggle-calendar (event)
   (interactive "e")
-  (let ((s (get-text-property
+  (when-let ((s (get-text-property
             (posn-point (event-start event))
             'cfw:source)))
     (setf (cfw:source-hidden s)
