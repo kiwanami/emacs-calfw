@@ -602,6 +602,7 @@ CLR2 is composited with 1-ALPHA transpancy."
   description ; event description [string] (optional)
   location    ; location [strting] (optional)
   source      ; [internal] source of the event
+  status       ; 'cancelled, 'tentative, 'confirmed or nil
   data        ; reference to event data
   )
 
