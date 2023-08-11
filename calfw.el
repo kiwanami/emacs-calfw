@@ -1005,14 +1005,14 @@ VIEW is a symbol of the view type."
   (cl-loop for f in (cfw:component-click-hooks component)
         do (condition-case err
                (funcall f)
-             (nil (message "Calfw: Click / Hook error %S [%s]" f err)))))
+             (error (message "Calfw: Click / Hook error %S [%s]" f err)))))
 
 (defun cfw:cp-fire-update-hooks (component)
   "[internal] Call update hook functions of the component with no arguments."
   (cl-loop for f in (cfw:component-update-hooks component)
         do (condition-case err
                (funcall f)
-             (nil (message "Calfw: Update / Hook error %S [%s]" f err)))))
+             (error (message "Calfw: Update / Hook error %S [%s]" f err)))))
 
 
 
