@@ -1,4 +1,4 @@
-;;; calfw-howm.el --- calendar view for howm
+;;; calfw-howm.el --- calendar view for howm -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2011  SAKURAI Masashi
 

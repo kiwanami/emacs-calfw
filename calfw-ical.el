@@ -1,4 +1,4 @@
-;;; calfw-ical.el --- calendar view for ical format
+;;; calfw-ical.el --- calendar view for ical format -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2011  SAKURAI Masashi
 
@@ -38,29 +38,33 @@
 (require 'calfw)
 (require 'icalendar)
 (require 'url)
+(require 'url-http)
+
 
 (defun cfw:decode-to-calendar (dec)
   (cfw:date
    (nth 4 dec) (nth 3 dec) (nth 5 dec)))
 
-(defun cfw:ical-event-get-dates (event)
+(defun cfw:ical-event-get-dates (event zone-map)
   "Return date-time information from iCalendar event object:
-period event (list 'period start-date end-date), time span
-event (list 'time date start-time end-time).  The period includes
-end-date.  This function is copied from
-`icalendar--convert-ical-to-diary' and modified.  Recursive
-events have not been supported yet."
+period event (list \\='period start-date end-date), time span
+event (list \\='time date start-time end-time). The period
+includes end-date. This function is copied from
+`icalendar--convert-ical-to-diary' and modified. Recursive events
+have not been supported yet."
   (let*
       ((dtstart (icalendar--get-event-property event 'DTSTART))
        (dtstart-zone (icalendar--find-time-zone
-                      (icalendar--get-event-property-attributes event 'DTSTART) zone-map))
+                      (icalendar--get-event-property-attributes event 'DTSTART)
+                      zone-map))
        (dtstart-dec (icalendar--decode-isodatetime dtstart nil dtstart-zone))
        (start-d (cfw:decode-to-calendar dtstart-dec))
        (start-t (cfw:time (nth 2 dtstart-dec) (nth 1 dtstart-dec)))
 
        (dtend (icalendar--get-event-property event 'DTEND))
        (dtend-zone (icalendar--find-time-zone
-                    (icalendar--get-event-property-attributes event 'DTEND) zone-map))
+                    (icalendar--get-event-property-attributes event 'DTEND)
+                    zone-map))
        (dtend-dec (icalendar--decode-isodatetime dtend nil dtend-zone))
        (dtend-1-dec (icalendar--decode-isodatetime dtend -1 dtend-zone))
 
@@ -115,8 +119,9 @@ events have not been supported yet."
     (replace-regexp-in-string "\\\\n" "\n"
                               (replace-regexp-in-string "\\\\," "," string))))
 
-(defun cfw:ical-convert-event (event)
-  (destructuring-bind (dtag date start end) (cfw:ical-event-get-dates event)
+(defun cfw:ical-convert-event (event zone-map)
+  (cl-destructuring-bind
+      (dtag date start end) (cfw:ical-event-get-dates event zone-map)
     (make-cfw:event
      :start-date  date
      :start-time  start
@@ -130,19 +135,19 @@ events have not been supported yet."
                    (icalendar--get-event-property event 'DESCRIPTION)))))
 
 (defun cfw:ical-convert-ical-to-calfw (ical-list)
-  (loop with zone-map = (icalendar--convert-all-timezones ical-list)
-        for e in (icalendar--all-events ical-list)
-        for event = (cfw:ical-convert-event e)
-        if event
-        if (cfw:event-end-date event)
-        collect event into periods
-        else
-        collect event into contents
-        else do
-        (progn
-          (message "Ignoring event \"%s\"" e)
-          (message "Cannot handle this event, tag: %s" e))
-        finally (return `((periods ,periods) ,@contents))))
+  (cl-loop with zone-map = (icalendar--convert-all-timezones ical-list)
+           for e in (icalendar--all-events ical-list)
+           for event = (cfw:ical-convert-event e zone-map)
+           if event
+           if (cfw:event-end-date event)
+           collect event into periods
+           else
+           collect event into contents
+           else do
+           (progn
+             (message "Ignoring event \"%s\"" e)
+             (message "Cannot handle this event, tag: %s" e))
+           finally (return `((periods ,periods) ,@contents))))
 
 (defun cfw:ical-debug (f)
   (interactive)
@@ -167,7 +172,7 @@ events have not been supported yet."
     (with-current-buffer buf
       (erase-buffer))
     (call-process-shell-command
-     cfw:ical-calendar-external-shell-command nil buf nil url)
+     (concat cfw:ical-calendar-external-shell-command url) nil buf nil)
     buf))
 
 (defun cfw:ical-url-to-buffer-internal (url)
@@ -223,10 +228,10 @@ events have not been supported yet."
 
 (defun cfw:ical-data-cache-clear (url)
   (setq cfw:ical-data-cache
-        (loop for i in cfw:ical-data-cache
-              for (u . d) = i
-              unless (equal u url)
-              collect i)))
+        (cl-loop for i in cfw:ical-data-cache
+                 for (u . d) = i
+                 unless (equal u url)
+                 collect i)))
 
 (defun cfw:ical-data-cache-clear-all ()
   (interactive)
@@ -245,19 +250,19 @@ events have not been supported yet."
     (cdr data)))
 
 (defun cfw:ical-to-calendar (url begin end)
-  (loop for event in (cfw:ical-get-data url)
-        if (and (listp event)
-                (equal 'periods (car event)))
-        collect
-        (cons
-         'periods
-         (loop for evt in (cadr event)
-               if (and
-                   (cfw:date-less-equal-p begin (cfw:event-end-date evt))
-                   (cfw:date-less-equal-p (cfw:event-start-date evt) end))
-               collect evt))
-        else if (cfw:date-between begin end (cfw:event-start-date event))
-        collect event))
+  (cl-loop for event in (cfw:ical-get-data url)
+           if (and (listp event)
+                   (equal 'periods (car event)))
+           collect
+           (cons
+            'periods
+            (cl-loop for evt in (cadr event)
+                  if (and
+                      (cfw:date-less-equal-p begin (cfw:event-end-date evt))
+                      (cfw:date-less-equal-p (cfw:event-start-date evt) end))
+                  collect evt))
+           else if (cfw:date-between begin end (cfw:event-start-date event))
+           collect event))
 
 (defun cfw:ical-create-source (name url color)
   (lexical-let ((url url))
