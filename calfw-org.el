@@ -393,12 +393,11 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
 
 (defun cfw:org-create-file-source (name file color)
   "Create org-element based source. "
-  (lexical-let ((file file))
-    (make-cfw:source
-     :name (concat "Org:" name)
-     :color color
-     :data (lambda (begin end)
-             (cfw:org-to-calendar file begin end)))))
+  (make-cfw:source
+   :name (concat "Org:" name)
+   :color color
+   :data (lambda (begin end)
+           (cfw:org-to-calendar file begin end))))
 
 (defun cfw:org-capture-day ()
   (with-current-buffer  (get-buffer-create cfw:calendar-buffer-name)

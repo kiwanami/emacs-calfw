@@ -265,13 +265,12 @@ have not been supported yet."
            collect event))
 
 (defun cfw:ical-create-source (name url color)
-  (lexical-let ((url url))
-    (make-cfw:source
-     :name (concat "iCal:" name)
-     :color color
-     :update (lambda () (cfw:ical-data-cache-clear url))
-     :data (lambda (begin end)
-             (cfw:ical-to-calendar url begin end)))))
+  (make-cfw:source
+   :name (concat "iCal:" name)
+   :color color
+   :update (lambda () (cfw:ical-data-cache-clear url))
+   :data (lambda (begin end)
+           (cfw:ical-to-calendar url begin end))))
 
 (defun cfw:open-ical-calendar (url)
   "Simple calendar interface. This command displays just one
