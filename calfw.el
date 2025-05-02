@@ -1019,6 +1019,8 @@ VIEW is a symbol of the view type."
 
 ;;; Models
 
+(defvar cfw:default-text-sorter 'string-lessp "[internal] Default sorting criteria in a calendar cell.")
+
 (defun cfw:model-abstract-new (date contents-sources annotation-sources &optional sorter)
   "Return an abstract model object.
 DATE is initial date for the calculation of the start date and end one.
@@ -1050,8 +1052,6 @@ The new model is created with with VIEW-DATA.
    (cfw:model-abstract-derived
     (cfw:k 'init-date model) model)
    view-data))
-
-(defvar cfw:default-text-sorter 'string-lessp "[internal] Default sorting criteria in a calendar cell.")
 
 ;; public functions
 
@@ -1466,9 +1466,10 @@ command, such as `cfw:navi-previous(next)-month-command' and
 (defun cfw:event-toggle-calendar (source)
   (interactive (list
                 (get-text-property (point) 'cfw:source)))
+  (when source
   (setf (cfw:source-hidden source)
         (not (cfw:source-hidden source)))
-  (cfw:cp-update (cfw:cp-get-component)))
+    (cfw:cp-update (cfw:cp-get-component))))
 
 (defun cfw:event-toggle-all-calendars ()
   "Show all calendars in the current view.
@@ -2921,7 +2922,7 @@ If the text already has some keymap property, the text is skipped."
 ;; inline
 
 (cl-defun cfw:get-calendar-text
-  (width height &key date keymap contents-sources annotation-sources view sorter)
+  (width height &key date _keymap contents-sources annotation-sources view sorter)
   "Return a text that is drew the calendar view.
 
 In this case, the rendering destination object is disposable.
