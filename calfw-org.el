@@ -190,7 +190,7 @@ For example,
     ;;; ------------------------------------------------------------------------
     (setq text (replace-regexp-in-string "%[0-9A-F]\\{2\\}" " " text))
     (if (string-match org-bracket-link-regexp text)
-      (let* ((desc (if (match-end 3) (org-match-string-no-properties 3 text)))
+      (let* ((desc (if (match-end 2) (org-match-string-no-properties 2 text)))
              (link (org-link-unescape (org-match-string-no-properties 1 text)))
              (help (concat "LINK: " link))
              (link-props (list
