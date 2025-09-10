@@ -3,10 +3,11 @@
 ;; Copyright (C) 2011-2021  SAKURAI Masashi
 
 ;; Author: SAKURAI Masashi <m.sakurai at kiwanami.net>
+;; Maintainer: Al Haji-Ali <abdo.haji.ali at gmail.com>
 ;; Version: 1.7
 ;; Keywords: calendar
 ;; Package-Requires: ((emacs "28.1"))
-;; URL: https://github.com/kiwanami/emacs-calfw
+;; URL: https://github.com/haji-lia/emacs-calfw
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

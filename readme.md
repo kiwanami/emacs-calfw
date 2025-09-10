@@ -61,8 +61,8 @@ block views on a regular basis.
 
 In the calendar buffer and region, you can use following key bindings:
 
-| Navigation          |                                              | 
-|---------------------|----------------------------------------------| 
+| Navigation          |                                              |
+|---------------------|----------------------------------------------|
 | [left], b, h        | Previous day                                 |
 | [right], f, l       | Next day                                     |
 | [up], p, k          | Previous week                                |
@@ -229,7 +229,7 @@ Here is the sample code:
     (cfw:cal-create-source "Orange") ; diary source
     (cfw:ical-create-source "Moon" "~/moon.ics" "Gray")  ; ICS source1
     (cfw:ical-create-source "gcal" "https://..../basic.ics" "IndianRed") ; google calendar ICS
-   ))) 
+   )))
 ```
 
 The function `cfw:open-calendar-buffer` receives schedules sources via
@@ -321,7 +321,7 @@ Grid setting example:
       cfw:fchar-top-junction ?┯
       cfw:fchar-top-left-corner ?┏
       cfw:fchar-top-right-corner ?┓)
-      
+
 ;; Another unicode chars
 (setq cfw:fchar-junction ?╬
       cfw:fchar-vertical-line ?║
@@ -382,7 +382,7 @@ This section explains what objects the function-slot `cfw:source-data` should re
 The function-slot `cfw:source-data` receives two arguments, start and
 end date of the query period, and returns a list of instances of `cfw:event` struct.
 
-Here is a simple example. 
+Here is a simple example.
 
 `cfw:source-data example1:`
 
@@ -398,7 +398,7 @@ Here is a simple example.
 (cfw:open-calendar-buffer
   :date (cfw:date 1 1 2011)
   :contents-sources
-   (list 
+   (list
      (make-cfw:source
       :name "test1" :data 'sample-data1)))
 ```
@@ -430,11 +430,11 @@ Period items are little different. One period item is specified by
           :start-date (cfw:date 1 11 2011)
           :end-date   (cfw:date 1 12 2011)
           :description "Next item description"))))
-  
+
 (cfw:open-calendar-buffer
   :date (cfw:date 1 1 2011)
   :contents-sources
-   (list 
+   (list
      (make-cfw:source
       :name "test2" :data 'sample-data2)))
 ```
@@ -510,7 +510,7 @@ The function-slot `cfw:source-data` receives two arguments, start and
 end date of the query period, and returns an alist that consists of
 ([date] . ([item1] [item2] ... )).
 
-Here is a simple example. 
+Here is a simple example.
 
 `cfw:source-data example1:`
 
@@ -525,7 +525,7 @@ Here is a simple example.
 (cfw:open-calendar-buffer
   :date (cfw:date 1 1 2011)
   :contents-sources
-   (list 
+   (list
      (make-cfw:source
       :name "test1" :data 'sample-data1)))
 ```
@@ -550,7 +550,7 @@ alist collects them as a list, like the following code.
 (cfw:open-calendar-buffer
   :date (cfw:date 1 1 2011)
   :contents-sources
-   (list 
+   (list
      (make-cfw:source
       :name "test2" :data 'sample-data2)))
 ```
@@ -721,7 +721,7 @@ The summary diagram is here.
 See the calfw-howm.el code for more details.
 
 ## History
-
+- 2015/09/24 ver 1.7 : Fixed bugs and changed maintainer.
 - 2015/09/24 ver 1.5 : Fixed bugs and added some customize variables.
 - 2015/02/27 ver 1.4 : Introduced cfw:event struct, improved some functions, fixed some bugs.
 - 2011/10/10 ver 1.3 : Improved visual and navigation: multi-line, moving items in a day, diary mode and so on.

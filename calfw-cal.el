@@ -62,7 +62,7 @@
          (end        (match-string 2 first))
          (properties (list 'mouse-face 'highlight
                            'help-echo string
-                           'cfw-marker (copy-marker (point-at-bol)))))
+                           'cfw-marker (copy-marker (pos-bol)))))
     (make-cfw:event :title       (apply 'propertize title properties)
                     :start-date  date
                     :start-time  (when start
