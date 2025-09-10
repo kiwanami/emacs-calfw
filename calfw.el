@@ -817,8 +817,7 @@ the calfw is responsible to manage the buffer and key maps."
      :clear-func
      (lambda ()
        (cfw:dest-region-clear (marker-position mark-begin)
-                              (marker-position mark-end)))
-     )))
+                              (marker-position mark-end))))))
 
 (defun cfw:dest-region-clear (begin end)
   "[internal] Clear the content text."
@@ -2476,9 +2475,8 @@ calendar view."
      ("6" . digit-argument)
      ("7" . digit-argument)
      ("8" . digit-argument)
-     ("9" . digit-argument)
-
-     )) "Default key map of calendar views.")
+     ("9" . digit-argument)))
+  "Default key map of calendar views.")
 
 (defun cfw:calendar-mode-map (&optional custom-map)
   "[internal] Return a keymap object for the calendar buffer."
@@ -2761,8 +2759,7 @@ DATE is a date to show. MODEL is model object."
      ("TAB"     . cfw:details-navi-next-item-command)
      ("C-i"     . cfw:details-navi-next-item-command)
      ("<backtab>" . cfw:details-navi-prev-item-command)
-     ("S-TAB"     . cfw:details-navi-prev-item-command)
-     ))
+     ("S-TAB"     . cfw:details-navi-prev-item-command)))
   "Default key map for the details buffer.")
 
 (defvar cfw:details-mode-hook nil "")

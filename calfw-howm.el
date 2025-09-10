@@ -95,22 +95,22 @@ If this function splits into a list of string, the calfw displays those string i
 (defun cfw:howm-schedule-period-to-calendar (begin end)
   "[internal] Return calfw calendar items between BEGIN and END
 from the howm schedule data."
-  (loop with contents = nil
-        with periods = nil
-        for i in (cfw:howm-schedule-period begin end)
-        for date = (cfw:emacs-to-calendar
-                    (seconds-to-time (+ 10 (* (howm-schedule-date i) 24 3600))))
-        for (datestr num type summary) = (cfw:howm-schedule-parse-line (howm-item-summary i))
-        for summary = (funcall cfw:howm-schedule-summary-transformer summary)
-        do
-        (cond
-         ((and (string= type "@") (< 0 num))
-          (push (list date (cfw:date-after date (1- num)) summary) periods))
-         ((and (string= type "!") (< 0 num))
-          (push (list (cfw:date-before date (1- num)) date summary) periods))
-         (t
-          (setq contents (cfw:contents-add date summary contents))))
-        finally return (nconc contents (list (cons 'periods periods)))))
+  (cl-loop with contents = nil
+           with periods = nil
+           for i in (cfw:howm-schedule-period begin end)
+           for date = (cfw:emacs-to-calendar
+                       (seconds-to-time (+ 10 (* (howm-schedule-date i) 24 3600))))
+           for (datestr num type summary) = (cfw:howm-schedule-parse-line (howm-item-summary i))
+           for summary = (funcall cfw:howm-schedule-summary-transformer summary)
+           do
+           (cond
+            ((and (string= type "@") (< 0 num))
+             (push (list date (cfw:date-after date (1- num)) summary) periods))
+            ((and (string= type "!") (< 0 num))
+             (push (list (cfw:date-before date (1- num)) date summary) periods))
+            (t
+             (setq contents (cfw:contents-add date summary contents))))
+           finally return (nconc contents (list (cons 'periods periods)))))
 
 (defun cfw:howm-create-source (&optional color)
   "Create a howm source."
@@ -228,8 +228,8 @@ schedule data and set up inline calendar function for the howm menu."
        (unless (elscreen-one-screen-p)
          (elscreen-kill)))
 
-     (define-key cfw:howm-schedule-map (kbd "q") 'cfw:elscreen-kill-calendar)
-     ))
+     (define-key cfw:howm-schedule-map (kbd "q")
+                 'cfw:elscreen-kill-calendar)))
 
 (provide 'calfw-howm)
 ;;; calfw-howm.el ends here
