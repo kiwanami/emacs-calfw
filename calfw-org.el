@@ -1,9 +1,13 @@
-;;; calfw-org.el --- calendar view for org-agenda  -*- lexical-binding: t; -*-
+;;; calfw-org.el --- Calendar view for org-agenda  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2011  SAKURAI Masashi
 
 ;; Author: SAKURAI Masashi <m.sakurai at kiwanami.net>
+;; Maintainer: Al Haji-Ali <abdo.haji.ali at gmail.com>
+;; Version: 1.7
 ;; Keywords: calendar, org
+;; Package-Requires: ((emacs "28.1") (calfw "1.7"))
+;; URL: https://github.com/haji-ali/emacs-calfw
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -27,9 +31,9 @@
 ;; (require 'calfw-org)
 ;;
 ;; ;; use org agenda buffer style keybinding.
-;; ;; (setq cfw:org-overwrite-default-keybinding t)
+;; ;; (setq calfw-org-overwrite-default-keybinding t)
 ;;
-;; M-x cfw:open-org-calendar
+;; M-x calfw-open-org-calendar
 
 ;;; Code:
 
@@ -40,70 +44,70 @@
 (require 'org-capture)
 (require 'google-maps nil t)
 
-(defgroup cfw-org nil
+(defgroup calfw-org nil
   "Options about calfw-org."
   :tag "Calfw Org"
   :group 'org
-  :group 'cfw)
+  :group 'calfw)
 
-(defcustom cfw:org-capture-template nil
+(defcustom calfw-org-capture-template nil
   "org-capture template. If you use `org-capture' with `calfw', you shold set like
-\\='(\"c\" \"calfw2org\" entry (file nil)  \"* %?\n %(cfw:org-capture-day)\")"
-  :group 'cfw-org
+\\='(\"c\" \"calfw2org\" entry (file nil)  \"* %?\n %(calfw-org-capture-day)\")"
+  :group 'calfw-org
   :version "24.1"
   :type
   '(list string string symbol (list symbol (choice file (const nil))) string))
 
-(defsubst cfw:org-tp (text prop)
+(defsubst calfw-org-tp (text prop)
   "[internal] Return text property at position 0."
   (get-text-property 0 prop text))
 
-(defvar cfw:org-agenda-schedule-args nil
+(defvar calfw-org-agenda-schedule-args nil
   "Default arguments for collecting agenda entries.
 If value is nil, `org-agenda-entry-types' is used.")
 
-(defvar cfw:org-icalendars nil
+(defvar calfw-org-icalendars nil
   "Org buffers for exporting icalendars.
 Setting a list of the custom agenda files, one can use the
 different agenda files from the default agenda ones.")
 
-(defvar cfw:org-overwrite-default-keybinding nil
+(defvar calfw-org-overwrite-default-keybinding nil
   "Overwrites default keybinding. It needs restarting of Emacs(if not work)
 For example,
 
  ------------------------------------------------
   key   | function
  ------------------------------------------------
-    g   | cfw:refresh-calendar-buffer
-    j   | cfw:org-goto-date
+    g   | calfw-refresh-calendar-buffer
+    j   | calfw-org-goto-date
     k   | org-capture
-    x   | cfw:org-clean-exit
-    d   | cfw:change-view-day
-    v d | cfw:change-view-day
-    v w | cfw:change-view-week
-    v m | cfw:change-view-month
+    x   | calfw-org-clean-exit
+    d   | calfw-change-view-day
+    v d | calfw-change-view-day
+    v w | calfw-change-view-week
+    v m | calfw-change-view-month
  ------------------------------------------------")
 
-(defvar cfw:org-face-agenda-item-foreground-color "Seagreen4"
+(defvar calfw-org-face-agenda-item-foreground-color "Seagreen4"
   "Variable for org agenda item foreground color.")
 
-(defun cfw:org-collect-schedules-period (begin end)
+(defun calfw-org-collect-schedules-period (begin end)
   "[internal] Return org schedule items between BEGIN and END."
   (let ((org-agenda-prefix-format " "))
     (setq org-agenda-buffer
       (when (buffer-live-p org-agenda-buffer)
         org-agenda-buffer))
     (org-compile-prefix-format nil)
-    (cl-loop for date in (cfw:enumerate-days begin end) append
-             (cl-loop for file in (or cfw:org-icalendars (org-agenda-files nil 'ifmode))
+    (cl-loop for date in (calfw-enumerate-days begin end) append
+             (cl-loop for file in (or calfw-org-icalendars (org-agenda-files nil 'ifmode))
                       append
                       (progn
                         (org-check-agenda-file file)
                         (apply 'org-agenda-get-day-entries
                                file date
-                               cfw:org-agenda-schedule-args))))))
+                               calfw-org-agenda-schedule-args))))))
 
-(defun cfw:org-onclick ()
+(defun calfw-org-onclick ()
   "Jump to the clicked org item."
   (interactive)
   (let (
@@ -127,7 +131,7 @@ For example,
       (goto-char beg)
       (org-cycle))))
 
-(defun cfw:org-jump-map ()
+(defun calfw-org-jump-map ()
   "Jump to the clicked org item."
   (interactive)
   (when (fboundp 'google-maps) ;; TODO: Not sure where this function is from!
@@ -135,26 +139,26 @@ For example,
       (when loc
         (google-maps loc)))))
 
-(defun cfw:org-clean-exit ()
+(defun calfw-org-clean-exit ()
   "Close buffers opened by calfw-org before closing Calendar Framework."
   (interactive)
   (org-release-buffers org-agenda-new-buffers)
   (setq org-agenda-new-buffers nil)
   (bury-buffer))
 
-(defvar cfw:org-text-keymap
+(defvar calfw-org-text-keymap
   (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'cfw:org-onclick)
-    (define-key map (kbd "RET") 'cfw:org-onclick)
-    (define-key map (kbd "C-c C-o") 'cfw:org-onclick)
-    (define-key map (kbd "m") 'cfw:org-jump-map)
+    (define-key map [mouse-1] 'calfw-org-onclick)
+    (define-key map (kbd "RET") 'calfw-org-onclick)
+    (define-key map (kbd "C-c C-o") 'calfw-org-onclick)
+    (define-key map (kbd "m") 'calfw-org-jump-map)
     map)
   "key map on the calendar item text.")
 
-(defun cfw:org-extract-summary (org-item)
+(defun calfw-org-extract-summary (org-item)
   "[internal] Remove some strings."
-  (let* ((item org-item) (tags (cfw:org-tp item 'tags)))
-    ;; (when (string-match cfw:org-todo-keywords-regexp item) ; dynamic bind
+  (let* ((item org-item) (tags (calfw-org-tp item 'tags)))
+    ;; (when (string-match calfw-org-todo-keywords-regexp item) ; dynamic bind
     ;;   (setq item (replace-match "" nil nil item)))
     (if tags
       (when (string-match (concat "[\t ]*:+" (mapconcat 'identity tags ":+") ":+[\t ]*$") item)
@@ -164,22 +168,22 @@ For example,
     (when (string-match "^ +" item)
       (setq item (replace-match "" nil nil item)))
     (when (= 0 (length item))
-      (setq item (cfw:org-tp org-item 'org-category)))
+      (setq item (calfw-org-tp org-item 'org-category)))
     item))
 
-(defun cfw:org-summary-format (item)
+(defun calfw-org-summary-format (item)
   "Format an item. (How should be displayed?)"
-  (let* (;; (time (cfw:org-tp item 'time))
-         (time-of-day (cfw:org-tp item 'time-of-day))
+  (let* (;; (time (calfw-org-tp item 'time))
+         (time-of-day (calfw-org-tp item 'time-of-day))
          (time-str (and time-of-day
                         (format "%02i:%02i " (/ time-of-day 100) (% time-of-day 100))))
-         ;; (category (cfw:org-tp item 'org-category))
-         ;; (tags (cfw:org-tp item 'tags))
-         ;; (marker (cfw:org-tp item 'org-marker))
+         ;; (category (calfw-org-tp item 'org-category))
+         ;; (tags (calfw-org-tp item 'tags))
+         ;; (marker (calfw-org-tp item 'org-marker))
          ;; (buffer (and marker (marker-buffer marker)))
-         (text (cfw:org-extract-summary item))
-         (props (cfw:extract-text-props item 'face 'keymap))
-         (extra (cfw:org-tp item 'extra)))
+         (text (calfw-org-extract-summary item))
+         (props (calfw-extract-text-props item 'face 'keymap))
+         (extra (calfw-org-tp item 'extra)))
     (setq text (substring-no-properties text))
     (when (and extra (string-match (concat "^" org-deadline-string ".*") extra))
       (add-text-properties 0 (length text) (list 'face (org-agenda-deadline-face 1.0)) text))
@@ -211,30 +215,30 @@ For example,
      (apply 'propertize text props)
      ;; include org filename
      ;; (and buffer (concat " " (buffer-name buffer)))
-     'keymap cfw:org-text-keymap
+     'keymap calfw-org-text-keymap
      ;; Delete the display property, since displaying images will break our
      ;; table layout.
      'display nil)))
 
-(defvar cfw:org-schedule-summary-transformer 'cfw:org-summary-format
+(defvar calfw-org-schedule-summary-transformer 'calfw-org-summary-format
   "Transforms the org item string to calendar title.
 If this function splits into a list of string, the calfw displays
 those string in multi-lines.")
 
-(defun cfw:org-normalize-date (date)
+(defun calfw-org-normalize-date (date)
   "Return a normalized date. (MM DD YYYY)."
   (cond
    ((numberp date)
     (calendar-gregorian-from-absolute date))
    (t date)))
 
-(defun cfw:org-get-timerange (text)
+(defun calfw-org-get-timerange (text)
   "Return a range object (begin end text).
 If TEXT does not have a range, return nil."
-  (let* ((dotime (cfw:org-tp text 'dotime)))
+  (let* ((dotime (calfw-org-tp text 'dotime)))
     (and (stringp dotime) (and dotime (string-match org-ts-regexp dotime))
 	 (let ((date-string  (match-string 1 dotime))
-	       (extra (cfw:org-tp text 'extra)))
+	       (extra (calfw-org-tp text 'extra)))
 	   (if (and extra (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra))
 	       (let* ((cur-day (string-to-number
 				(match-string 1 extra)))
@@ -247,36 +251,37 @@ If TEXT does not have a range, return nil."
 				 (org-read-date nil t date-string)
 				 (seconds-to-time (* 3600 24 (- total-days cur-day))))))
 		 (list (calendar-gregorian-from-absolute (time-to-days start-date))
-		       (calendar-gregorian-from-absolute (time-to-days end-date)) text))
-	     )))))
+		       (calendar-gregorian-from-absolute
+                        (time-to-days end-date))
+                       text)))))))
 
-(defun cfw:org-schedule-period-to-calendar (begin end)
+(defun calfw-org-schedule-period-to-calendar (begin end)
   "[internal] Return calfw calendar items between BEGIN and END
 from the org schedule data."
   (cl-loop
-   ;;with cfw:org-todo-keywords-regexp = (regexp-opt org-todo-keywords-for-agenda) ; dynamic bind
+   ;;with calfw-org-todo-keywords-regexp = (regexp-opt org-todo-keywords-for-agenda) ; dynamic bind
    with contents = nil with periods = nil
-   for i in (cfw:org-collect-schedules-period begin end)
-   for date = (cfw:org-tp i 'date)
-   for line = (funcall cfw:org-schedule-summary-transformer i)
-   for range = (cfw:org-get-timerange line)
+   for i in (calfw-org-collect-schedules-period begin end)
+   for date = (calfw-org-tp i 'date)
+   for line = (funcall calfw-org-schedule-summary-transformer i)
+   for range = (calfw-org-get-timerange line)
    if range do
    (unless (member range periods)
      (push range periods))
    else do
    ; dotime is not present if this event was already added as a timerange
-   (if (cfw:org-tp i 'dotime)
-       (setq contents (cfw:contents-add
-		       (cfw:org-normalize-date date)
+   (if (calfw-org-tp i 'dotime)
+       (setq contents (calfw-contents-add
+		       (calfw-org-normalize-date date)
 		       line contents)))
    finally return (nconc contents (list (cons 'periods periods)))))
 
-(defun cfw:org-schedule-sorter (text1 text2)
+(defun calfw-org-schedule-sorter (text1 text2)
   "[internal] Sorting algorithm for org schedule items.
 TEXT1 < TEXT2."
   (condition-case _
-      (let ((time1 (cfw:org-tp text1 'time-of-day))
-            (time2 (cfw:org-tp text2 'time-of-day)))
+      (let ((time1 (calfw-org-tp text1 'time-of-day))
+            (time2 (calfw-org-tp text2 'time-of-day)))
         (cond
          ((and time1 time2) (< time1 time2))
          (time1 t)   ; time object is moved to upper
@@ -284,12 +289,12 @@ TEXT1 < TEXT2."
          (t (string-lessp text1 text2))))
     (error (string-lessp text1 text2))))
 
-(defun cfw:org-schedule-sorter2 (text1 text2)
+(defun calfw-org-schedule-sorter2 (text1 text2)
   "[internal] Sorting algorithm for org schedule items.
 TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
   (condition-case _
-      (let ((time1 (cfw:org-tp text1 'time-of-day))
-            (time2 (cfw:org-tp text2 'time-of-day)))
+      (let ((time1 (calfw-org-tp text1 'time-of-day))
+            (time2 (calfw-org-tp text2 'time-of-day)))
         (cond
          ((and time1 time2) (< time1 time2))
          (time1 nil) ; time object is moved to upper
@@ -297,7 +302,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
          (t (string-lessp text1 text2))))
     (error (string-lessp text1 text2))))
 
-(defun cfw:org-format-title (file h-obj t-obj h-beg loc)
+(defun calfw-org-format-title (file h-obj t-obj h-beg loc)
   (propertize
   (concat
    (when  (org-element-property :hour-start t-obj)
@@ -305,34 +310,34 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
              (org-element-property :hour-start t-obj)
              (org-element-property :minute-start t-obj)))
    (org-element-property :title h-obj))
-  'keymap cfw:org-text-keymap
+  'keymap calfw-org-text-keymap
   'display nil
   'cfw:org-file file
   'cfw:org-h-beg h-beg
   'cfw:org-loc loc))
 
-(defun cfw:org-format-date (t-obj lst)
+(defun calfw-org-format-date (t-obj lst)
   (mapcar
    (lambda (v)
      (org-element-property v t-obj)) lst))
 
-(defun cfw:org-filter-datetime (t-obj lst)
-  (if (car (cfw:org-format-date t-obj lst))
-      (cfw:org-format-date t-obj lst)
+(defun calfw-org-filter-datetime (t-obj lst)
+  (if (car (calfw-org-format-date t-obj lst))
+      (calfw-org-format-date t-obj lst)
     nil))
 
-(defun cfw:org-convert-event (file h-obj t-obj h-beg)
+(defun calfw-org-convert-event (file h-obj t-obj h-beg)
   (let ((sdate '(:month-start :day-start :year-start))
         (stime '(:hour-start :minute-start))
         (edate '(:month-end :day-end :year-end))
         (etime '(:hour-end :minute-end))
         (loc (org-element-property :LOCATION h-obj)))
-    (make-cfw:event
-     :start-date  (cfw:org-format-date t-obj sdate)
-     :start-time  (cfw:org-filter-datetime t-obj stime)
-     :end-date    (cfw:org-filter-datetime t-obj edate)
-     :end-time    (cfw:org-filter-datetime t-obj etime)
-     :title       (cfw:org-format-title file h-obj t-obj h-beg loc)
+    (make-calfw-event
+     :start-date  (calfw-org-format-date t-obj sdate)
+     :start-time  (calfw-org-filter-datetime t-obj stime)
+     :end-date    (calfw-org-filter-datetime t-obj edate)
+     :end-time    (calfw-org-filter-datetime t-obj etime)
+     :title       (calfw-org-format-title file h-obj t-obj h-beg loc)
      :location    loc
      :description (if (org-element-property :contents-begin h-obj)
                       (replace-regexp-in-string
@@ -341,7 +346,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
                                          (org-element-property :contents-end h-obj)))
                     nil))))
 
-(defun cfw:org-convert-org-to-calfw (file)
+(defun calfw-org-convert-org-to-calfw (file)
   (save-excursion
     (with-current-buffer
         (find-file-noselect file)
@@ -364,7 +369,7 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
                             (org-back-to-heading t)
                             (org-element-headline-parser (point-max) t))
               for h-beg  = (point)
-              for event = (cfw:org-convert-event file h-obj t-obj h-beg)
+              for event = (calfw-org-convert-event file h-obj t-obj h-beg)
               for ts-type = (org-element-property :type t-obj)
               if (eq 'active-range ts-type)
               collect event into periods
@@ -376,8 +381,8 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
               (kill-buffer (get-file-buffer file))
               (cl-return `((periods ,periods) ,@contents)))))))
 
-(defun cfw:org-to-calendar (file begin end)
-  (cl-loop for event in (cfw:org-convert-org-to-calfw file)
+(defun calfw-org-to-calendar (file begin end)
+  (cl-loop for event in (calfw-org-convert-org-to-calfw file)
            if (and (listp event)
                    (equal 'periods (car event)))
            collect
@@ -385,23 +390,23 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
             'periods
             (cl-loop for evt in (cadr event)
                      if (and
-                         (cfw:date-less-equal-p begin (cfw:event-end-date evt))
-                         (cfw:date-less-equal-p (cfw:event-start-date evt) end))
+                         (calfw-date-less-equal-p begin (calfw-event-end-date evt))
+                         (calfw-date-less-equal-p (calfw-event-start-date evt) end))
                      collect evt))
-           else if (cfw:date-between begin end (cfw:event-start-date event))
+           else if (calfw-date-between begin end (calfw-event-start-date event))
            collect event))
 
-(defun cfw:org-create-file-source (name file color)
+(defun calfw-org-create-file-source (name file color)
   "Create org-element based source. "
-  (make-cfw:source
+  (make-calfw-source
    :name (concat "Org:" name)
    :color color
    :data (lambda (begin end)
-           (cfw:org-to-calendar file begin end))))
+           (calfw-org-to-calendar file begin end))))
 
-(defun cfw:org-capture-day ()
-  (with-current-buffer  (get-buffer-create cfw:calendar-buffer-name)
-    (let ((pos (cfw:cursor-to-nearest-date)))
+(defun calfw-org-capture-day ()
+  (with-current-buffer  (get-buffer-create calfw-calendar-buffer-name)
+    (let ((pos (calfw-cursor-to-nearest-date)))
       (concat "<"
               (format-time-string  "%Y-%m-%d %a"
                                    (encode-time 0 0 0
@@ -410,95 +415,91 @@ TEXT1 < TEXT2. This function makes no-time items in front of timed-items."
                                                 (calendar-extract-year pos)))
               ">"))))
 
-(when cfw:org-capture-template
+(when calfw-org-capture-template
 (setq org-capture-templates
-      (append org-capture-templates (list cfw:org-capture-template))))
+      (append org-capture-templates (list calfw-org-capture-template))))
 
-(defun cfw:org-capture ()
+(defun calfw-org-capture ()
   "Open org-agenda buffer on the selected date."
   (interactive)
-  (if cfw:org-capture-template
-      (org-capture nil (car cfw:org-capture-template))
-    (message "cfw:org-capture-template is not set yet.")))
+  (if calfw-org-capture-template
+      (org-capture nil (car calfw-org-capture-template))
+    (message "calfw-org-capture-template is not set yet.")))
 
-(defun cfw:org-open-agenda-day ()
+(defun calfw-org-open-agenda-day ()
   "Open org-agenda buffer on the selected date."
   (interactive)
-  (let ((date (cfw:cursor-to-nearest-date)))
+  (let ((date (calfw-cursor-to-nearest-date)))
     (when date
       (org-agenda-list nil (calendar-absolute-from-gregorian date) 'day))))
 
 (define-key
-  cfw:calendar-mode-map "c" 'cfw:org-capture)
+  calfw-calendar-mode-map "c" 'calfw-org-capture)
 
-(defvar cfw:org-schedule-map
-  (cfw:define-keymap
-   '(
-     ("q"   . bury-buffer)
-     ("SPC" . cfw:org-open-agenda-day)
-     ))
+(defvar calfw-org-schedule-map
+  (calfw-define-keymap
+   '(("q"   . bury-buffer)
+     ("SPC" . calfw-org-open-agenda-day)))
   "Key map for the calendar buffer.")
 
-(defvar cfw:org-custom-map
-  (cfw:define-keymap
-   '(
-     ("g"   . cfw:refresh-calendar-buffer)
-     ("j"   . cfw:org-goto-date)
+(defvar calfw-org-custom-map
+  (calfw-define-keymap
+   '(("g"   . calfw-refresh-calendar-buffer)
+     ("j"   . calfw-org-goto-date)
      ("k"   . org-capture)
      ("q"   . bury-buffer)
-     ("d"   . cfw:change-view-day)
-     ("v d" . cfw:change-view-day)
-     ("v w" . cfw:change-view-week)
-     ("v m" . cfw:change-view-month)
-     ("x"   . cfw:org-clean-exit)
-     ("SPC" . cfw:org-open-agenda-day)
-     ))
+     ("d"   . calfw-change-view-day)
+     ("v d" . calfw-change-view-day)
+     ("v w" . calfw-change-view-week)
+     ("v m" . calfw-change-view-month)
+     ("x"   . calfw-org-clean-exit)
+     ("SPC" . calfw-org-open-agenda-day)))
   "Key map for the calendar buffer.")
 
-(defun cfw:org-create-source (&optional color)
+(defun calfw-org-create-source (&optional color)
   "Create org-agenda source."
-  (make-cfw:source
+  (make-calfw-source
    :name "org-agenda"
-   :color (or color cfw:org-face-agenda-item-foreground-color)
-   :data 'cfw:org-schedule-period-to-calendar))
+   :color (or color calfw-org-face-agenda-item-foreground-color)
+   :data 'calfw-org-schedule-period-to-calendar))
 
-(defun cfw:open-org-calendar ()
+(defun calfw-org-open-calendar ()
   "Open an org schedule calendar in the new buffer."
   (interactive)
   (save-excursion
-    (let* ((source1 (cfw:org-create-source))
-           (curr-keymap (if cfw:org-overwrite-default-keybinding cfw:org-custom-map cfw:org-schedule-map))
-           (cp (cfw:create-calendar-component-buffer
+    (let* ((source1 (calfw-org-create-source))
+           (curr-keymap (if calfw-org-overwrite-default-keybinding calfw-org-custom-map calfw-org-schedule-map))
+           (cp (calfw-create-calendar-component-buffer
                 :view 'month
                 :contents-sources (list source1)
                 :custom-map curr-keymap
-                :sorter 'cfw:org-schedule-sorter)))
-      (switch-to-buffer (cfw:cp-get-buffer cp))
+                :sorter 'calfw-org-schedule-sorter)))
+      (switch-to-buffer (calfw-cp-get-buffer cp))
       (when (not org-todo-keywords-for-agenda)
         (message "Warn : open org-agenda buffer first.")))))
 
-;; (defun cfw:org-from-calendar ()
+;; (defun calfw-org-from-calendar ()
 ;;   "Do something. This command should be executed on the calfw calendar."
 ;;   (interactive)
-;;   (let* ((mdy (cfw:cursor-to-nearest-date))
+;;   (let* ((mdy (calfw-cursor-to-nearest-date))
 ;;          (m (calendar-extract-month mdy))
 ;;          (d (calendar-extract-day   mdy))
 ;;          (y (calendar-extract-year  mdy)))
 ;;     ;; exec org-remember here?
 ;;     ))
 
-(defun cfw:org-read-date-command ()
+(defun calfw-org-read-date-command ()
   "Move the cursor to the specified date."
   (interactive)
-  (cfw:emacs-to-calendar (org-read-date nil 'to-time)))
+  (calfw-emacs-to-calendar (org-read-date nil 'to-time)))
 
-(defun cfw:org-goto-date ()
+(defun calfw-org-goto-date ()
   "Move the cursor to the specified date."
   (interactive)
-  (cfw:navi-goto-date
-   (cfw:org-read-date-command)))
+  (calfw-navi-goto-date
+   (calfw-org-read-date-command)))
 
-;; (progn (eval-current-buffer) (cfw:open-org-calendar))
+;; (progn (eval-current-buffer) (calfw-open-org-calendar))
 ;; (setq org-agenda-files '("./org-samples/complex.org"))
 
 
