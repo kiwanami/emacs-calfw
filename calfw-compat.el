@@ -79,7 +79,9 @@ Output goes into a new buffer, wrapped to `fill-column`."
   (calfw-compat--generate-calls))
 
 (defcustom calfw-compat-mark-obsolete "1.8"
-  "When non-nil, mark old symbols as obsolete using the value as version.")
+  "When non-nil, mark old symbols as obsolete using the value as version."
+  :group 'calfw
+  :type 'string)
 
 (defvar calfw-compat-aliases
   '((vars
@@ -176,12 +178,12 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (cl-struct-calfw-source-tags . cl-struct-cfw:source-tags))
 
     (funcs
-     (calfw-annotations-merge . cfw:annotations-merge)
+     (calfw--annotations-merge . cfw:annotations-merge)
      (calfw-cal-create-source . cfw:cal-create-source)
-     (calfw-cal-entry-to-event . cfw:cal-entry-to-event)
+     (calfw-cal--entry-to-event . cfw:cal-entry-to-event)
      (calfw-cal-from-calendar . cfw:cal-from-calendar)
      (calfw-cal-onclick . cfw:cal-onclick)
-     (calfw-cal-schedule-period-to-calendar
+     (calfw-cal--schedule-period-to-calendar
       . cfw:cal-schedule-period-to-calendar)
      (calfw-calendar-mode . cfw:calendar-mode)
      (calfw-calendar-mode-map . cfw:calendar-mode-map)
@@ -206,17 +208,17 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-component-view . cfw:component-view)
      (calfw-component-view--cmacro . cfw:component-view--cmacro)
      (calfw-composite-color . cfw:composite-color)
-     (calfw-contents-add . cfw:contents-add)
-     (calfw-contents-get . cfw:contents-get)
-     (calfw-contents-get-internal . cfw:contents-get-internal)
-     (calfw-contents-merge . cfw:contents-merge)
-     (calfw-contents-put-source . cfw:contents-put-source)
+     (calfw--contents-add . cfw:contents-add)
+     (calfw--contents-get . cfw:contents-get)
+     (calfw--contents-get-internal . cfw:contents-get-internal)
+     (calfw--contents-merge . cfw:contents-merge)
+     (calfw--contents-put-source . cfw:contents-put-source)
      (calfw-cp-add-click-hook . cfw:cp-add-click-hook)
      (calfw-cp-add-update-hook . cfw:cp-add-update-hook)
-     (calfw-cp-dispatch-view-impl . cfw:cp-dispatch-view-impl)
+     (calfw--cp-dispatch-view-impl . cfw:cp-dispatch-view-impl)
      (calfw-cp-displayed-date-p . cfw:cp-displayed-date-p)
-     (calfw-cp-fire-click-hooks . cfw:cp-fire-click-hooks)
-     (calfw-cp-fire-update-hooks . cfw:cp-fire-update-hooks)
+     (calfw--cp-fire-click-hooks . cfw:cp-fire-click-hooks)
+     (calfw--cp-fire-update-hooks . cfw:cp-fire-update-hooks)
      (calfw-cp-get-annotation-sources
       . cfw:cp-get-annotation-sources)
      (calfw-cp-get-buffer . cfw:cp-get-buffer)
@@ -225,20 +227,20 @@ Output goes into a new buffer, wrapped to `fill-column`."
       . cfw:cp-get-contents-sources)
      (calfw-cp-get-view . cfw:cp-get-view)
      (calfw-cp-goto-date . cfw:cp-goto-date)
-     (calfw-cp-move-cursor . cfw:cp-move-cursor)
-     (calfw-cp-new . cfw:cp-new)
+     (calfw--cp-move-cursor . cfw:cp-move-cursor)
+     (calfw--cp-new . cfw:cp-new)
      (calfw-cp-resize . cfw:cp-resize)
      (calfw-cp-set-annotation-sources
       . cfw:cp-set-annotation-sources)
      (calfw-cp-set-contents-sources
       . cfw:cp-set-contents-sources)
      (calfw-cp-set-view . cfw:cp-set-view)
-     (calfw-cp-update . cfw:cp-update)
+     (calfw--cp-update . cfw:cp-update)
      (calfw-create-calendar-component-buffer
       . cfw:create-calendar-component-buffer)
      (calfw-create-calendar-component-region
       . cfw:create-calendar-component-region)
-     (calfw-cursor-to-date . cfw:cursor-to-date)
+     (calfw--cursor-to-date . cfw:cursor-to-date)
      (calfw-cursor-to-nearest-date . cfw:cursor-to-nearest-date)
      (calfw-date . cfw:date)
      (calfw-date-after . cfw:date-after)
@@ -248,7 +250,7 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-days-diff . cfw:days-diff)
 
      (calfw-ical-decode-to-calendar . cfw:decode-to-calendar)
-     (calfw-define-keymap . cfw:define-keymap)
+     (calfw--define-keymap . cfw:define-keymap)
      (calfw-dest-after-update . cfw:dest-after-update)
      (calfw-dest-after-update-func . cfw:dest-after-update-func)
      (calfw-dest-after-update-func--cmacro
@@ -273,13 +275,13 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-dest-max-func--cmacro . cfw:dest-max-func--cmacro)
      (calfw-dest-min-func . cfw:dest-min-func)
      (calfw-dest-min-func--cmacro . cfw:dest-min-func--cmacro)
-     (calfw-dest-ol-today-clear . cfw:dest-ol-today-clear)
-     (calfw-dest-ol-today-set . cfw:dest-ol-today-set)
+     (calfw--dest-ol-today-clear . cfw:dest-ol-today-clear)
+     (calfw--dest-ol-today-set . cfw:dest-ol-today-set)
      (calfw-dest-p . cfw:dest-p)
      (calfw-dest-p--cmacro . cfw:dest-p--cmacro)
      (calfw-dest-point-max . cfw:dest-point-max)
      (calfw-dest-point-min . cfw:dest-point-min)
-     (calfw-dest-region-clear . cfw:dest-region-clear)
+     (calfw--dest-region-clear . cfw:dest-region-clear)
      (calfw-dest-today-ol . cfw:dest-today-ol)
      (calfw-dest-today-ol--cmacro . cfw:dest-today-ol--cmacro)
      (calfw-dest-type . cfw:dest-type)
@@ -287,7 +289,7 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-dest-width . cfw:dest-width)
      (calfw-dest-width--cmacro . cfw:dest-width--cmacro)
      (calfw-dest-with-region . cfw:dest-with-region)
-     (calfw-details-find-item . cfw:details-find-item)
+     (calfw--details-find-item . cfw:details-find-item)
      (calfw-details-kill-buffer-command
       . cfw:details-kill-buffer-command)
      (calfw-details-layout . cfw:details-layout)
@@ -316,14 +318,14 @@ Output goes into a new buffer, wrapped to `fill-column`."
 
      (calfw-event-end-time--cmacro . cfw:event-end-time--cmacro)
      (calfw-event-format . cfw:event-format)
-     (calfw-event-format-field . cfw:event-format-field)
-     (calfw-event-format-field-date
+     (calfw--event-format-field . cfw:event-format-field)
+     (calfw--event-format-field-date
       . cfw:event-format-field-date)
-     (calfw-event-format-field-number
+     (calfw--event-format-field-number
       . cfw:event-format-field-number)
-     (calfw-event-format-field-string
+     (calfw--event-format-field-string
       . cfw:event-format-field-string)
-     (calfw-event-format-field-time
+     (calfw--event-format-field-time
       . cfw:event-format-field-time)
      (calfw-event-location . cfw:event-location)
      (calfw-event-location--cmacro . cfw:event-location--cmacro)
@@ -348,13 +350,13 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-event-toggle-all-calendars
       . cfw:event-toggle-all-calendars)
      (calfw-event-toggle-calendar . cfw:event-toggle-calendar)
-     (calfw-extract-text-props . cfw:extract-text-props)
-     (calfw-fill-keymap-property . cfw:fill-keymap-property)
-     (calfw-find-all-by-date . cfw:find-all-by-date)
-     (calfw-find-by-date . cfw:find-by-date)
-     (calfw-find-first-date . cfw:find-first-date)
-     (calfw-find-item . cfw:find-item)
-     (calfw-find-last-date . cfw:find-last-date)
+     (calfw--extract-text-props . cfw:extract-text-props)
+     (calfw--fill-keymap-property . cfw:fill-keymap-property)
+     (calfw--find-all-by-date . cfw:find-all-by-date)
+     (calfw--find-by-date . cfw:find-by-date)
+     (calfw--find-first-date . cfw:find-first-date)
+     (calfw--find-item . cfw:find-item)
+     (calfw--find-last-date . cfw:find-last-date)
      (calfw-flatten . cfw:flatten)
      (calfw-get-calendar-text . cfw:get-calendar-text)
      (calfw-howm-create-source . cfw:howm-create-source)
@@ -363,12 +365,12 @@ Output goes into a new buffer, wrapped to `fill-column`."
       . cfw:howm-from-calendar-fast)
      (calfw-howm-schedule-cache-clear
       . cfw:howm-schedule-cache-clear)
-     (calfw-howm-schedule-get . cfw:howm-schedule-get)
+     (calfw-howm--schedule-get . cfw:howm-schedule-get)
      (calfw-howm-schedule-inline . cfw:howm-schedule-inline)
-     (calfw-howm-schedule-parse-line
+     (calfw-howm--schedule-parse-line
       . cfw:howm-schedule-parse-line)
-     (calfw-howm-schedule-period . cfw:howm-schedule-period)
-     (calfw-howm-schedule-period-to-calendar
+     (calfw-howm--schedule-period . cfw:howm-schedule-period)
+     (calfw-howm--schedule-period-to-calendar
       . cfw:howm-schedule-period-to-calendar)
      (calfw-ical-convert-event . cfw:ical-convert-event)
      (calfw-ical-convert-ical-to-calfw
@@ -388,30 +390,30 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-ical-url-to-buffer-internal . cfw:ical-url-to-buffer-internal)
      (calfw-ical-with-buffer . cfw:ical-with-buffer)
      (calfw-howm-install-schedules . cfw:install-howm-schedules)
-     (calfw-k . cfw:k)
+     (calfw--k . cfw:k)
      (calfw-make-bg-color . cfw:make-bg-color)
      (calfw-make-fg-color . cfw:make-fg-color)
      (calfw-model-abstract-derived . cfw:model-abstract-derived)
      (calfw-model-abstract-new . cfw:model-abstract-new)
-     (calfw-model-create-updated-view-data
+     (calfw--model-create-updated-view-data
       . cfw:model-create-updated-view-data)
      (calfw-model-get-annotation-by-date
       . cfw:model-get-annotation-by-date)
-     (calfw-model-get-annotation-sources
+     (calfw--model-get-annotation-sources
       . cfw:model-get-annotation-sources)
      (calfw-model-get-contents-by-date
       . cfw:model-get-contents-by-date)
-     (calfw-model-get-contents-sources
+     (calfw--model-get-contents-sources
       . cfw:model-get-contents-sources)
      (calfw-model-get-holiday-by-date
       . cfw:model-get-holiday-by-date)
      (calfw-model-get-periods-by-date
       . cfw:model-get-periods-by-date)
      (calfw-model-get-sorter . cfw:model-get-sorter)
-     (calfw-model-set-annotation-sources
+     (calfw--model-set-annotation-sources
       . cfw:model-set-annotation-sources)
-     (calfw-model-set-contents-sources . cfw:model-set-contents-sources)
-     (calfw-model-set-init-date . cfw:model-set-init-date)
+     (calfw--model-set-contents-sources . cfw:model-set-contents-sources)
+     (calfw--model-set-init-date . cfw:model-set-init-date)
      (calfw-month-year-contain-p . cfw:month-year-contain-p)
      (calfw-month-year-equal-p . cfw:month-year-equal-p)
      (calfw-navi-goto-date . cfw:navi-goto-date)
@@ -441,13 +443,13 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-org-capture . cfw:org-capture)
      (calfw-org-capture-day . cfw:org-capture-day)
      (calfw-org-clean-exit . cfw:org-clean-exit)
-     (calfw-org-collect-schedules-period
+     (calfw-org--collect-schedules-period
       . cfw:org-collect-schedules-period)
      (calfw-org-convert-event . cfw:org-convert-event)
      (calfw-org-convert-org-to-calfw . cfw:org-convert-org-to-calfw)
      (calfw-org-create-file-source . cfw:org-create-file-source)
      (calfw-org-create-source . cfw:org-create-source)
-     (calfw-org-extract-summary . cfw:org-extract-summary)
+     (calfw-org--extract-summary . cfw:org-extract-summary)
      (calfw-org-filter-datetime . cfw:org-filter-datetime)
      (calfw-org-format-date . cfw:org-format-date)
      (calfw-org-format-title . cfw:org-format-title)
@@ -458,71 +460,71 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-org-onclick . cfw:org-onclick)
      (calfw-org-open-agenda-day . cfw:org-open-agenda-day)
      (calfw-org-read-date-command . cfw:org-read-date-command)
-     (calfw-org-schedule-period-to-calendar
+     (calfw-org--schedule-period-to-calendar
       . cfw:org-schedule-period-to-calendar)
      (calfw-org-schedule-sorter . cfw:org-schedule-sorter)
      (calfw-org-schedule-sorter2 . cfw:org-schedule-sorter2)
      (calfw-org-summary-format . cfw:org-summary-format)
      (calfw-org-to-calendar . cfw:org-to-calendar)
-     (calfw-org-tp . cfw:org-tp)
+     (calfw-org--tp . cfw:org-tp)
      (calfw-parse-str-time . cfw:parse-str-time)
      (calfw-parsetime . cfw:parsetime)
      (calfw-parsetime-emacs . cfw:parsetime-emacs)
      (calfw-periods-put-source . cfw:periods-put-source)
      (calfw-read-date-command-simple . cfw:read-date-command-simple)
      (calfw-refresh-calendar-buffer . cfw:refresh-calendar-buffer)
-     (calfw-render-add-item-separator-sign
+     (calfw--render-add-item-separator-sign
       . cfw:render-add-item-separator-sign)
-     (calfw-render-add-right . cfw:render-add-right)
-     (calfw-render-append-parts . cfw:render-append-parts)
-     (calfw-render-break-lines . cfw:render-break-lines)
-     (calfw-render-button . cfw:render-button)
-     (calfw-render-calendar-cells-days . cfw:render-calendar-cells-days)
-     (calfw-render-calendar-cells-weeks . cfw:render-calendar-cells-weeks)
-     (calfw-render-center . cfw:render-center)
-     (calfw-render-columns . cfw:render-columns)
-     (calfw-render-day-of-week-names
+     (calfw--render-add-right . cfw:render-add-right)
+     (calfw--render-append-parts . cfw:render-append-parts)
+     (calfw--render-break-lines . cfw:render-break-lines)
+     (calfw--render-button . cfw:render-button)
+     (calfw--render-calendar-cells-days . cfw:render-calendar-cells-days)
+     (calfw--render-calendar-cells-weeks . cfw:render-calendar-cells-weeks)
+     (calfw--render-center . cfw:render-center)
+     (calfw--render-columns . cfw:render-columns)
+     (calfw--render-day-of-week-names
       . cfw:render-day-of-week-names)
-     (calfw-render-default-content-face
+     (calfw--render-default-content-face
       . cfw:render-default-content-face)
-     (calfw-render-event-days-overview-content
+     (calfw--render-event-days-overview-content
       . cfw:render-event-days-overview-content)
-     (calfw-render-event-details-content
+     (calfw--render-event-details-content
       . cfw:render-event-details-content)
-     (calfw-render-event-overview-content
+     (calfw--render-event-overview-content
       . cfw:render-event-overview-content)
-     (calfw-render-footer . cfw:render-footer)
-     (calfw-render-get-face-content
+     (calfw--render-footer . cfw:render-footer)
+     (calfw--render-get-face-content
       . cfw:render-get-face-content)
-     (calfw-render-get-face-period . cfw:render-get-face-period)
-     (calfw-render-get-week-face . cfw:render-get-week-face)
-     (calfw-render-left . cfw:render-left)
+     (calfw--render-get-face-period . cfw:render-get-face-period)
+     (calfw--render-get-week-face . cfw:render-get-week-face)
+     (calfw--render-left . cfw:render-left)
      (calfw-render-line-breaker-none
       . cfw:render-line-breaker-none)
      (calfw-render-line-breaker-simple
       . cfw:render-line-breaker-simple)
      (calfw-render-line-breaker-wordwrap
       . cfw:render-line-breaker-wordwrap)
-     (calfw-render-map-event-content
+     (calfw--render-map-event-content
       . cfw:render-map-event-content)
-     (calfw-render-periods . cfw:render-periods)
-     (calfw-render-periods-days . cfw:render-periods-days)
-     (calfw-render-periods-get-min
+     (calfw--render-periods . cfw:render-periods)
+     (calfw--render-periods-days . cfw:render-periods-days)
+     (calfw--render-periods-get-min
       . cfw:render-periods-get-min)
-     (calfw-render-periods-place . cfw:render-periods-place)
-     (calfw-render-periods-stacks . cfw:render-periods-stacks)
-     (calfw-render-periods-title . cfw:render-periods-title)
-     (calfw-render-right . cfw:render-right)
-     (calfw-render-rows-prop . cfw:render-rows-prop)
-     (calfw-render-separator . cfw:render-separator)
-     (calfw-render-sort-contents . cfw:render-sort-contents)
+     (calfw--render-periods-place . cfw:render-periods-place)
+     (calfw--render-periods-stacks . cfw:render-periods-stacks)
+     (calfw--render-periods-title . cfw:render-periods-title)
+     (calfw--render-right . cfw:render-right)
+     (calfw--render-rows-prop . cfw:render-rows-prop)
+     (calfw--render-separator . cfw:render-separator)
+     (calfw--render-sort-contents . cfw:render-sort-contents)
      (calfw-render-title-day . cfw:render-title-day)
      (calfw-render-title-month . cfw:render-title-month)
      (calfw-render-title-period . cfw:render-title-period)
-     (calfw-render-toolbar . cfw:render-toolbar)
-     (calfw-render-truncate . cfw:render-truncate)
-     (calfw-round-cell-width . cfw:round-cell-width)
-     (calfw-rt . cfw:rt)
+     (calfw--render-toolbar . cfw:render-toolbar)
+     (calfw--render-truncate . cfw:render-truncate)
+     (calfw--round-cell-width . cfw:round-cell-width)
+     (calfw--rt . cfw:rt)
      (calfw-show-details-command . cfw:show-details-command)
      (calfw-source-color . cfw:source-color)
      (calfw-source-color--cmacro . cfw:source-color--cmacro)
@@ -544,49 +546,49 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-source-period-bgcolor . cfw:source-period-bgcolor)
      (calfw-source-period-bgcolor--cmacro
       . cfw:source-period-bgcolor--cmacro)
-     (calfw-source-period-bgcolor-get
+     (calfw--source-period-bgcolor-get
       . cfw:source-period-bgcolor-get)
      (calfw-source-period-fgcolor . cfw:source-period-fgcolor)
      (calfw-source-period-fgcolor--cmacro
       . cfw:source-period-fgcolor--cmacro)
-     (calfw-source-period-fgcolor-get
+     (calfw--source-period-fgcolor-get
       . cfw:source-period-fgcolor-get)
      (calfw-source-update . cfw:source-update)
      (calfw-source-update--cmacro . cfw:source-update--cmacro)
      (calfw-strtime . cfw:strtime)
      (calfw-strtime-emacs . cfw:strtime-emacs)
-     (calfw-sym . cfw:sym)
+     (calfw--sym . cfw:sym)
      (calfw-time . cfw:time)
-     (calfw-howm-convert-date . cfw:to-howm-date)
-     (calfw-tp . cfw:tp)
-     (calfw-view-day . cfw:view-day)
-     (calfw-view-day-calc-param . cfw:view-day-calc-param)
-     (calfw-view-model-make-common-data
+     (calfw-howm--convert-date . cfw:to-howm-date)
+     (calfw--tp . cfw:tp)
+     (calfw--view-day . cfw:view-day)
+     (calfw--view-day-calc-param . cfw:view-day-calc-param)
+     (calfw--view-model-make-common-data
       . cfw:view-model-make-common-data)
-     (calfw-view-model-make-common-data-for-days
+     (calfw--view-model-make-common-data-for-days
       . cfw:view-model-make-common-data-for-days)
-     (calfw-view-model-make-common-data-for-weeks
+     (calfw--view-model-make-common-data-for-weeks
       . cfw:view-model-make-common-data-for-weeks)
-     (calfw-view-model-make-day-names-for-days
+     (calfw--view-model-make-day-names-for-days
       . cfw:view-model-make-day-names-for-days)
-     (calfw-view-model-make-day-names-for-week
+     (calfw--view-model-make-day-names-for-week
       . cfw:view-model-make-day-names-for-week)
-     (calfw-view-model-make-days . cfw:view-model-make-days)
-     (calfw-view-model-make-holidays
+     (calfw--view-model-make-days . cfw:view-model-make-days)
+     (calfw--view-model-make-holidays
       . cfw:view-model-make-holidays)
-     (calfw-view-model-make-weeks . cfw:view-model-make-weeks)
-     (calfw-view-month . cfw:view-month)
-     (calfw-view-month-calc-param . cfw:view-month-calc-param)
-     (calfw-view-month-model . cfw:view-month-model)
-     (calfw-view-two-weeks . cfw:view-two-weeks)
-     (calfw-view-two-weeks-calc-param
+     (calfw--view-model-make-weeks . cfw:view-model-make-weeks)
+     (calfw--view-month . cfw:view-month)
+     (calfw--view-month-calc-param . cfw:view-month-calc-param)
+     (calfw--view-month-model . cfw:view-month-model)
+     (calfw--view-two-weeks . cfw:view-two-weeks)
+     (calfw--view-two-weeks-calc-param
       . cfw:view-two-weeks-calc-param)
-     (calfw-view-two-weeks-model . cfw:view-two-weeks-model)
+     (calfw--view-two-weeks-model . cfw:view-two-weeks-model)
      (calfw-view-two-weeks-model-adjust
       . cfw:view-two-weeks-model-adjust)
-     (calfw-view-week . cfw:view-week)
-     (calfw-view-week-calc-param . cfw:view-week-calc-param)
-     (calfw-view-week-model . cfw:view-week-model)
+     (calfw--view-week . cfw:view-week)
+     (calfw--view-week-calc-param . cfw:view-week-calc-param)
+     (calfw--view-week-model . cfw:view-week-model)
      (calfw-week-begin-date . cfw:week-begin-date)
      (calfw-week-end-date . cfw:week-end-date)
      (calfw-howm-elscreen-open-calendar

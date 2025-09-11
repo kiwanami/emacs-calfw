@@ -50,16 +50,18 @@
 
 
 (defun calfw-ical-decode-to-calendar (dec)
+  "Convert a decoded iCalendar date DEC to a `calfw-date' object."
   (calfw-date
    (nth 4 dec) (nth 3 dec) (nth 5 dec)))
 
 (defun calfw-ical-event-get-dates (event zone-map)
-  "Return date-time information from iCalendar event object:
-period event (list \\='period start-date end-date), time span
-event (list \\='time date start-time end-time). The period
-includes end-date. This function is copied from
-`icalendar--convert-ical-to-diary' and modified. Recursive events
-have not been supported yet."
+  "Return date-time information from iCalendar EVENT object in ZONE-MAP.
+
+Returns a list of the form `(period START-DATE END-DATE)' or
+`(time DATE START-TIME END-TIME)'. The period includes END-DATE.
+
+This function is copied from `icalendar--convert-ical-to-diary'
+and modified. Recursive events have not been supported yet."
   (let*
       ((dtstart (icalendar--get-event-property event 'DTSTART))
        (dtstart-zone (icalendar--find-time-zone
@@ -122,12 +124,15 @@ have not been supported yet."
       (list 'period start-d nil end-1-d)))))
 
 (defun calfw-ical-sanitize-string (string)
+  "Sanitize STRING by replacing escaped commas and newlines."
   (when (and string
              (> (length string) 0))
     (replace-regexp-in-string "\\\\n" "\n"
                               (replace-regexp-in-string "\\\\," "," string))))
 
 (defun calfw-ical-convert-event (event zone-map)
+  "Create a calfw event from the ical EVENT using ZONE-MAP.
+Returns the calfw event."
   (cl-destructuring-bind
       (dtag date start end) (calfw-ical-event-get-dates event zone-map)
     (make-calfw-event
@@ -143,6 +148,11 @@ have not been supported yet."
                    (icalendar--get-event-property event 'DESCRIPTION)))))
 
 (defun calfw-ical-convert-ical-to-calfw (ical-list)
+  "Convert an ical list ICAL-LIST to a calfw list.
+
+Returns an alist of `(periods . PERIODS) CONTENTS`, where PERIODS
+are events with end dates and CONTENTS are events without end
+dates."
   (cl-loop with zone-map = (icalendar--convert-all-timezones ical-list)
            for e in (icalendar--all-events ical-list)
            for event = (calfw-ical-convert-event e zone-map)
@@ -158,6 +168,11 @@ have not been supported yet."
            finally (return `((periods ,periods) ,@contents))))
 
 (defun calfw-ical-debug (f)
+  "Display the parsed iCalendar data from URL F in a buffer.
+
+The buffer \"*ical-debug*\" contains the parsed data.
+The buffer containing the iCalendar data from URL F is killed
+afterwards."
   (interactive)
   (let ((buf (calfw-ical-url-to-buffer f)))
     (unwind-protect
@@ -174,7 +189,10 @@ have not been supported yet."
 (defvar calfw-ical-url-to-buffer-get 'calfw-ical-url-to-buffer-internal)
 
 (defun calfw-ical-url-to-buffer-external (url)
-  "Retrieve ICS file with an external command."
+  "Retrieve ICS file from URL with an external command.
+
+The URL argument specifies the URL to retrieve.  Returns the
+buffer containing the ICS data."
   (let ((buf (get-buffer-create calfw-ical-calendar-tmpbuf)))
     (buffer-disable-undo buf)
     (with-current-buffer buf
@@ -184,7 +202,10 @@ have not been supported yet."
     buf))
 
 (defun calfw-ical-url-to-buffer-internal (url)
-  "Retrieve ICS file with the url package."
+  "Retrieve ICS file from URL into a buffer.
+
+The buffer `calfw-ical-calendar-tmpbuf' contains the ICS data.
+Returns the buffer."
   (let ((buf (url-retrieve-synchronously url))
         (dbuf (get-buffer-create calfw-ical-calendar-tmpbuf))
         pos)
@@ -201,6 +222,11 @@ have not been supported yet."
     dbuf))
 
 (defun calfw-ical-url-to-buffer (url)
+  "Visit the iCalendar file specified by URL in a buffer.
+
+If URL is a local file, visit it; otherwise, use
+`calfw-ical-url-to-buffer-get' to fetch it. Returns the buffer
+visited."
   (let* ((url-code (url-generic-parse-url url))
          (type (url-type url-code)))
     (cond
@@ -212,6 +238,10 @@ have not been supported yet."
         buf)))))
 
 (defmacro calfw-ical-with-buffer (url &rest body)
+  "Execute BODY in a buffer containing the iCalendar data at URL.
+
+The buffer containing the iCalendar data at URL is killed after
+BODY is executed."
   (let (($buf (gensym)))
     `(let ((,$buf (calfw-ical-url-to-buffer ,url)))
        (unwind-protect
@@ -222,6 +252,11 @@ have not been supported yet."
 (put 'calfw-ical-with-buffer 'lisp-indent-function 1)
 
 (defun calfw-ical-normalize-buffer ()
+  "Normalize the current buffer by removing line continuations and VALUE=DATE.
+
+Removes line continuations (newline followed by space) and
+`VALUE=DATE' from `DTSTART' and `DTEND' properties in the current
+buffer. The buffer is marked as unmodified."
   (save-excursion
     (goto-char (point-min))
     (while (re-search-forward "\n " nil t)
@@ -232,9 +267,11 @@ have not been supported yet."
       (replace-match "DT\\1:")))
   (set-buffer-modified-p nil))
 
-(defvar calfw-ical-data-cache nil "a list of (url . ics-data)")
+(defvar calfw-ical-data-cache nil
+  "A list of (url . ics-data).")
 
 (defun calfw-ical-data-cache-clear (url)
+  "Remove the cached data for URL from `calfw-ical-data-cache'."
   (setq calfw-ical-data-cache
         (cl-loop for i in calfw-ical-data-cache
                  for (u . d) = i
@@ -242,10 +279,15 @@ have not been supported yet."
                  collect i)))
 
 (defun calfw-ical-data-cache-clear-all ()
+  "Clear the entire `calfw-ical-data-cache'."
   (interactive)
   (setq calfw-ical-data-cache nil))
 
 (defun calfw-ical-get-data (url)
+  "Return the calendar data associated with URL.
+
+Return cached data if available, otherwise fetch and convert the
+ical data at URL.  The return value is a list of calendar events."
   (let ((data (assoc url calfw-ical-data-cache)))
     (unless data
       (setq data (let ((cal-list
@@ -258,6 +300,8 @@ have not been supported yet."
     (cdr data)))
 
 (defun calfw-ical-to-calendar (url begin end)
+  "Convert iCalendar data from URL to calendar events between BEGIN and END.
+Returns a list of calendar events."
   (cl-loop for event in (calfw-ical-get-data url)
            if (and (listp event)
                    (equal 'periods (car event)))
@@ -273,6 +317,10 @@ have not been supported yet."
            collect event))
 
 (defun calfw-ical-create-source (name url color)
+  "Create a calfw source for an ical calendar at URL.
+
+NAME is the name of the calendar, COLOR is the color to use.
+Returns a calfw source."
   (make-calfw-source
    :name (concat "iCal:" name)
    :color color
@@ -281,8 +329,7 @@ have not been supported yet."
            (calfw-ical-to-calendar url begin end))))
 
 (defun calfw-ical-open-calendar (url)
-  "Simple calendar interface. This command displays just one
-calendar source."
+  "Display a calendar buffer for the iCalendar at URL."
   (interactive)
   (save-excursion
     (let ((cp (calfw-create-calendar-component-buffer
