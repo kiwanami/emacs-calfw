@@ -70,12 +70,12 @@ Return the `calfw-event`."
                            'help-echo string
                            'cfw-marker (copy-marker (point-at-bol)))))
     (make-calfw-event :title       (apply 'propertize title properties)
-                    :start-date  date
-                    :start-time  (when start
-                                   (calfw-parse-str-time start))
-                    :end-time    (when end
-                                   (calfw-parse-str-time end))
-                    :description (apply 'propertize desc properties))))
+                      :start-date  date
+                      :start-time  (when start
+                                     (calfw-parse-str-time start))
+                      :end-time    (when end
+                                     (calfw-parse-str-time end))
+                      :description (apply 'propertize desc properties))))
 
 (defun calfw-cal-onclick ()
   "Jump to the clicked diary item."
@@ -175,7 +175,7 @@ Returns the calendar source."
       (switch-to-buffer (calfw-cp-get-buffer cp)))))
 
 (defun calfw-cal-from-calendar ()
-  "Insert a new item. This command should be executed on the calfw calendar."
+  "Insert a new item.  This command should be executed on the calfw calendar."
   (interactive)
   (let* ((mdy (calfw-cursor-to-nearest-date))
          (m (calendar-extract-month mdy))

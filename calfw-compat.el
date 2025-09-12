@@ -28,6 +28,8 @@
 
 ;;; Code:
 
+(require 'cl-macs)  ;; for cl--find-class
+
 (when nil
   ;; The following is convenience function to generate calls to appropriate
   ;; aliasing functions when the old version of calfw is loaded. The list is
@@ -93,53 +95,40 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-calendar-mode-map . cfw:calendar-mode-map)
      (calfw-cp-dipatch-funcs . cfw:cp-dipatch-funcs)
      (calfw-default-text-sorter . cfw:default-text-sorter)
-     (calfw-dest-background-buffer
-      . cfw:dest-background-buffer)
+     (calfw-dest-background-buffer . cfw:dest-background-buffer)
      (calfw-details-buffer-name . cfw:details-buffer-name)
      (calfw-details-mode-hook . cfw:details-mode-hook)
      (calfw-details-mode-map . cfw:details-mode-map)
      (calfw-details-window-size . cfw:details-window-size)
-     (calfw-display-calendar-holidays
-      . cfw:display-calendar-holidays)
-     (calfw-event-format-days-overview
-      . cfw:event-format-days-overview)
-     (calfw-event-format-description
-      . cfw:event-format-description)
+     (calfw-display-calendar-holidays . cfw:display-calendar-holidays)
+     (calfw-event-format-days-overview . cfw:event-format-days-overview)
+     (calfw-event-format-description . cfw:event-format-description)
      (calfw-event-format-detail . cfw:event-format-detail)
      (calfw-event-format-end-date . cfw:event-format-end-date)
      (calfw-event-format-end-time . cfw:event-format-end-time)
      (calfw-event-format-location . cfw:event-format-location)
      (calfw-event-format-overview . cfw:event-format-overview)
-     (calfw-event-format-period-overview
-      . cfw:event-format-period-overview)
-     (calfw-event-format-start-date
-      . cfw:event-format-start-date)
-     (calfw-event-format-start-time
-      . cfw:event-format-start-time)
-     (calfw-event-format-title
-      . cfw:event-format-title)
-     (calfw-face-item-separator-color
-      . cfw:face-item-separator-color)
+     (calfw-event-format-period-overview . cfw:event-format-period-overview)
+     (calfw-event-format-start-date . cfw:event-format-start-date)
+     (calfw-event-format-start-time . cfw:event-format-start-time)
+     (calfw-event-format-title . cfw:event-format-title)
+     (calfw-face-item-separator-color . cfw:face-item-separator-color)
      (calfw-fchar-horizontal-line . cfw:fchar-horizontal-line)
      (calfw-fchar-junction . cfw:fchar-junction)
      (calfw-fchar-left-junction . cfw:fchar-left-junction)
      (calfw-fchar-right-junction . cfw:fchar-right-junction)
      (calfw-fchar-top-junction . cfw:fchar-top-junction)
      (calfw-fchar-top-left-corner . cfw:fchar-top-left-corner)
-     (calfw-fchar-top-right-corner
-      . cfw:fchar-top-right-corner)
+     (calfw-fchar-top-right-corner . cfw:fchar-top-right-corner)
      (calfw-fchar-vertical-line . cfw:fchar-vertical-line)
      (calfw-fstring-period-end . cfw:fstring-period-end)
      (calfw-fstring-period-start . cfw:fstring-period-start)
      (calfw-highlight-today . cfw:highlight-today)
-     (calfw-howm-annotation-contents
-      . cfw:howm-annotation-contents)
-     (calfw-howm-schedule-cache
-      . cfw:howm-schedule-cache)
+     (calfw-howm-annotation-contents . cfw:howm-annotation-contents)
+     (calfw-howm-schedule-cache . cfw:howm-schedule-cache)
      (calfw-howm-schedule-contents . cfw:howm-schedule-contents)
      (calfw-howm-schedule-hook . cfw:howm-schedule-hook)
-     (calfw-howm-schedule-inline-keymap
-      . cfw:howm-schedule-inline-keymap)
+     (calfw-howm-schedule-inline-keymap . cfw:howm-schedule-inline-keymap)
      (calfw-howm-schedule-map . cfw:howm-schedule-map)
      (calfw-howm-schedule-summary-transformer
       . cfw:howm-schedule-summary-transformer)
@@ -147,10 +136,8 @@ Output goes into a new buffer, wrapped to `fill-column`."
       . cfw:ical-calendar-external-shell-command)
      (calfw-ical-calendar-tmpbuf . cfw:ical-calendar-tmpbuf)
      (calfw-ical-data-cache . cfw:ical-data-cache)
-     (calfw-ical-url-to-buffer-get
-      . cfw:ical-url-to-buffer-get)
-     (calfw-org-agenda-schedule-args
-      . cfw:org-agenda-schedule-args)
+     (calfw-ical-url-to-buffer-get . cfw:ical-url-to-buffer-get)
+     (calfw-org-agenda-schedule-args . cfw:org-agenda-schedule-args)
      (calfw-org-capture-template . cfw:org-capture-template)
      (calfw-org-custom-map . cfw:org-custom-map)
      (calfw-org-face-agenda-item-foreground-color
@@ -574,34 +561,28 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw--view-model-make-day-names-for-week
       . cfw:view-model-make-day-names-for-week)
      (calfw--view-model-make-days . cfw:view-model-make-days)
-     (calfw--view-model-make-holidays
-      . cfw:view-model-make-holidays)
+     (calfw--view-model-make-holidays . cfw:view-model-make-holidays)
      (calfw--view-model-make-weeks . cfw:view-model-make-weeks)
      (calfw--view-month . cfw:view-month)
      (calfw--view-month-calc-param . cfw:view-month-calc-param)
      (calfw--view-month-model . cfw:view-month-model)
      (calfw--view-two-weeks . cfw:view-two-weeks)
-     (calfw--view-two-weeks-calc-param
-      . cfw:view-two-weeks-calc-param)
+     (calfw--view-two-weeks-calc-param . cfw:view-two-weeks-calc-param)
      (calfw--view-two-weeks-model . cfw:view-two-weeks-model)
-     (calfw-view-two-weeks-model-adjust
-      . cfw:view-two-weeks-model-adjust)
+     (calfw-view-two-weeks-model-adjust . cfw:view-two-weeks-model-adjust)
      (calfw--view-week . cfw:view-week)
      (calfw--view-week-calc-param . cfw:view-week-calc-param)
      (calfw--view-week-model . cfw:view-week-model)
      (calfw-week-begin-date . cfw:week-begin-date)
      (calfw-week-end-date . cfw:week-end-date)
-     (calfw-howm-elscreen-open-calendar
-      . cfw:elscreen-open-howm-calendar)
-     (calfw-howm-elscreen-kill-calendar
-      . cfw:elscreen-kill-calendar)
+     (calfw-howm-elscreen-open-calendar . cfw:elscreen-open-howm-calendar)
+     (calfw-howm-elscreen-kill-calendar . cfw:elscreen-kill-calendar)
      (copy-calfw-component . copy-cfw:component)
      (copy-calfw-dest . copy-cfw:dest)
      (copy-calfw-event . copy-cfw:event)
      (copy-calfw-source . copy-cfw:source)
      (make-calfw-component . make-cfw:component)
-     (make-calfw-component--cmacro
-      . make-cfw:component--cmacro)
+     (make-calfw-component--cmacro . make-cfw:component--cmacro)
      (make-calfw-dest . make-cfw:dest)
      (make-calfw-dest--cmacro . make-cfw:dest--cmacro)
      (make-calfw-event . make-cfw:event)
@@ -629,26 +610,30 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-face-toolbar-button-off . cfw:face-toolbar-button-off)
      (calfw-face-toolbar-button-on . cfw:face-toolbar-button-on))))
 
-(cl-loop for (new . old) in (alist-get 'vars calfw-compat-aliases)
-         do
-         (if calfw-compat-mark-obsolete
-             (define-obsolete-variable-alias old new
-               calfw-compat-mark-obsolete)
-           (defvaralias old new)))
 
-(cl-loop for (new . old) in (alist-get 'funcs calfw-compat-aliases)
-         do
-         (if calfw-compat-mark-obsolete
-             (define-obsolete-function-alias old new
-               calfw-compat-mark-obsolete)
-           (defalias old new)))
+(let ((alias  (if calfw-compat-mark-obsolete
+                  (lambda (old new)
+                    (define-obsolete-variable-alias
+                      old new calfw-compat-mark-obsolete))
+                #'defvaralias)))
+  (dolist (pair (alist-get 'vars calfw-compat-aliases))
+    (funcall alias (car pair) (cdr pair))))
 
-(cl-loop for (new . old) in (alist-get 'faces calfw-compat-aliases)
-         do
-         (if calfw-compat-mark-obsolete
-             (define-obsolete-face-alias old new
-                                         calfw-compat-mark-obsolete)
-           (put old 'face-alias new)))
+(let ((alias (if calfw-compat-mark-obsolete
+                 (lambda (old new)
+                   (define-obsolete-function-alias
+                     old new calfw-compat-mark-obsolete))
+               #'defalias)))
+  (dolist (pair (alist-get 'funcs calfw-compat-aliases))
+    (funcall alias (car pair) (cdr pair))))
+
+(let ((alias (if calfw-compat-mark-obsolete
+                 (lambda (old new)
+                   (define-obsolete-face-alias
+                    old new calfw-compat-mark-obsolete))
+               (lambda (old new) (put old 'face-alias new)))))
+  (dolist (pair (alist-get 'faces calfw-compat-aliases))
+    (funcall alias (car pair) (cdr pair))))
 
 ;; a HACK to alias old names of structures
 (put 'cfw:event 'cl--class (cl--find-class 'calfw-event))

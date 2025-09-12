@@ -57,7 +57,7 @@
 (defun calfw-howm--schedule-get ()
   "Return all schedule items in the whole howm data.
 
-If cache data exists, this function uses the cache. Returns
+If cache data exists, this function uses the cache.  Returns
 `calfw-howm-schedule-cache'."
   (unless calfw-howm-schedule-cache
     (let* ((howm-schedule-types howm-schedule-menu-types)

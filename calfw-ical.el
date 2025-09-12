@@ -58,10 +58,10 @@
   "Return date-time information from iCalendar EVENT object in ZONE-MAP.
 
 Returns a list of the form `(period START-DATE END-DATE)' or
-`(time DATE START-TIME END-TIME)'. The period includes END-DATE.
+`(time DATE START-TIME END-TIME)'.  The period includes END-DATE.
 
 This function is copied from `icalendar--convert-ical-to-diary'
-and modified. Recursive events have not been supported yet."
+and modified.  Recursive events have not been supported yet."
   (let*
       ((dtstart (icalendar--get-event-property event 'DTSTART))
        (dtstart-zone (icalendar--find-time-zone
@@ -225,7 +225,7 @@ Returns the buffer."
   "Visit the iCalendar file specified by URL in a buffer.
 
 If URL is a local file, visit it; otherwise, use
-`calfw-ical-url-to-buffer-get' to fetch it. Returns the buffer
+`calfw-ical-url-to-buffer-get' to fetch it.  Returns the buffer
 visited."
   (let* ((url-code (url-generic-parse-url url))
          (type (url-type url-code)))
@@ -256,7 +256,7 @@ BODY is executed."
 
 Removes line continuations (newline followed by space) and
 `VALUE=DATE' from `DTSTART' and `DTEND' properties in the current
-buffer. The buffer is marked as unmodified."
+buffer.  The buffer is marked as unmodified."
   (save-excursion
     (goto-char (point-min))
     (while (re-search-forward "\n " nil t)
@@ -292,9 +292,9 @@ ical data at URL.  The return value is a list of calendar events."
     (unless data
       (setq data (let ((cal-list
                         (calfw-ical-with-buffer url
-                          (calfw-ical-normalize-buffer)
-                          (calfw-ical-convert-ical-to-calfw
-                           (icalendar--read-element nil nil)))))
+                                                (calfw-ical-normalize-buffer)
+                                                (calfw-ical-convert-ical-to-calfw
+                                                 (icalendar--read-element nil nil)))))
                    (cons url cal-list)))
       (push data calfw-ical-data-cache))
     (cdr data)))
@@ -309,10 +309,10 @@ Returns a list of calendar events."
            (cons
             'periods
             (cl-loop for evt in (cadr event)
-                  if (and
-                      (calfw-date-less-equal-p begin (calfw-event-end-date evt))
-                      (calfw-date-less-equal-p (calfw-event-start-date evt) end))
-                  collect evt))
+                     if (and
+                         (calfw-date-less-equal-p begin (calfw-event-end-date evt))
+                         (calfw-date-less-equal-p (calfw-event-start-date evt) end))
+                     collect evt))
            else if (calfw-date-between begin end (calfw-event-start-date event))
            collect event))
 

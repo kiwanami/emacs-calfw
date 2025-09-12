@@ -100,8 +100,8 @@ v m | `calfw-change-view-month'
   "Return org schedule items between BEGIN and END."
   (let ((org-agenda-prefix-format " "))
     (setq org-agenda-buffer
-      (when (buffer-live-p org-agenda-buffer)
-        org-agenda-buffer))
+          (when (buffer-live-p org-agenda-buffer)
+            org-agenda-buffer))
     (org-compile-prefix-format nil)
     (cl-loop for date in (calfw-enumerate-days begin end) append
              (cl-loop for file in (or calfw-org-icalendars (org-agenda-files nil 'ifmode))
@@ -116,12 +116,12 @@ v m | `calfw-change-view-month'
   "Jump to the clicked org item."
   (interactive)
   (let (
-    (marker (get-text-property (point) 'org-marker))
-    (link   (get-text-property (point) 'org-link))
-    (file   (get-text-property (point) 'cfw:org-file))
-    (beg    (get-text-property (point) 'cfw:org-h-beg))
-    ;; (loc    (get-text-property (point) 'cfw:org-loc))
-    )
+        (marker (get-text-property (point) 'org-marker))
+        (link   (get-text-property (point) 'org-link))
+        (file   (get-text-property (point) 'cfw:org-file))
+        (beg    (get-text-property (point) 'cfw:org-h-beg))
+        ;; (loc    (get-text-property (point) 'cfw:org-loc))
+        )
     (when link
       (org-link-open-from-string link))
     (when (and marker (marker-buffer marker))
@@ -166,8 +166,8 @@ v m | `calfw-change-view-month'
     ;; (when (string-match calfw-org-todo-keywords-regexp item) ; dynamic bind
     ;;   (setq item (replace-match "" nil nil item)))
     (if tags
-      (when (string-match (concat "[\t ]*:+" (mapconcat 'identity tags ":+") ":+[\t ]*$") item)
-        (setq item (replace-match "" nil nil item))))
+        (when (string-match (concat "[\t ]*:+" (mapconcat 'identity tags ":+") ":+[\t ]*$") item)
+          (setq item (replace-match "" nil nil item))))
     (when (string-match "[0-9]\\{2\\}:[0-9]\\{2\\}\\(-[0-9]\\{2\\}:[0-9]\\{2\\}\\)?[\t ]+" item)
       (setq item (replace-match "" nil nil item)))
     (when (string-match "^ +" item)
@@ -195,27 +195,27 @@ ITEM is an org entry.  Return a string with text properties."
     (when (and extra (string-match (concat "^" org-deadline-string ".*") extra))
       (add-text-properties 0 (length text) (list 'face (org-agenda-deadline-face 1.0)) text))
     (if org-todo-keywords-for-agenda
-      (when (string-match (concat "^[\t ]*\\<\\(" (mapconcat 'identity org-todo-keywords-for-agenda "\\|") "\\)\\>") text)
-        (add-text-properties (match-beginning 1) (match-end 1) (list 'face (org-get-todo-face (match-string 1 text))) text)))
+        (when (string-match (concat "^[\t ]*\\<\\(" (mapconcat 'identity org-todo-keywords-for-agenda "\\|") "\\)\\>") text)
+          (add-text-properties (match-beginning 1) (match-end 1) (list 'face (org-get-todo-face (match-string 1 text))) text)))
     ;;; ------------------------------------------------------------------------
     ;;; act for org link
     ;;; ------------------------------------------------------------------------
     (setq text (replace-regexp-in-string "%[0-9A-F]\\{2\\}" " " text))
     (if (string-match org-link-bracket-re text)
-      (let* ((desc (if (match-end 3) (match-string-no-properties 3 text)))
-             (link (org-link-unescape (match-string-no-properties 1 text)))
-             (help (concat "LINK: " link))
-             (link-props (list
-                          'face 'org-link
-                          'mouse-face 'highlight
-                          'help-echo help
-                          'org-link link)))
-        (if desc
-            (progn
-              (setq desc (apply 'propertize desc link-props))
-              (setq text (replace-match desc nil nil text)))
-          (setq link (apply 'propertize link link-props))
-          (setq text (replace-match link nil nil text)))))
+        (let* ((desc (if (match-end 3) (match-string-no-properties 3 text)))
+               (link (org-link-unescape (match-string-no-properties 1 text)))
+               (help (concat "LINK: " link))
+               (link-props (list
+                            'face 'org-link
+                            'mouse-face 'highlight
+                            'help-echo help
+                            'org-link link)))
+          (if desc
+              (progn
+                (setq desc (apply 'propertize desc link-props))
+                (setq text (replace-match desc nil nil text)))
+            (setq link (apply 'propertize link link-props))
+            (setq text (replace-match link nil nil text)))))
     (when time-str
       (setq text (concat time-str text)))
     (propertize
@@ -275,7 +275,7 @@ If TEXT does not have a range, return nil."
    (unless (member range periods)
      (push range periods))
    else do
-   ; dotime is not present if this event was already added as a timerange
+                                        ; dotime is not present if this event was already added as a timerange
    (if (calfw-org--tp i 'dotime)
        (setq contents (calfw--contents-add
 		       (calfw-org-normalize-date date)
@@ -310,21 +310,21 @@ If TEXT does not have a range, return nil."
   "Create a text string for the title of the headline H-OBJ.
 
 Create a text string for the title of the headline H-OBJ in FILE
-at H-BEG and LOC, using time information from T-OBJ. Return a
+at H-BEG and LOC, using time information from T-OBJ.  Return a
 string with `keymap', `display', `cfw:org-file', `cfw:org-h-beg',
 and `cfw:org-loc' properties."
   (propertize
-  (concat
-   (when  (org-element-property :hour-start t-obj)
-     (format "%02i:%02i "
-             (org-element-property :hour-start t-obj)
-             (org-element-property :minute-start t-obj)))
-   (org-element-property :title h-obj))
-  'keymap calfw-org-text-keymap
-  'display nil
-  'cfw:org-file file
-  'cfw:org-h-beg h-beg
-  'cfw:org-loc loc))
+   (concat
+    (when  (org-element-property :hour-start t-obj)
+      (format "%02i:%02i "
+              (org-element-property :hour-start t-obj)
+              (org-element-property :minute-start t-obj)))
+    (org-element-property :title h-obj))
+   'keymap calfw-org-text-keymap
+   'display nil
+   'cfw:org-file file
+   'cfw:org-h-beg h-beg
+   'cfw:org-loc loc))
 
 (defun calfw-org-format-date (t-obj lst)
   "Format a date object T-OBJ using a list of properties LST.
@@ -372,34 +372,37 @@ Returns an alist of `:periods' and `:contents'."
         (find-file-noselect file)
       (let*
           ((elem-obj (org-element-parse-buffer))
-           (pos-lst `( ,@(org-element-map elem-obj 'timestamp
-                           (lambda (hl) (org-element-property :begin hl) ))
-                       ,@(org-element-map (org-element-map elem-obj 'headline
-                                            (lambda (hl)
-                                 (org-element-property :deadline hl) ) ) 'timestamp
-                           (lambda (hl) (org-element-property :begin hl) ))
-                       ,@(org-element-map (org-element-map elem-obj 'headline
-                                            (lambda (hl)
-                                              (org-element-property :scheduled hl) ) ) 'timestamp
-                           (lambda (hl) (org-element-property :begin hl) )))))
+           (pos-lst `(,@(org-element-map elem-obj 'timestamp
+                          (lambda (hl) (org-element-property :begin hl)))
+                      ,@(org-element-map (org-element-map elem-obj 'headline
+                                           (lambda (hl)
+                                             (org-element-property
+                                              :deadline hl)))
+                            'timestamp
+                          (lambda (hl) (org-element-property :begin hl)))
+                      ,@(org-element-map (org-element-map elem-obj 'headline
+                                           (lambda (hl)
+                                             (org-element-property :scheduled hl)))
+                            'timestamp
+                          (lambda (hl) (org-element-property :begin hl))))))
         (cl-loop for pos in pos-lst
-              do (goto-char pos)
-              for t-obj =  (org-element-timestamp-parser)
-              for h-obj = (progn
-                            (org-back-to-heading t)
-                            (org-element-headline-parser (point-max) t))
-              for h-beg  = (point)
-              for event = (calfw-org-convert-event file h-obj t-obj h-beg)
-              for ts-type = (org-element-property :type t-obj)
-              if (eq 'active-range ts-type)
-              collect event into periods
-              else if (eq 'active ts-type)
-              collect event into contents
-              ;; else do
-              ;; (message "calfw-org: Cannot handle event")
-              finally
-              (kill-buffer (get-file-buffer file))
-              (cl-return `((periods ,periods) ,@contents)))))))
+                 do (goto-char pos)
+                 for t-obj =  (org-element-timestamp-parser)
+                 for h-obj = (progn
+                               (org-back-to-heading t)
+                               (org-element-headline-parser (point-max) t))
+                 for h-beg  = (point)
+                 for event = (calfw-org-convert-event file h-obj t-obj h-beg)
+                 for ts-type = (org-element-property :type t-obj)
+                 if (eq 'active-range ts-type)
+                 collect event into periods
+                 else if (eq 'active ts-type)
+                 collect event into contents
+                 ;; else do
+                 ;; (message "calfw-org: Cannot handle event")
+                 finally
+                 (kill-buffer (get-file-buffer file))
+                 (cl-return `((periods ,periods) ,@contents)))))))
 
 (defun calfw-org-to-calendar (file begin end)
   "Convert org entries in FILE between BEGIN and END to calfw events."
@@ -446,7 +449,7 @@ Returns an alist of `:periods' and `:contents'."
 
 If `calfw-org-capture-template' is set, use `org-capture' with
 the template specified by the CAR of
-`calfw-org-capture-template'. Otherwise, display a message
+`calfw-org-capture-template'.  Otherwise, display a message
 indicating that `calfw-org-capture-template' is not set."
   (interactive)
   (if calfw-org-capture-template
@@ -463,7 +466,7 @@ Open the `org-agenda' buffer for the date at point, DATE."
       (org-agenda-list nil (calendar-absolute-from-gregorian date) 'day))))
 
 (define-key
-  calfw-calendar-mode-map "c" 'calfw-org-capture)
+ calfw-calendar-mode-map "c" 'calfw-org-capture)
 
 (defvar calfw-org-schedule-map
   (calfw--define-keymap
