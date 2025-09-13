@@ -24,38 +24,25 @@ and add the following code to your .emacs.
 
 ```el
 (require 'calfw)
+
+;; For compatiblity with the old name scheme (starting with `cfw:`
+;; instead of `calfw-`), uncomment the following code:
+;;
+;; (setq calfw-compat-mark-obsolete nil) ;; This supresses obsolete messages
+;; (require 'calfw-compat)
 ```
 
-Executing the command `cfw:open-calendar-buffer`, switch to the calendar buffer.
+Executing the command `calfw-open-calendar-buffer`, switch to the calendar buffer.
 You can navigate the date like calendar.el.
 
 Schedule data which are shown in the calendar view, are collected by a
-list of the struct `cfw:source` objects through the named argument
+list of the struct `calfw-source` objects through the named argument
 variables `:contents-sources` and `:annotation-sources`. The former
 source defines schedule contents. The later one does date
 annotations like the moon phases.
 
 This program gets the holidays using the function
 `calendar-holiday-list`. See the document for the holidays.el and the Info text.
-
-## Fork changelog
-
-This fork has the following change
-- Applied three external pull requests (See Pull requests for more info)
-- Implement a `noerror` mode for `cp-get-compoonent`
-- Removed highlighting of selected date, preferring more subtle indication.
-- Showing calendars on separate lines and allowing showing/hiding of them
-- Removed everything to do with selecting a date, preferring instead to use
-  the point to indicate selection.
-- Changed coloring of background/foreground.
-- Removed M-v and C-v binding.
-- Cleaned up some of the code and using more standard functions, though much
-  more can be done (WIP).
-
-I use this package with
-[calfw-blocks](https://github.com/haji-ali/calfw-blocks) and
-[maccalfw](https://github.com/haji-ali/maccalfw/) and I am only testing the
-block views on a regular basis.
 
 ## Key bindings
 
@@ -109,21 +96,21 @@ Following programs are also useful:
 ```el
 (eval-after-load "howm-menu" '(progn
   (require 'calfw-howm)
-  (cfw:install-howm-schedules)
-  (define-key howm-mode-map (kbd "M-C") 'cfw:open-howm-calendar)
+  (calfw-howm-install-schedules)
+  (define-key howm-mode-map (kbd "M-C") 'calfw-howm-open-calendar)
 ))
 ```
 
 If you are using Elscreen, here is useful.
 
 ```el
-(define-key howm-mode-map (kbd "M-C") 'cfw:elscreen-open-howm-calendar)
+(define-key howm-mode-map (kbd "M-C") 'calfw-howm-elscreen-open-calendar)
 ```
 
 You can display a calendar in your howm menu file.
 
 ```
-%here%(cfw:howm-schedule-inline)
+%here%(calfw-howm-schedule-inline)
 ```
 
 ![howm menu embedding](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-1F941.png?width=450)
@@ -132,43 +119,43 @@ You can display a calendar in your howm menu file.
 
     (require 'calfw-org)
 
-Then, M-x `cfw:open-org-calendar`.
+Then, M-x `calfw-open-org-calendar`.
 
 ![org-agenda and calfw-org](https://cacoo.com/diagrams/S6aJntG6giGs44Yn-89CB2.png?width=450)
 
 #### Filtering agenda items
 
-You can choose agenda items with `cfw:org-agenda-schedule-args`, like following code:
+You can choose agenda items with `calfw-org-agenda-schedule-args`, like following code:
 
 ```el
-(setq cfw:org-agenda-schedule-args '(:timestamp))
+(setq calfw-org-agenda-schedule-args '(:timestamp))
 ```
 
 This setting restricts items containing a date stamp or date range matching the selected date.
-If `cfw:org-agenda-schedule-args` is `nil`, the default customize variable `org-agenda-entry-types` is used. For the further information, please refer the orgmode document.
+If `calfw-org-agenda-schedule-args` is `nil`, the default customize variable `org-agenda-entry-types` is used. For the further information, please refer the orgmode document.
 
 - [Worg: Speeding up custom agenda commands](http://orgmode.org/worg/org-tutorials/org-custom-agenda-commands.html#sec-5)
 
 #### Orgmode like key bindng
 
-You can use another key binding like org agenda buffer, setting `cfw:org-overwrite-default-keybinding` to non-nil, like following code:
+You can use another key binding like org agenda buffer, setting `calfw-org-overwrite-default-keybinding` to non-nil, like following code:
 
 ```el
-(setq cfw:org-overwrite-default-keybinding t)
+(setq calfw-org-overwrite-default-keybinding t)
 ```
 
 Then, following key bindings are overwritten:
 
 | key   | function
 |-------|----------------------------------------
-|   g   | Refresh data and re-draw contents (cfw:refresh-calendar-buffer)
-|   j   | Goto the specified date (cfw:org-goto-date)
+|   g   | Refresh data and re-draw contents (calfw-refresh-calendar-buffer)
+|   j   | Goto the specified date (calfw-org-goto-date)
 |   k   | org-capture
-|   x   | Close calfw and other buffers opened by calfw-org (cfw:org-clean-exit)
-|   d   | Day view (cfw:change-view-day)
-|   v d | Day view (cfw:change-view-day)
-|   v w | 1 Week view (cfw:change-view-week)
-|   v m | Month View (cfw:change-view-month)
+|   x   | Close calfw and other buffers opened by calfw-org (calfw-org-clean-exit)
+|   d   | Day view (calfw-change-view-day)
+|   v d | Day view (calfw-change-view-day)
+|   v w | 1 Week view (calfw-change-view-week)
+|   v m | Month View (calfw-change-view-month)
 
 #### Synchronization with google calendar
 
@@ -184,7 +171,7 @@ Here is a minimum sample code:
 
 ```el
 (require 'calfw-ical)
-(cfw:open-ical-calendar "http://www.google.com/calendar/ical/.../basic.ics")
+(calfw-ical-open-calendar "http://www.google.com/calendar/ical/.../basic.ics")
 ```
 
 ![Google Calendar and calfw-ical](https://cacoo.com/diagrams/vrScI4K2QlmDApfd-5E808.png?width=450)
@@ -202,14 +189,14 @@ Here is a minimum sample code:
 (require 'calfw-cal)
 ```
 
-Then, M-x `cfw:open-diary-calendar`.
+Then, M-x `calfw-cal-open-diary-calendar`.
 
 If you see a blank entry for each day, set the variable `diary-list-include-blanks` to nil.
 
 ### General setting
 
 The calfw view can display many schedule items, gathering some schedule sources.
-Using the function `cfw:open-calendar-buffer` is the general way to display the schedules.
+Using the function `calfw-open-calendar-buffer` is the general way to display the schedules.
 
 Here is the sample code:
 
@@ -221,22 +208,22 @@ Here is the sample code:
 
 (defun my-open-calendar ()
   (interactive)
-  (cfw:open-calendar-buffer
+  (calfw-open-calendar-buffer
    :contents-sources
    (list
-    (cfw:org-create-source "Green")  ; orgmode source
-    (cfw:howm-create-source "Blue")  ; howm source
-    (cfw:cal-create-source "Orange") ; diary source
-    (cfw:ical-create-source "Moon" "~/moon.ics" "Gray")  ; ICS source1
-    (cfw:ical-create-source "gcal" "https://..../basic.ics" "IndianRed") ; google calendar ICS
+    (calfw-org-create-source "Green")  ; orgmode source
+    (calfw-howm-create-source "Blue")  ; howm source
+    (calfw-cal-create-source "Orange") ; diary source
+    (calfw-ical-create-source "Moon" "~/moon.ics" "Gray")  ; ICS source1
+    (calfw-ical-create-source "gcal" "https://..../basic.ics" "IndianRed") ; google calendar ICS
    )))
 ```
 
-The function `cfw:open-calendar-buffer` receives schedules sources via
+The function `calfw-open-calendar-buffer` receives schedules sources via
 the named argument `:contents-sources`.
 
 One can customize the keymap on the calendar buffer with the named
-argument `:custom-map` of `cfw:open-calendar-buffer`.
+argument `:custom-map` of `calfw-open-calendar-buffer`.
 
 
 ## Customize
@@ -275,24 +262,24 @@ Here is a template code for face customization:
 
 ```el
 (custom-set-faces
- '(cfw:face-title ((t (:foreground "#f0dfaf" :weight bold :height 2.0 :inherit variable-pitch))))
- '(cfw:face-header ((t (:foreground "#d0bf8f" :weight bold))))
- '(cfw:face-sunday ((t :foreground "#cc9393" :background "grey10" :weight bold)))
- '(cfw:face-saturday ((t :foreground "#8cd0d3" :background "grey10" :weight bold)))
- '(cfw:face-holiday ((t :background "grey10" :foreground "#8c5353" :weight bold)))
- '(cfw:face-grid ((t :foreground "DarkGrey")))
- '(cfw:face-default-content ((t :foreground "#bfebbf")))
- '(cfw:face-periods ((t :foreground "cyan")))
- '(cfw:face-day-title ((t :background "grey10")))
- '(cfw:face-default-day ((t :weight bold :inherit cfw:face-day-title)))
- '(cfw:face-annotation ((t :foreground "RosyBrown" :inherit cfw:face-day-title)))
- '(cfw:face-disable ((t :foreground "DarkGray" :inherit cfw:face-day-title)))
- '(cfw:face-today-title ((t :background "#7f9f7f" :weight bold)))
- '(cfw:face-today ((t :background: "grey10" :weight bold)))
- '(cfw:face-select ((t :background "#2f2f2f")))
- '(cfw:face-toolbar ((t :foreground "Steelblue4" :background "Steelblue4")))
- '(cfw:face-toolbar-button-off ((t :foreground "Gray10" :weight bold)))
- '(cfw:face-toolbar-button-on ((t :foreground "Gray50" :weight bold))))
+ '(calfw-face-title ((t (:foreground "#f0dfaf" :weight bold :height 2.0 :inherit variable-pitch))))
+ '(calfw-face-header ((t (:foreground "#d0bf8f" :weight bold))))
+ '(calfw-face-sunday ((t :foreground "#cc9393" :background "grey10" :weight bold)))
+ '(calfw-face-saturday ((t :foreground "#8cd0d3" :background "grey10" :weight bold)))
+ '(calfw-face-holiday ((t :background "grey10" :foreground "#8c5353" :weight bold)))
+ '(calfw-face-grid ((t :foreground "DarkGrey")))
+ '(calfw-face-default-content ((t :foreground "#bfebbf")))
+ '(calfw-face-periods ((t :foreground "cyan")))
+ '(calfw-face-day-title ((t :background "grey10")))
+ '(calfw-face-default-day ((t :weight bold :inherit calfw-face-day-title)))
+ '(calfw-face-annotation ((t :foreground "RosyBrown" :inherit calfw-face-day-title)))
+ '(calfw-face-disable ((t :foreground "DarkGray" :inherit calfw-face-day-title)))
+ '(calfw-face-today-title ((t :background "#7f9f7f" :weight bold)))
+ '(calfw-face-today ((t :background: "grey10" :weight bold)))
+ '(calfw-face-select ((t :background "#2f2f2f")))
+ '(calfw-face-toolbar ((t :foreground "Steelblue4" :background "Steelblue4")))
+ '(calfw-face-toolbar-button-off ((t :foreground "Gray10" :weight bold)))
+ '(calfw-face-toolbar-button-on ((t :foreground "Gray50" :weight bold))))
 ```
 
 ### Grid frame
@@ -303,46 +290,46 @@ Grid setting example:
 
 ```el
 ;; Default setting
-(setq cfw:fchar-junction ?+
-      cfw:fchar-vertical-line ?|
-      cfw:fchar-horizontal-line ?-
-      cfw:fchar-left-junction ?+
-      cfw:fchar-right-junction ?+
-      cfw:fchar-top-junction ?+
-      cfw:fchar-top-left-corner ?+
-      cfw:fchar-top-right-corner ?+ )
+(setq calfw-fchar-junction ?+
+      calfw-fchar-vertical-line ?|
+      calfw-fchar-horizontal-line ?-
+      calfw-fchar-left-junction ?+
+      calfw-fchar-right-junction ?+
+      calfw-fchar-top-junction ?+
+      calfw-fchar-top-left-corner ?+
+      calfw-fchar-top-right-corner ?+ )
 
 ;; Unicode characters
-(setq cfw:fchar-junction ?╋
-      cfw:fchar-vertical-line ?┃
-      cfw:fchar-horizontal-line ?━
-      cfw:fchar-left-junction ?┣
-      cfw:fchar-right-junction ?┫
-      cfw:fchar-top-junction ?┯
-      cfw:fchar-top-left-corner ?┏
-      cfw:fchar-top-right-corner ?┓)
+(setq calfw-fchar-junction ?╋
+      calfw-fchar-vertical-line ?┃
+      calfw-fchar-horizontal-line ?━
+      calfw-fchar-left-junction ?┣
+      calfw-fchar-right-junction ?┫
+      calfw-fchar-top-junction ?┯
+      calfw-fchar-top-left-corner ?┏
+      calfw-fchar-top-right-corner ?┓)
 
 ;; Another unicode chars
-(setq cfw:fchar-junction ?╬
-      cfw:fchar-vertical-line ?║
-      cfw:fchar-horizontal-line ?═
-      cfw:fchar-left-junction ?╠
-      cfw:fchar-right-junction ?╣
-      cfw:fchar-top-junction ?╦
-      cfw:fchar-top-left-corner ?╔
-      cfw:fchar-top-right-corner ?╗)
+(setq calfw-fchar-junction ?╬
+      calfw-fchar-vertical-line ?║
+      calfw-fchar-horizontal-line ?═
+      calfw-fchar-left-junction ?╠
+      calfw-fchar-right-junction ?╣
+      calfw-fchar-top-junction ?╦
+      calfw-fchar-top-left-corner ?╔
+      calfw-fchar-top-right-corner ?╗)
 ```
 
 ### Line breaking
 
 If a content string is longer than the cell width, the calfw breaks into the multiple lines.
-In the current implementation, the Calfw has 3 strategies: none, simple and wordwrap. The variable `cfw:render-line-breaker` selects the strategy to break lines.
+In the current implementation, the Calfw has 3 strategies: none, simple and wordwrap. The variable `calfw-render-line-breaker` selects the strategy to break lines.
 
-- `cfw:render-line-breaker-none`
+- `calfw-render-line-breaker-none`
     - Never breaks lines. Longer contents are truncated.
-- `cfw:render-line-breaker-simple` (default)
+- `calfw-render-line-breaker-simple` (default)
     - This strategy breaks lines with rigid width. This may be not so beautiful, but In the most cases it looks good.
-- `cfw:render-line-breaker-wordwrap`
+- `calfw-render-line-breaker-wordwrap`
     - This strategy breaks lines with the emacs function `fill-region`. Although, the line breaking algorithm of the Emacs is not so smart as more complicated ones, such as Knuth/Plass algorithm, this strategy is better than the simple one.
 
 ## Calfw framework details
@@ -351,13 +338,13 @@ In this section, I would explain how to add a new calendar source and how to emb
 
 ### How to add a new calendar source?
 
-Defining the `cfw:source` object, one can extend calfw calendar source.
+Defining the `calfw-source` object, one can extend calfw calendar source.
 
-#### struct cfw:source details
+#### struct calfw-source details
 
-The struct `cfw:source` is a simple data type defined by cl-defstruct.
+The struct `calfw-source` is a simple data type defined by cl-defstruct.
 
-Here is the details of the slot members of `cfw:source`.
+Here is the details of the slot members of `calfw-source`.
 
 | slot name       | description                                                                                                                        |
 |-----------------|------------------------------------------------------------------------------------------------------------------------------------ |
@@ -366,7 +353,7 @@ Here is the details of the slot members of `cfw:source`.
 | update          | [option] Update function. Calfw calls this function when this source needs to refresh the data.                                    |
 | color           | [option] Color string for this source.  Color names those are shown by `M-x list-colors-display` or RGB hex format like "#abcdef". |
 | period-fgcolor  | [option] Foreground color for period items. The default color is white or black.                                                   |
-| period-bgcolor  | [option] Background color for period items. The default color is `cfw:source-color`.                                               |
+| period-bgcolor  | [option] Background color for period items. The default color is `calfw-source-color`.                                               |
 | opt-face        | [option] Additional options for the normal item face.  Ex. `:opt-face '(:weight bold)`                                             |
 | opt-period-face | [option] Additional options for the period item face.                                                                              |
 
@@ -375,31 +362,30 @@ Only `name` and `data` slots are essential. Many slots are visual options.
 In many cases, one has to specify only the `color` slot for visual,
 because the calfw chooses appropriate colors for the rest color options.
 
-#### cfw:source-data details
+#### calfw-source-data details
 
-This section explains what objects the function-slot `cfw:source-data` should return.
+This section explains what objects the function-slot `calfw-source-data` should return.
 
-The function-slot `cfw:source-data` receives two arguments, start and
-end date of the query period, and returns a list of instances of `cfw:event` struct.
+The function-slot `calfw-source-data` receives two arguments, start and
+end date of the query period, and returns a list of instances of `calfw-event` struct.
 
 Here is a simple example.
 
-`cfw:source-data example1:`
+`calfw-source-data example1:`
 
 ```el
-;; cfw:source-data example
+;; calfw-source-data example
 (defun sample-data1 (b e)
   (list
-    (make-cfw:event :title "item1"   :start-date  (cfw:date 1 1 2011))
-    (make-cfw:event :title "item2-1" :start-date  (cfw:date 1 10 2011))
-    (make-cfw:event :title "item2-2" :start-date  (cfw:date 1 10 2011))
-    ))
+    (make-calfw-event :title "item1"   :start-date  (calfw-date 1 1 2011))
+    (make-calfw-event :title "item2-1" :start-date  (calfw-date 1 10 2011))
+    (make-calfw-event :title "item2-2" :start-date  (calfw-date 1 10 2011))))
 
-(cfw:open-calendar-buffer
-  :date (cfw:date 1 1 2011)
+(calfw-open-calendar-buffer
+  :date (calfw-date 1 1 2011)
   :contents-sources
    (list
-     (make-cfw:source
+     (make-calfw-source
       :name "test1" :data 'sample-data1)))
 ```
 
@@ -407,35 +393,35 @@ Evaluating this code in the scratch buffer, following result is displayed.
 
 ![Simple source example](https://cacoo.com/diagrams/P6baUrxEQj4NYheV-50310.png?width=450)
 
-The date is specified by `cfw:date` type, `([month] [day] [year])`. This format is commonly used in calendar.el and orgmode.
+The date is specified by `calfw-date` type, `([month] [day] [year])`. This format is commonly used in calendar.el and orgmode.
 (I diagrammed the exchange ways for some time and date formats in Emacs, [here](https://cacoo.com/diagrams/lsA64PTazlLTbSwR).)
 
 Period items are little different. One period item is specified by
 `:start-date` and `:end-date`, and the nested list which has the symbol `periods` at the head collects them, like the following code.
 
-`cfw:source-data example2:`
+`calfw-source-data example2:`
 
 ```el
-;; cfw:source-data period items
+;; calfw-source-data period items
 (defun sample-data2 (b e)
   (list
-    (make-cfw:event :title "Item1"
-          :start-date  (cfw:date 1 15 2011))
+    (make-calfw-event :title "Item1"
+          :start-date  (calfw-date 1 15 2011))
     (list 'periods
-      (make-cfw:event :title "Period item"
-          :start-date (cfw:date 1 8 2011)
-          :end-date   (cfw:date 1 9 2011)
+      (make-calfw-event :title "Period item"
+          :start-date (calfw-date 1 8 2011)
+          :end-date   (calfw-date 1 9 2011)
           :description "Period item description")
-      (make-cfw:event :title "Next item"
-          :start-date (cfw:date 1 11 2011)
-          :end-date   (cfw:date 1 12 2011)
+      (make-calfw-event :title "Next item"
+          :start-date (calfw-date 1 11 2011)
+          :end-date   (calfw-date 1 12 2011)
           :description "Next item description"))))
 
-(cfw:open-calendar-buffer
-  :date (cfw:date 1 1 2011)
+(calfw-open-calendar-buffer
+  :date (calfw-date 1 1 2011)
   :contents-sources
    (list
-     (make-cfw:source
+     (make-calfw-source
       :name "test2" :data 'sample-data2)))
 ```
 
@@ -447,23 +433,23 @@ Here are other detailed specifications.
 
 - The both start and end date are included by the query period.
 - The items those aren't included in the query period are ignored.
-- `cfw:source-data` should return a value as fast as possible, because users are waiting for the result. Caching is good idea.
+- `calfw-source-data` should return a value as fast as possible, because users are waiting for the result. Caching is good idea.
 - Schedule items don't have to be ordered. Duplicated items may be gathered.
 - In the day cell, the items are sorted by `string-lessp`, i.e. numerical and alphabetical order.
   - The ordering function can be customized by the named argument `:sorter` of the component construction.
 
 In the above examples, the dates of the schedule items are fixed. The actual sources generate result values by the programs. The codes of calfw add-ons may be helpful for your implementation.
 
-##### cfw:event struct detail
+##### calfw-event struct detail
 
-The `cfw:event` struct:
+The `calfw-event` struct:
 
 | slot name     | description                                 |
 |---------------|---------------------------------------------|
 | `title`       | event title [string]                        |
-| `start-date`  | start date of the event [cfw:date]          |
+| `start-date`  | start date of the event [calfw-date]          |
 | `start-time`  | start time of the event (optional)          |
-| `end-date`    | end date of the event [cfw:date] (optional) |
+| `end-date`    | end date of the event [calfw-date] (optional) |
 | `end-time`    | end of the event (optional)                 |
 | `description` | event description [string] (optional)       |
 | `location`    | location [string] (optional)                |
@@ -471,29 +457,29 @@ The `cfw:event` struct:
 
 ##### Event formatting
 
-The framework has several formatting functions for `cfw:event` instances.
+The framework has several formatting functions for `calfw-event` instances.
 The functions are used by the calfw plugins (cal,ical, etc) to display in a common way.
 
 | Format function             | Description                                                 |
 |-----------------------------|-------------------------------------------------------------|
-| `cfw:event-overview`        | To get an overview of the event (month, 2-week & week view) |
-| `cfw:event-days-overview`   | Overview in day-view.                                       |
-| `cfw:event-period-overview` | Overview of periods (same for all views)                    |
-| `cfw:event-detail`          | Detailed information of the event for the detail-view       |
+| `calfw-event-overview`        | To get an overview of the event (month, 2-week & week view) |
+| `calfw-event-days-overview`   | Overview in day-view.                                       |
+| `calfw-event-period-overview` | Overview of periods (same for all views)                    |
+| `calfw-event-detail`          | Detailed information of the event for the detail-view       |
 
 The formatting can be customized by the user with several formatting strings:
 
-- `cfw:event-format-overview`
-- `cfw:event-format-days-overview`
-- `cfw:event-format-period-overview`
-- `cfw:event-format-detail`
-- `cfw:event-format-title`
-- `cfw:event-format-start-date`
-- `cfw:event-format-start-time`
-- `cfw:event-format-end-date`
-- `cfw:event-format-end-time`
-- `cfw:event-format-location`
-- `cfw:event-format-description`
+- `calfw-event-format-overview`
+- `calfw-event-format-days-overview`
+- `calfw-event-format-period-overview`
+- `calfw-event-format-detail`
+- `calfw-event-format-title`
+- `calfw-event-format-start-date`
+- `calfw-event-format-start-time`
+- `calfw-event-format-end-date`
+- `calfw-event-format-end-time`
+- `calfw-event-format-location`
+- `calfw-event-format-description`
 
 #### Examples
 
@@ -506,27 +492,27 @@ The formatting can be customized by the user with several formatting strings:
 
 *This subsection explains legacy method to define schedule items, so as for users to read old source codes. We should not use this method in the future.*
 
-The function-slot `cfw:source-data` receives two arguments, start and
+The function-slot `calfw-source-data` receives two arguments, start and
 end date of the query period, and returns an alist that consists of
 ([date] . ([item1] [item2] ... )).
 
 Here is a simple example.
 
-`cfw:source-data example1:`
+`calfw-source-data example1:`
 
 ```el
-;; cfw:source-data example
+;; calfw-source-data example
 (defun sample-data1 (b e)
   '(
     ((1  1 2011) . ("item1"))
     ((1 10 2011) . ("item2-1" "item2-2"))
     ))
 
-(cfw:open-calendar-buffer
-  :date (cfw:date 1 1 2011)
+(calfw-open-calendar-buffer
+  :date (calfw-date 1 1 2011)
   :contents-sources
    (list
-     (make-cfw:source
+     (make-calfw-source
       :name "test1" :data 'sample-data1)))
 ```
 
@@ -534,10 +520,10 @@ Period items are little different. One period item is specified by
 `([start date] [end date] [content])` and the `periods` record of the
 alist collects them as a list, like the following code.
 
-`cfw:source-data example2:`
+`calfw-source-data example2:`
 
 ```el
-;; cfw:source-data period items
+;; calfw-source-data period items
 (defun sample-data2 (b e)
   '(
     ((1  8 2011) . ("item1"))
@@ -547,11 +533,11 @@ alist collects them as a list, like the following code.
     ))
 ;; (A . (B C) ) is equivalent to (A B C)
 
-(cfw:open-calendar-buffer
-  :date (cfw:date 1 1 2011)
+(calfw-open-calendar-buffer
+  :date (calfw-date 1 1 2011)
   :contents-sources
    (list
-     (make-cfw:source
+     (make-calfw-source
       :name "test2" :data 'sample-data2)))
 ```
 
@@ -573,7 +559,7 @@ Calfw has three destination components to display the calendar.
 
 The 'buffer' destination displays the calendar view as ordinary Emacs applications do.
 
-The function `cfw:open-calendar-buffer` makes a new calendar buffer (calfw buffer) and displays it by `switch-to-buffer`. The major mode of the calfw buffer is `cfw:calendar-mode` and the keymap `cfw:calendar-mode-map` is bound.
+The function `calfw-open-calendar-buffer` makes a new calendar buffer (calfw buffer) and displays it by `switch-to-buffer`. The major mode of the calfw buffer is `calfw-calendar-mode` and the keymap `calfw-calendar-mode-map` is bound.
 
 This destination is easy to use for applications and users, because the buffer is usual application boundary and users know how to use buffers.
 
@@ -588,7 +574,7 @@ Region destination example:
 ```el
 ;; Evaluate this code in the scratch buffer
 (require 'calfw)
-(cfw:create-calendar-component-region :height 10)
+(calfw-create-calendar-component-region :height 10)
 ```
 
 Then, the calendar view will be embedded in the scratch buffer like the following screenshot. You can navigate the calfw view in the buffer. Undoing for the some times, you can remove the calfw view.
@@ -599,7 +585,7 @@ Because this destination never interacts anything out of the region and has its 
 
 ##### Text
 
-The 'text' destination generates just a text which represent calfw view. The function `cfw:get-calendar-text` returns the text.
+The 'text' destination generates just a text which represent calfw view. The function `calfw-get-calendar-text` returns the text.
 
 ##### Destination and View
 
@@ -615,28 +601,28 @@ The similar word 'view' means in which form the calfw displays the contents, for
 
 The calfw consists of four objects:
 
-- `cfw:component` that gathers following objects up.
-- `cfw:model` that manages calendar contents.
-- `cfw:source` that defines schedule items.
-- `cfw:dest` that is abstraction of destinations.
+- `calfw-component` that gathers following objects up.
+- `calfw-model` that manages calendar contents.
+- `calfw-source` that defines schedule items.
+- `calfw-dest` that is abstraction of destinations.
 
 The relations between the objects are displayed as UML class diagram ([Diagrammed by astah](http://astah.change-vision.com/ja/:title=Astah)).
 
 ![Overview for calfw objects](https://cacoo.com/diagrams/P6baUrxEQj4NYheV-EC8C6.png)
 
-`cfw:component` acts as Controller of MVC. It connects model object and destination one, and controls all events. It also gives the interface of calfw objects for the other applications.
+`calfw-component` acts as Controller of MVC. It connects model object and destination one, and controls all events. It also gives the interface of calfw objects for the other applications.
 
-`cfw:model` and `cfw:source` act as Model of MVC. They manage the schedule contents and calendar logic.
+`calfw-model` and `calfw-source` act as Model of MVC. They manage the schedule contents and calendar logic.
 
-`cfw:dest` acts as View of MVC. It abstracts the common interface from UI destinations.
+`calfw-dest` acts as View of MVC. It abstracts the common interface from UI destinations.
 
-##### cfw:component
+##### calfw-component
 
-The object `cfw:component` controls calfw objects and events.
+The object `calfw-component` controls calfw objects and events.
 
 The object has following information:
 
-- References to `cfw:dest` object and `cfw:model` one.
+- References to `calfw-dest` object and `calfw-model` one.
 - Selected date on the calfw component.
 - View style.
 - Hooks
@@ -646,7 +632,7 @@ The object has following information:
 
 The object has following operations:
 
-- Getting object references to `cfw:dest`, `cfw:model`, belonging buffer and so on.
+- Getting object references to `calfw-dest`, `calfw-model`, belonging buffer and so on.
 - Getting and setting the selected date (`get-selected-date` / `set-selected-date`).
 - Getting and setting the view style (`get-view` / `set-view`).
   - The view style is a symbol, such as `month`, `two-weeks`, `week` and `day`.
@@ -655,21 +641,21 @@ The object has following operations:
 
 After construction of the calfw component, the destination object can not be changed.
 
-The views are defined as a function and dispatched by the function `cfw:cp-dispatch-view-impl`.
+The views are defined as a function and dispatched by the function `calfw-cp-dispatch-view-impl`.
 
 The instance of the calfw component is stored at following places:
 
-- `buffer` destination: the buffer-local variable `cfw:component`
+- `buffer` destination: the buffer-local variable `calfw-component`
 - `region` destination: the text property `cfw:component`
 - `text` destination: N/A
 
-Calling the utility function `cfw:cp-get-component`, one can obtain the calfw instance at the appropriate places. The stateless functions, such as simple event handler functions, can use this function to get the instance.
+Calling the utility function `calfw-cp-get-component`, one can obtain the calfw instance at the appropriate places. The stateless functions, such as simple event handler functions, can use this function to get the instance.
 
 The applications those have the state-full operations, however, should hold their own calfw instance for the safety object reference.
 
-##### cfw:model
+##### calfw-model
 
-The object `cfw:model` gathers schedule sources and gives a common interface for view functions to access the contents.
+The object `calfw-model` gathers schedule sources and gives a common interface for view functions to access the contents.
 
 The object has following information:
 
@@ -685,9 +671,9 @@ The schedule contents are modified through the model object after the component 
 
 (In the current implementation, the model object is build by alist. Then, view functions adds some data as view model. I think it is not good solution, so the implementation may be modified in future.)
 
-##### cfw:dest
+##### calfw-dest
 
-The object `cfw:dest` abstracts rendering destinations and gives a common interface of rendering operation to view functions.
+The object `calfw-dest` abstracts rendering destinations and gives a common interface of rendering operation to view functions.
 
 The object has following information:
 
@@ -698,7 +684,7 @@ The object has following information:
 - advice functions (`before-update-func`, `after-update-func`)
 - overlay data (`select-ol`, `today-ol`)
 
-In the current implementation, `cfw:dest` has three forms, buffer, region and text, mentioned above. Actually, the region destination is what I want. One buffer can have some destination objects, because all data (including local-variables and keymaps) are packed in the `cfw:dest` object.
+In the current implementation, `calfw-dest` has three forms, buffer, region and text, mentioned above. Actually, the region destination is what I want. One buffer can have some destination objects, because all data (including local-variables and keymaps) are packed in the `calfw-dest` object.
 
 #### Application design
 
@@ -706,13 +692,13 @@ In this section, I would describe a simple guide line of application design usin
 
 One can use calfw as an application UI (like calfw-howm) or dialog UI for selecting a date (like calendar.el). The user application can choose the destination style: buffer or region. Switching between them is very easy.
 
-The data presentation can be achieved by defining `cfw:source` object. It may be straightforward.
+The data presentation can be achieved by defining `calfw-source` object. It may be straightforward.
 
-The input events by the user can be caught by hooks in the `cfw:component`. Then, the selected date is obtained by the function `cfw:cursor-to-nearest-date` or `cfw:cursor-to-date`. The current implementation, calfw can not treat a range on the calendar.
+The input events by the user can be caught by hooks in the `calfw-component`. Then, the selected date is obtained by the function `calfw-cursor-to-nearest-date` or `calfw-cursor-to-date`. The current implementation, calfw can not treat a range on the calendar.
 
-Generally, any events can be caught by the custom keymap which is given by the named argument `:custom-map` with component construction. Furthermore, because calfw reserves the text properties (face, keymap and so on) on the text that is returned by `cfw:source` objects, one can control event handling at each characters.
+Generally, any events can be caught by the custom keymap which is given by the named argument `:custom-map` with component construction. Furthermore, because calfw reserves the text properties (face, keymap and so on) on the text that is returned by `calfw-source` objects, one can control event handling at each characters.
 
-Once the model is modified, update function of the `cfw:component` object should be called to refresh the view.
+Once the model is modified, update function of the `calfw-component` object should be called to refresh the view.
 
 The summary diagram is here.
 
@@ -721,9 +707,9 @@ The summary diagram is here.
 See the calfw-howm.el code for more details.
 
 ## History
-- 2015/09/24 ver 1.7 : Fixed bugs and changed maintainer.
+- 2025/09/13 ver 2.0 : Fixed bugs, used standard naming and docs. Changed maintainer.
 - 2015/09/24 ver 1.5 : Fixed bugs and added some customize variables.
-- 2015/02/27 ver 1.4 : Introduced cfw:event struct, improved some functions, fixed some bugs.
+- 2015/02/27 ver 1.4 : Introduced calfw-event struct, improved some functions, fixed some bugs.
 - 2011/10/10 ver 1.3 : Improved visual and navigation: multi-line, moving items in a day, diary mode and so on.
 - 2011/07/20 ver 1.2 : Merged many patches and improved many and bug fixed.
 - 2011/07/05 ver 1.0 : Refactored the whole implementation and design. Improved UI and views.
