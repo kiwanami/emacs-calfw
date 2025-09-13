@@ -642,5 +642,24 @@ Output goes into a new buffer, wrapped to `fill-column`."
 (put 'cfw:event 'cl--class (cl--find-class 'calfw-event))
 (put 'cfw:dest 'cl--class (cl--find-class 'calfw-dest))
 
+(defun calfw-compat-update-symbols (files)
+  "Replace old symbols with new ones in FILES, based on `calfw-compat-aliases'."
+  (dolist (f files)
+    (when (file-exists-p f)
+      (with-current-buffer (find-file-noselect f)
+        (save-excursion
+          (dolist (lst calfw-compat-aliases)
+            (dolist (pair (cdr lst))
+              (goto-char (point-min))
+              (let ((regexp (format "\\_<%s\\_>"
+                                    (regexp-quote (symbol-name (cdr pair)))))
+                    (new (symbol-name (car pair))))
+                (while (re-search-forward regexp nil t)
+                  (replace-match new t t))))))
+        (when (buffer-modified-p)
+          (save-buffer))))))
+
+;; (calfw-compat-update-symbolsd (directory-files default-directory t ".*\\.el"))
+
 (provide 'calfw-compat)
 ;;; calfw-compat.el ends here
