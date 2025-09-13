@@ -80,7 +80,7 @@ Output goes into a new buffer, wrapped to `fill-column`."
       (pop-to-buffer buf)))
   (calfw-compat--generate-calls))
 
-(defcustom calfw-compat-mark-obsolete "1.8"
+(defcustom calfw-compat-mark-obsolete "2.0"
   "When non-nil, mark old symbols as obsolete using the value as version."
   :group 'calfw
   :type 'string)
@@ -617,7 +617,7 @@ Output goes into a new buffer, wrapped to `fill-column`."
                       old new calfw-compat-mark-obsolete))
                 #'defvaralias)))
   (dolist (pair (alist-get 'vars calfw-compat-aliases))
-    (funcall alias (car pair) (cdr pair))))
+    (funcall alias (cdr pair) (car pair))))
 
 (let ((alias (if calfw-compat-mark-obsolete
                  (lambda (old new)
@@ -625,7 +625,7 @@ Output goes into a new buffer, wrapped to `fill-column`."
                      old new calfw-compat-mark-obsolete))
                #'defalias)))
   (dolist (pair (alist-get 'funcs calfw-compat-aliases))
-    (funcall alias (car pair) (cdr pair))))
+    (funcall alias (cdr pair) (car pair))))
 
 (let ((alias (if calfw-compat-mark-obsolete
                  (lambda (old new)
@@ -633,7 +633,7 @@ Output goes into a new buffer, wrapped to `fill-column`."
                     old new calfw-compat-mark-obsolete))
                (lambda (old new) (put old 'face-alias new)))))
   (dolist (pair (alist-get 'faces calfw-compat-aliases))
-    (funcall alias (car pair) (cdr pair))))
+    (funcall alias (cdr pair) (car pair))))
 
 ;; a HACK to alias old names of structures
 (put 'cfw:event 'cl--class (cl--find-class 'calfw-event))
