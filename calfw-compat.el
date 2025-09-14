@@ -34,7 +34,7 @@
   ;; The following is convenience function to generate calls to appropriate
   ;; aliasing functions when the old version of calfw is loaded. The list is
   ;; 95% complete/accurate and required some small modifications.
-  (defun calfw-compat--generate-calls ()
+  (defun calfw-compat--generate-maps ()
     "Generate function call for all symbols starting with `cfw:'.
 Output goes into a new buffer, wrapped to `fill-column`."
     (require 'calfw)
@@ -42,43 +42,31 @@ Output goes into a new buffer, wrapped to `fill-column`."
     (require 'calfw-ical)
     (require 'calfw-howm)
     (require 'calfw-cal)
-    (let ((buf (get-buffer-create "*cfw-obsolete*")))
-      (cl-labels ((emit (form)
-                    (let ((start (point)))
-                      (pp form buf)
-                      (fill-region-as-paragraph start (point))
-                      (indent-region start (point))))
-                  (new-name (sym)
-                    (intern
-                     (replace-regexp-in-string
-                      "cfw:"
-                      "calfw-" (symbol-name sym) nil 'literal))
-                    ;; (intern (concat "calfw-" (substring (symbol-name sym) 4)))
-                    ))
-        (with-current-buffer buf
+
+    (cl-labels ((new-name (sym)
+                  (intern
+                   (replace-regexp-in-string
+                    "cfw:"
+                    "calfw-" (symbol-name sym) nil 'literal))))
+      (let* ((syms (apropos-internal "cfw:"))
+             (seps '((vars . boundp)
+                     (funcs . fboundp)
+                     (faces . facep)))
+             (all
+              (cl-loop for (tag . func) in seps
+                       collect
+                       (cons tag
+                             (cl-loop for sym in (sort (seq-filter func syms)
+                                                       'string-lessp)
+                                      collect
+                                      (cons (new-name sym) sym))))))
+        (with-current-buffer (get-buffer-create "*cfw-obsolete*")
           (erase-buffer)
           (emacs-lisp-mode)
-          (let* ((fill-column (or fill-column 80))
-                 (syms (apropos-internal "cfw:"))
-                 (vars (seq-filter #'boundp syms))
-                 (funcs (seq-filter #'fboundp syms))
-                 (faces (seq-filter #'facep syms)))
-            ;; Variables first
-            (dolist (sym vars)
-              (let ((new (new-name sym)))
-                (emit `(',new . ',sym))))
-
-            ;; Functions next
-            (dolist (sym funcs)
-              (let ((new (new-name sym)))
-                ;; mark obsolete if mode says so
-                (emit `(',new . ',sym))))
-            (dolist (sym faces)
-              (let ((new (new-name sym)))
-                ;; mark obsolete if mode says so
-                (emit `(',new . ',sym)))))))
-      (pop-to-buffer buf)))
-  (calfw-compat--generate-calls))
+          (pp all (current-buffer))
+          (pop-to-buffer (current-buffer)))
+        all)))
+  (calfw-compat--generate-maps))
 
 (defcustom calfw-compat-mark-obsolete "2.0"
   "When non-nil, mark old symbols as obsolete using the value as version."
@@ -235,7 +223,6 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-date-between . cfw:date-between)
      (calfw-date-less-equal-p . cfw:date-less-equal-p)
      (calfw-days-diff . cfw:days-diff)
-
      (calfw-ical-decode-to-calendar . cfw:decode-to-calendar)
      (calfw--define-keymap . cfw:define-keymap)
      (calfw-dest-after-update . cfw:dest-after-update)
@@ -302,7 +289,6 @@ Output goes into a new buffer, wrapped to `fill-column`."
      (calfw-event-end-date . cfw:event-end-date)
      (calfw-event-end-date--cmacro . cfw:event-end-date--cmacro)
      (calfw-event-end-time . cfw:event-end-time)
-
      (calfw-event-end-time--cmacro . cfw:event-end-time--cmacro)
      (calfw-event-format . cfw:event-format)
      (calfw--event-format-field . cfw:event-format-field)
