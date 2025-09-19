@@ -210,7 +210,7 @@ See `calfw-event-format' for possible values."
 
 ;;; Faces
 
-(defface calfw-face-title
+(defface calfw-title-face
   '((((class color) (background light))
      :foreground "DarkGrey" :weight bold :height 2.0 :inherit variable-pitch)
     (((class color) (background dark))
@@ -218,35 +218,35 @@ See `calfw-event-format' for possible values."
     (t :height 1.5 :weight bold :inherit variable-pitch))
   "Face for title." :group 'calfw)
 
-(defface calfw-face-header
+(defface calfw-header-face
   '((((class color) (background light))
      :foreground "Slategray4" :background "Gray90" :weight bold)
     (((class color) (background dark))
      :foreground "maroon2" :weight bold))
   "Face for headers." :group 'calfw)
 
-(defface calfw-face-sunday
+(defface calfw-sunday-face
   '((((class color) (background light))
      :foreground "red2" :background "#ffd5e5" :weight bold)
     (((class color) (background dark))
      :foreground "red" :weight bold))
   "Face for Sunday." :group 'calfw)
 
-(defface calfw-face-saturday
+(defface calfw-saturday-face
   '((((class color) (background light))
      :foreground "Blue" :background "#d4e5ff" :weight bold)
     (((class color) (background light))
      :foreground "Blue" :weight bold))
   "Face for Saturday." :group 'calfw)
 
-(defface calfw-face-holiday
+(defface calfw-holiday-face
   '((((class color) (background light))
      :background "#ffd5e5")
     (((class color) (background dark))
      :background "grey10" :foreground "purple" :weight bold))
   "Face for holidays." :group 'calfw)
 
-(defface calfw-face-grid
+(defface calfw-grid-face
   '((((class color) (background light))
      :foreground "SlateBlue")
     (((class color) (background dark))
@@ -254,7 +254,7 @@ See `calfw-event-format' for possible values."
   "Face for grids."
   :group 'calfw)
 
-(defface calfw-face-default-content
+(defface calfw-default-content-face
   '((((class color) (background light))
      :foreground "#2952a3")
     (((class color) (background dark))
@@ -262,14 +262,14 @@ See `calfw-event-format' for possible values."
   "Face for default contents."
   :group 'calfw)
 
-(defface calfw-face-periods
+(defface calfw-periods-face
   '((((class color) (background light))
      :background "#668cd9" :foreground "White" :slant italic)
     (((class color) (background dark))
      :foreground "cyan"))
   "Face for period." :group 'calfw)
 
-(defface calfw-face-day-title
+(defface calfw-day-title-face
   '((((class color) (background light))
      :background "#f8f9ff")
     (((class color) (background dark))
@@ -277,41 +277,41 @@ See `calfw-event-format' for possible values."
   "Face for day title."
   :group 'calfw)
 
-(defface calfw-face-default-day
+(defface calfw-default-day-face
   '((((class color) (background light))
-     :weight bold :inherit calfw-face-day-title)
+     :weight bold :inherit calfw-day-title-face)
     (((class color) (background dark))
-     :weight bold :inherit calfw-face-day-title))
+     :weight bold :inherit calfw-day-title-face))
   "Face for default day." :group 'calfw)
 
-(defface calfw-face-annotation
-  '((((class color)) :foreground "RosyBrown" :inherit calfw-face-day-title))
+(defface calfw-annotation-face
+  '((((class color)) :foreground "RosyBrown" :inherit calfw-day-title-face))
   "Face for annotations."
   :group 'calfw)
 
-(defface calfw-face-disable
-  '((((class color)) :foreground "DarkGray" :inherit calfw-face-day-title))
+(defface calfw-disable-face
+  '((((class color)) :foreground "DarkGray" :inherit calfw-day-title-face))
   "Face for days out of focused period."
   :group 'calfw)
 
-(defface calfw-face-today-title
+(defface calfw-today-title-face
   '((((class color) (background light))
      :background "#fad163")
     (((class color) (background dark))
      :background "red4" :weight bold))
   "Face for today." :group 'calfw)
 
-(defface calfw-face-today
+(defface calfw-today-face
   '((((class color) (background light))
      :background "#fff7d7")
     (((class color) (background dark))
      :foreground "Cyan" :weight bold))
   "Face for today." :group 'calfw)
 
-(defvar calfw-face-item-separator-color "SlateBlue"
+(defvar calfw-item-separator-color-face "SlateBlue"
   "Color for the separator line of items in a day.")
 
-(defface calfw-face-calendar-hidden
+(defface calfw-calendar-hidden-face
   '((((class color) (background light))
      :foreground "grey"  :strike-through t)
     (((class color) (background dark))
@@ -778,9 +778,9 @@ Sets `calfw-dest-today-ol' of DEST to the created overlays."
                              (lambda (begin end)
                                (let ((overlay (make-overlay begin end)))
                                  (overlay-put overlay 'face
-                                              (if (eq 'calfw-face-day-title
+                                              (if (eq 'calfw-day-title-face
                                                       (get-text-property begin 'face))
-                                                  'calfw-face-today-title 'calfw-face-today))
+                                                  'calfw-today-title-face 'calfw-today-face))
                                  (push overlay ols)))))
     (setf (calfw-dest-today-ol dest) ols)))
 
@@ -1339,14 +1339,14 @@ Returns STRING."
     (let ((last-face (get-text-property 0 'face string)))
       (cond
        ((or (null last-face) (listp last-face))
-        (setq last-face (append last-face `(:underline ,calfw-face-item-separator-color)))
+        (setq last-face (append last-face `(:underline ,calfw-item-separator-color-face)))
         (put-text-property 0 (length string) 'face last-face string)
         (put-text-property 0 (length string) 'font-lock-face last-face string))
        ((symbolp last-face)
         (let ((attrs (face-all-attributes last-face (selected-frame))))
           (setq attrs ; transform alist to plist
                 (cl-loop with nattrs = nil
-                         for (n . v) in (append attrs `((:underline . ,calfw-face-item-separator-color)))
+                         for (n . v) in (append attrs `((:underline . ,calfw-item-separator-color-face)))
                          do (setq nattrs (cons n (cons v nattrs)))
                          finally return nattrs))
           (put-text-property 0 (length string) 'face attrs string)
@@ -1425,7 +1425,7 @@ Use DEFAULT-FACE if non-nil.  Return the modified string."
            with ret = (substring str 0)
            with face = (or default-face
                            (calfw--render-get-face-content
-                            str 'calfw-face-default-content))
+                            str 'calfw-default-content-face))
            unless (get-text-property i 'face ret)
            do
            (put-text-property i (1+ i) 'face face ret)
@@ -1437,9 +1437,9 @@ Use DEFAULT-FACE if non-nil.  Return the modified string."
   ;;
   (cond
    ((= daynum calfw-week-saturday)
-    'calfw-face-saturday)
+    'calfw-saturday-face)
    ((= daynum calfw-week-sunday)
-    'calfw-face-sunday)
+    'calfw-sunday-face)
    (t default-face)))
 
 (defun calfw--render-truncate (org limit-width &optional ellipsis)
@@ -1456,7 +1456,7 @@ ELLIPSIS is the string to use as ellipsis."
         str)
     org))
 
-(defface calfw-face-toolbar
+(defface calfw-toolbar-face
   '((((class color) (background light))
      :foreground "Gray90" :background "Gray90")
     (((class color) (background dark))
@@ -1464,7 +1464,7 @@ ELLIPSIS is the string to use as ellipsis."
   "Face for toolbar."
   :group 'calfw)
 
-(defface calfw-face-toolbar-button-off
+(defface calfw-toolbar-button-off-face
   '((((class color) (background light))
      :foreground "Lightskyblue4" :background "White")
     (((class color) (background dark))
@@ -1472,7 +1472,7 @@ ELLIPSIS is the string to use as ellipsis."
   "Face for button on toolbar."
   :group 'calfw)
 
-(defface calfw-face-toolbar-button-on
+(defface calfw-toolbar-button-on-face
   '((((class color) (background light))
      :foreground "Lightpink3" :background "Gray94" )
     (((class color) (background dark))
@@ -1484,12 +1484,12 @@ ELLIPSIS is the string to use as ellipsis."
   "Return a decorated text for the toolbar buttons.
 
 TITLE is a button title, COMMAND is an interactive command called by
-clicking.  If STATE is non-nil, the face `calfw-face-toolbar-button-on'
-is applied, otherwise `calfw-face-toolbar-button-off' is applied."
+clicking.  If STATE is non-nil, the face `calfw-toolbar-button-on-face'
+is applied, otherwise `calfw-toolbar-button-off-face' is applied."
   (let ((text (concat "[" title "]"))
         (keymap (make-sparse-keymap)))
-    (calfw--rt text (if state 'calfw-face-toolbar-button-on
-                      'calfw-face-toolbar-button-off))
+    (calfw--rt text (if state 'calfw-toolbar-button-on-face
+                      'calfw-toolbar-button-off-face))
     (define-key keymap [mouse-1] command)
     (calfw--tp text 'keymap keymap)
     (calfw--tp text 'mouse-face 'highlight)
@@ -1521,7 +1521,7 @@ the commands for moving the view."
           (calfw--render-add-right
            width (concat sp prev sp next sp today sp)
            (concat day sp week sp tweek sp month sp))))
-    (calfw--render-default-content-face toolbar-text 'calfw-face-toolbar)))
+    (calfw--render-default-content-face toolbar-text 'calfw-toolbar-face)))
 
 (defun calfw-event-mouse-click-toggle-calendar (event)
   "Toggle the `calfw-source-hidden' property of calendar source at EVENT."
@@ -1538,8 +1538,16 @@ the commands for moving the view."
   (interactive (list
                 (get-text-property (point) 'cfw:source)))
   (when source
-    (setf (calfw-source-hidden source)
-          (not (calfw-source-hidden source)))
+    (if current-prefix-arg
+        (let* ((comp (calfw-cp-get-component))
+               (sources (calfw--model-get-contents-sources
+                         (calfw-component-model comp))))
+          (dolist (src sources)
+            (unless (eq src source)
+              (setf (calfw-source-hidden src)
+                    (not (calfw-source-hidden src))))))
+      (setf (calfw-source-hidden source)
+            (not (calfw-source-hidden source))))
     (calfw--cp-update (calfw-cp-get-component))))
 
 (defun calfw-event-toggle-all-calendars ()
@@ -1587,13 +1595,13 @@ The footer is rendered based on the SOURCES."
                 (concat
                  "[" (calfw--rt dot
                                 (if hidden-p
-                                    'calfw-face-calendar-hidden
-                                  (calfw--render-get-face-period dot 'calfw-face-periods)))
+                                    'calfw-calendar-hidden-face
+                                  (calfw--render-get-face-period dot 'calfw-periods-face)))
                  " " title "]")
                 (if hidden-p
-                    'calfw-face-calendar-hidden
+                    'calfw-calendar-hidden-face
                   (calfw--render-get-face-content title
-                                                  'calfw-face-default-content)))
+                                                  'calfw-default-content-face)))
                'keymap keymap)))
            (concat "\n" spaces))))
     (concat
@@ -1621,8 +1629,8 @@ The footer is rendered based on the SOURCES."
                   (concat (when beginp calfw-fstring-period-start)
                           (calfw--render-left inwidth title ?-)
                           (when endp calfw-fstring-period-end))
-                  'face (calfw--render-get-face-period content 'calfw-face-periods)
-                  'font-lock-face (calfw--render-get-face-period content 'calfw-face-periods)
+                  'face (calfw--render-get-face-period content 'calfw-periods-face)
+                  'font-lock-face (calfw--render-get-face-period content 'calfw-periods-face)
                   'cfw:period t
                   props)))
 
@@ -1716,7 +1724,7 @@ plist of parameters."
                      (calfw--tp
                       (calfw--render-default-content-face
                        (calfw--render-add-right cell-width tday ant)
-                       'calfw-face-day-title)
+                       'calfw-day-title-face)
                       'cfw:date date)
                    (calfw--render-left cell-width ""))))
     (insert VL EOL)
@@ -1853,7 +1861,7 @@ to MAX-LINE-NUM.  Returns a list of strings."
           (/ cell-width (char-width calfw-fchar-horizontal-line))))
     (append
      param
-     `((eol . ,EOL) (vl . ,(calfw--rt (make-string 1 calfw-fchar-vertical-line) 'calfw-face-grid))
+     `((eol . ,EOL) (vl . ,(calfw--rt (make-string 1 calfw-fchar-vertical-line) 'calfw-grid-face))
        (hline . ,(calfw--rt
                   (concat
                    (cl-loop for i from 0 below columns concat
@@ -1861,14 +1869,14 @@ to MAX-LINE-NUM.  Returns a list of strings."
                              (make-string 1 (if (= i 0) calfw-fchar-top-left-corner calfw-fchar-top-junction))
                              (make-string num-cell-char calfw-fchar-horizontal-line)))
                    (make-string 1 calfw-fchar-top-right-corner) EOL)
-                  'calfw-face-grid))
+                  'calfw-grid-face))
        (cline . ,(calfw--rt
                   (concat
                    (cl-loop for i from 0 below columns concat
                             (concat
                              (make-string 1 (if (= i 0) calfw-fchar-left-junction calfw-fchar-junction))
                              (make-string num-cell-char calfw-fchar-horizontal-line)))
-                   (make-string 1 calfw-fchar-right-junction) EOL) 'calfw-face-grid))))))
+                   (make-string 1 calfw-fchar-right-junction) EOL) 'calfw-grid-face))))))
 
 (defun calfw--render-day-of-week-names (model param)
   "Insert week names based on MODEL.
@@ -1880,7 +1888,7 @@ vertical line."
            with VL = (calfw--k 'vl param) with cell-width = (calfw--k 'cell-width param)
            for name = (aref calendar-day-name-array i) do
            (insert VL (calfw--rt (calfw--render-center cell-width name)
-                                 (calfw--render-get-week-face i 'calfw-face-header)))))
+                                 (calfw--render-get-week-face i 'calfw-header-face)))))
 
 (defun calfw--render-calendar-cells-weeks (model param title-func)
   "Insert calendar cells for week based views, using MODEL.
@@ -2083,7 +2091,7 @@ Render the monthly calendar view for COMPONENT."
     ;; header
     (insert
      (calfw--rt (calfw-render-title-month (calfw--k 'init-date model))
-                'calfw-face-title)
+                'calfw-title-face)
      EOL (calfw--render-toolbar total-width 'month
                                 'calfw-navi-previous-month-command
                                 'calfw-navi-next-month-command)
@@ -2100,9 +2108,9 @@ Render the monthly calendar view for COMPONENT."
          (calfw--rt
           (format "%s" (calendar-extract-day date))
           (cond
-           (hday 'calfw-face-sunday)
-           ((not (calfw-month-year-contain-p month year date)) 'calfw-face-disable)
-           (t (calfw--render-get-week-face week-day 'calfw-face-default-day)))))))
+           (hday 'calfw-sunday-face)
+           ((not (calfw-month-year-contain-p month year date)) 'calfw-disable-face)
+           (t (calfw--render-get-week-face week-day 'calfw-default-day-face)))))))
     ;; footer
     (insert (calfw--render-footer total-width (calfw--model-get-contents-sources model)))))
 
@@ -2157,7 +2165,7 @@ parameters specify the layout and formatting."
     (insert
      (calfw--rt
       (calfw-render-title-period begin-date end-date)
-      'calfw-face-title)
+      'calfw-title-face)
      EOL (calfw--render-toolbar total-width 'week
                                 'calfw-navi-previous-week-command
                                 'calfw-navi-next-week-command)
@@ -2170,9 +2178,9 @@ parameters specify the layout and formatting."
      model param
      (lambda (date week-day hday)
        (calfw--rt (format "%s" (calendar-extract-day date))
-                  (if hday 'calfw-face-sunday
+                  (if hday 'calfw-sunday-face
                     (calfw--render-get-week-face
-                     week-day 'calfw-face-default-day)))))
+                     week-day 'calfw-default-day-face)))))
     ;; footer
     (insert (calfw--render-footer total-width (calfw--model-get-contents-sources model)))))
 
@@ -2248,7 +2256,7 @@ of the component is updated."
     (insert
      (calfw--rt
       (calfw-render-title-period begin-date end-date)
-      'calfw-face-title)
+      'calfw-title-face)
      EOL (calfw--render-toolbar total-width 'two-weeks
                                 'calfw-navi-previous-week-command
                                 'calfw-navi-next-week-command)
@@ -2261,9 +2269,9 @@ of the component is updated."
      model param
      (lambda (date week-day hday)
        (calfw--rt (format "%s" (calendar-extract-day date))
-                  (if hday 'calfw-face-sunday
+                  (if hday 'calfw-sunday-face
                     (calfw--render-get-week-face
-                     week-day 'calfw-face-default-day)))))
+                     week-day 'calfw-default-day-face)))))
     ;; footer
     (insert (calfw--render-footer total-width (calfw--model-get-contents-sources model)))))
 
@@ -2308,7 +2316,7 @@ rendering parameters for DEST.  NUM is the number of columns."
     (insert
      (calfw--rt
       (calfw-render-title-day current-date)
-      'calfw-face-title)
+      'calfw-title-face)
      EOL (calfw--render-toolbar total-width 'day
                                 'calfw-navi-previous-day-command
                                 'calfw-navi-next-day-command)
@@ -2321,9 +2329,9 @@ rendering parameters for DEST.  NUM is the number of columns."
      model param
      (lambda (date week-day hday)
        (calfw--rt (format "%s" (calendar-extract-day date))
-                  (if hday 'calfw-face-sunday
+                  (if hday 'calfw-sunday-face
                     (calfw--render-get-week-face
-                     week-day 'calfw-face-default-day)))))
+                     week-day 'calfw-default-day-face)))))
     ;; footer
     (insert (calfw--render-footer total-width (calfw--model-get-contents-sources model)))))
 
@@ -2349,7 +2357,7 @@ TITLE-FUNC.  Optional DAYS, CONTENT-FUN, and DO-WEEKS are also used."
             for hday         = (car (calfw--contents-get date holidays))
             for week-day     = (nth count headers)
             for ant          = (calfw--rt (calfw--contents-get date annotations)
-                                          'calfw-face-annotation)
+                                          'calfw-annotation-face)
             for raw-periods  = (calfw--contents-get date raw-periods-all)
             for raw-contents = (calfw--render-sort-contents
                                 (funcall content-fun
@@ -2372,7 +2380,7 @@ TITLE-FUNC.  Optional DAYS, CONTENT-FUN, and DO-WEEKS are also used."
                         (funcall title-func date week-day hday)
                         (if num-label (concat " " num-label))
                         (if hday (concat " " (calfw--rt (substring hday 0)
-                                                        'calfw-face-holiday))))
+                                                        'calfw-holiday-face))))
             collect
             (cons date (cons (cons tday ant) prs-contents)))
    param))
@@ -2402,7 +2410,7 @@ Return a list of strings representing the periods."
                      (if beginp "(" " ")
                      (calfw--render-left width title ?-)
                      (if endp ")" " "))
-                    (calfw--render-get-face-period content 'calfw-face-periods))
+                    (calfw--render-get-face-period content 'calfw-periods-face))
                  "")))))
 
 
@@ -2833,7 +2841,7 @@ TEXT is a content to show."
   "Layout details and return the text.
 DATE is a date to show.  MODEL is model object."
   (let* ((EOL "\n")
-         (HLINE (calfw--rt (concat (make-string (window-width) ?-) EOL) 'calfw-face-grid))
+         (HLINE (calfw--rt (concat (make-string (window-width) ?-) EOL) 'calfw-grid-face))
          (holiday (calfw-model-get-holiday-by-date date model))
          (annotation (calfw-model-get-annotation-by-date date model))
          (periods (calfw-model-get-periods-by-date date model))
@@ -2843,28 +2851,28 @@ DATE is a date to show.  MODEL is model object."
                     (calfw-model-get-sorter model)))
          (row-count -1))
     (concat
-     (calfw--rt (concat "Schedule on " (calfw-strtime date) " (") 'calfw-face-header)
+     (calfw--rt (concat "Schedule on " (calfw-strtime date) " (") 'calfw-header-face)
      (calfw--rt (calendar-day-name date)
-                (calfw--render-get-week-face (calendar-day-of-week date) 'calfw-face-header))
-     (calfw--rt (concat ")" EOL) 'calfw-face-header)
+                (calfw--render-get-week-face (calendar-day-of-week date) 'calfw-header-face))
+     (calfw--rt (concat ")" EOL) 'calfw-header-face)
      (when (or holiday annotation)
        (concat
-        (and holiday (calfw--rt holiday 'calfw-face-holiday))
+        (and holiday (calfw--rt holiday 'calfw-holiday-face))
         (and holiday annotation " / ")
-        (and annotation (calfw--rt annotation 'calfw-face-annotation))
+        (and annotation (calfw--rt annotation 'calfw-annotation-face))
         EOL))
      HLINE
      (cl-loop for (begin end summary) in periods
               for prefix = (propertize
                             (concat (calfw-strtime begin) " - " (calfw-strtime end) " : ")
-                            'face (calfw--render-get-face-period summary 'calfw-face-periods)
-                            'font-lock-face (calfw--render-get-face-period summary 'calfw-face-periods)
+                            'face (calfw--render-get-face-period summary 'calfw-periods-face)
+                            'font-lock-face (calfw--render-get-face-period summary 'calfw-periods-face)
                             'cfw:row-count (cl-incf row-count))
               concat
               (concat prefix " " summary EOL))
 
      (cl-loop for i in contents
-              for f = (calfw--render-get-face-content i 'calfw-face-default-content)
+              for f = (calfw--render-get-face-content i 'calfw-default-content-face)
               concat
               (concat "- " (propertize
                             i 'face f 'font-lock-face f
