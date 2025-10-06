@@ -4,7 +4,7 @@
 
 ;; Author: SAKURAI Masashi <m.sakurai at kiwanami.net>
 ;; Maintainer: Al Haji-Ali <abdo.haji.ali at gmail.com>
-;; Version: 1.7
+;; Version: 2.0
 ;; Keywords: calendar
 ;; Package-Requires: ((emacs "28.1"))
 ;; URL: https://github.com/haji-ali/emacs-calfw

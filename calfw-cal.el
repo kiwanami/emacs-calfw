@@ -4,9 +4,9 @@
 
 ;; Author: SAKURAI Masashi <m.sakurai at kiwanami.net>
 ;; Maintainer: Al Haji-Ali <abdo.haji.ali at gmail.com>
-;; Version: 1.7
+;; Version: 2.0
 ;; Keywords: calendar, org
-;; Package-Requires: ((emacs "28.1") (calfw "1.7"))
+;; Package-Requires: ((emacs "28.1") (calfw "2.0"))
 ;; URL: https://github.com/haji-ali/emacs-calfw
 
 ;; This program is free software; you can redistribute it and/or modify

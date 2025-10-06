@@ -3,9 +3,9 @@
 ;; Copyright (C) 2025 Al Haji-Ali
 
 ;; Author: Al Haji-Ali <abdo.haji.ali at gmail dot com>
-;; Version: 1.7
+;; Version: 2.0
 ;; Keywords: calendar, org
-;; Package-Requires: ((emacs "28.1") (calfw "1.7"))
+;; Package-Requires: ((emacs "28.1") (calfw "2.0"))
 ;; URL: https://github.com/haji-ali/emacs-calfw
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -645,7 +645,7 @@ Output goes into a new buffer, wrapped to `fill-column`."
         (when (buffer-modified-p)
           (save-buffer))))))
 
-;; (calfw-compat-update-symbolsd (directory-files default-directory t ".*\\.el"))
+;; (calfw-compat-update-symbols (directory-files default-directory t ".*\\.el"))
 
 (provide 'calfw-compat)
 ;;; calfw-compat.el ends here
