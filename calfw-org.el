@@ -202,7 +202,7 @@ ITEM is an org entry.  Return a string with text properties."
     ;;; ------------------------------------------------------------------------
     (setq text (replace-regexp-in-string "%[0-9A-F]\\{2\\}" " " text))
     (if (string-match org-link-bracket-re text)
-        (let* ((desc (if (match-end 3) (match-string-no-properties 3 text)))
+        (let* ((desc (if (match-end 2) (match-string-no-properties 2 text)))
                (link (org-link-unescape (match-string-no-properties 1 text)))
                (help (concat "LINK: " link))
                (link-props (list
