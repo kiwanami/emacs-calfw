@@ -524,7 +524,7 @@ Returns a new calfw source."
 ;;     ))
 
 (defun calfw-org-read-date-command ()
-  "Move the cursor to the specified date."
+  "Read a date and return it as a calendar date value."
   (interactive)
   (calfw-emacs-to-calendar (org-read-date nil 'to-time)))
 

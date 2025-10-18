@@ -479,10 +479,9 @@ Returns a list of HOURS and MINUTES."
   "Transform the string format YYYY/MM/DD in STR to a calendar date value."
   (calfw-emacs-to-calendar (calfw-parsetime-emacs str)))
 
-(defun calfw-read-date-command-simple (string-date)
-  "Move the cursor to the specified date.
 
-Parse STRING-DATE using `calfw-parsetime'."
+(defun calfw-read-date-command-simple (string-date)
+  "Parse STRING-DATE and return it as a calendar date value."
   (interactive "sInput Date (YYYY/MM/DD): ")
   (calfw-parsetime string-date))
 
@@ -621,7 +620,7 @@ CLR2 is composited with 1-ALPHA transpancy."
   end-date    ; end date of the event [calfw-date] (optional)
   end-time    ; end of the event (optional)
   description ; event description [string] (optional)
-  location    ; location [strting] (optional)
+  location    ; location [string] (optional)
   source      ; [internal] source of the event
   status       ; 'cancelled, 'tentative, 'confirmed or nil
   data        ; reference to event data
