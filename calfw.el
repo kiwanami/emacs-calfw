@@ -957,7 +957,7 @@ FORCE non-nil unconditionally moves the cursor."
 (defun calfw-cp-set-contents-sources (component sources)
   "Set content sources for COMPONENT to SOURCES."
   (calfw--model-set-contents-sources
-   (calfw-component-model component) sources))
+    sources (calfw-component-model component)))
 
 (defun calfw-cp-set-annotation-sources (component sources)
   "Set annotation sources for COMPONENT to SOURCES."
