@@ -1494,6 +1494,54 @@ is applied, otherwise `calfw-toolbar-button-off-face' is applied."
     (calfw--tp text 'mouse-face 'highlight)
     text))
 
+(defvar calfw-toolbar-buttons
+  '((("Today" . calfw-navi-goto-today-command))
+    .
+    (("Day" . (:view day))
+     ("Week" . (:view week))
+     ("Two Weeks" . (:view two-weeks))
+     ("Month" . (:view month))))
+  "Buttons to be rendered in toolbar.
+
+The car are buttons on the left (after left/right), the cdr are
+buttons on the right. Each button description is a cons (TITLE .
+FN) where TITLE is the button title and FN is the function to
+call. If FN is a (:view VIEW) then it is pressing the button
+changes the view to VIEW.")
+
+(defun calfw--render-toolbar (width current-view prev-cmd next-cmd)
+  "Return a text string of the toolbar.
+
+WIDTH is the width of the toolbar.  CURRENT-VIEW is a symbol
+representing the current view type.  PREV-CMD and NEXT-CMD are
+the commands for moving the view."
+  (let* ((prev (calfw--render-button " < " prev-cmd))
+         (next (calfw--render-button " > " next-cmd))
+         (sp  " "))
+    (cl-labels
+        ((format-btns (btns)
+           (cl-loop for (title . fn) in btns
+                    concat
+                    (if (eq (car-safe fn) :view)
+                        (let ((view (cadr fn)))
+                          (calfw--render-button
+                           title
+                           (lambda ()
+                             (interactive)
+                             (calfw-cp-set-view (calfw-cp-get-component)
+                                                view))
+                           (eq current-view view)))
+                      (calfw--render-button title fn))
+                    concat sp)))
+      (calfw--render-default-content-face
+       (calfw--render-add-right
+        width
+        (concat
+         sp prev sp next sp
+         (format-btns (car calfw-toolbar-buttons)))
+        (format-btns (cdr calfw-toolbar-buttons)))
+       'calfw-toolbar-face))))
+
 (defun calfw--render-toolbar (width current-view prev-cmd next-cmd)
   "Return a text string of the toolbar.
 
