@@ -1,4 +1,7 @@
 
+## 2.1
+- Added `calfw-toolbar-buttons` to customize buttons on the toolbar.
+
 ## 2.0
 - Renamed all symbols to start with the package name.
 - Added `calfw-compat` for compatibility with old code.

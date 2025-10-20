@@ -1542,34 +1542,6 @@ the commands for moving the view."
         (format-btns (cdr calfw-toolbar-buttons)))
        'calfw-toolbar-face))))
 
-(defun calfw--render-toolbar (width current-view prev-cmd next-cmd)
-  "Return a text string of the toolbar.
-
-WIDTH is the width of the toolbar.  CURRENT-VIEW is a symbol
-representing the current view type.  PREV-CMD and NEXT-CMD are
-the commands for moving the view."
-  (let* ((prev (calfw--render-button " < " prev-cmd))
-         (today (calfw--render-button "Today" 'calfw-navi-goto-today-command))
-         (next (calfw--render-button " > " next-cmd))
-         (month (calfw--render-button
-                 "Month" 'calfw-change-view-month
-                 (eq current-view 'month)))
-         (tweek (calfw--render-button
-                 "Two Weeks" 'calfw-change-view-two-weeks
-                 (eq current-view 'two-weeks)))
-         (week (calfw--render-button
-                "Week" 'calfw-change-view-week
-                (eq current-view 'week)))
-         (day (calfw--render-button
-               "Day" 'calfw-change-view-day
-               (eq current-view 'day)))
-         (sp  " ")
-         (toolbar-text
-          (calfw--render-add-right
-           width (concat sp prev sp next sp today sp)
-           (concat day sp week sp tweek sp month sp))))
-    (calfw--render-default-content-face toolbar-text 'calfw-toolbar-face)))
-
 (defun calfw-event-mouse-click-toggle-calendar (event)
   "Toggle the `calfw-source-hidden' property of calendar source at EVENT."
   (interactive "e")
