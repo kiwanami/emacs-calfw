@@ -35,7 +35,8 @@
 ;; Here is a minimum sample code:
 ;; (require 'calfw-ical)
 ;; To open a calendar buffer, execute the following function.
-;; (calfw-ical-open-calendar "http://www.google.com/calendar/ical/.../basic.ics")
+;; (calfw-ical-open-calendar
+;;  "http://www.google.com/calendar/ical/.../basic.ics" "#2952a3")
 
 ;; Executing the following command, this program clears caches to refresh the ICS data.
 ;; (calfw-ical-data-cache-clear-all)
@@ -327,16 +328,17 @@ Returns a calfw source."
    :data (lambda (begin end)
            (calfw-ical-to-calendar url begin end))))
 
-(defun calfw-ical-open-calendar (url)
+(defun calfw-ical-open-calendar (url color)
   "Display a calendar buffer for the iCalendar at URL."
   (save-excursion
     (let ((cp (calfw-create-calendar-component-buffer
                :view 'month
                :contents-sources
-               (list (calfw-ical-create-source "ical" url "#2952a3")))))
+               (list (calfw-ical-create-source "ical" url color)))))
       (switch-to-buffer (calfw-cp-get-buffer cp)))))
 
-;; (progn (eval-current-buffer) (calfw-ical-open-calendar "./ics/test.ics"))
+;; (progn (eval-current-buffer) (calfw-ical-open-calendar "./ics/test.ics"
+;;                                                         "#2952a3"))
 
 (provide 'calfw-ical)
 ;;; calfw-ical.el ends here
