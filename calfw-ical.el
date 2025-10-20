@@ -329,7 +329,6 @@ Returns a calfw source."
 
 (defun calfw-ical-open-calendar (url)
   "Display a calendar buffer for the iCalendar at URL."
-  (interactive)
   (save-excursion
     (let ((cp (calfw-create-calendar-component-buffer
                :view 'month
