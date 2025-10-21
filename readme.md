@@ -119,7 +119,7 @@ You can display a calendar in your howm menu file.
 
     (require 'calfw-org)
 
-Then, M-x `calfw-open-org-calendar`.
+Then, M-x `calfw-org-open-calendar`.
 
 ![org-agenda and calfw-org](https://cacoo.com/diagrams/S6aJntG6giGs44Yn-89CB2.png?width=450)
 
