@@ -58,8 +58,8 @@ In the calendar buffer and region, you can use following key bindings:
 | $                   | Week end                                     |
 | [home]              | First date in this month                     |
 | [end]               | Last date in this month                      |
-| M-v, [PgUp], &lt;   | Previous month                               |
-| C-v, [PgDown], &gt; | Next month                                   |
+| &lt;                | Previous month                               |
+| &gt;                | Next month                                   |
 | t                   | Today                                        |
 | g                   | Absolute date (YYYY/MM/DD)                   |
 | TAB                 | Next item in a day                           |
