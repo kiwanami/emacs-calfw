@@ -498,14 +498,21 @@ Returns a new calfw source."
    :color (or color calfw-org-face-agenda-item-foreground-color)
    :data 'calfw-org--schedule-period-to-calendar))
 
-(defun calfw-org-open-calendar ()
-  "Open an org schedule calendar in the new buffer."
+(cl-defun calfw-org-open-calendar (&key date buffer annotation-sources view)
+  "Open an org schedule calendar in the new buffer.
+
+Defaults to month view of today in a new buffer, overridable with DATE,
+BUFFER, ANNOTATION-SOURCES and VIEW as in
+`calfw-create-calendar-component-buffer'."
   (interactive)
   (save-excursion
     (let* ((source1 (calfw-org-create-source))
            (curr-keymap (if calfw-org-overwrite-default-keybinding calfw-org-custom-map calfw-org-schedule-map))
            (cp (calfw-create-calendar-component-buffer
-                :view 'month
+                :date date
+                :view view
+                :buffer buffer
+                :annotation-sources annotation-sources
                 :contents-sources (list source1)
                 :custom-map curr-keymap
                 :sorter 'calfw-org--schedule-sorter)))
