@@ -120,6 +120,11 @@
   :group 'calfw
   :type 'string)
 
+(defcustom calfw-fchar-period-line ?-
+  "The char used to indicate continuation of period."
+  :group 'calfw
+  :type 'character)
+
 (defcustom calfw-fstring-period-end ")"
   "The string used to indicate the end of a period."
   :group 'calfw
@@ -1661,7 +1666,8 @@ The footer is rendered based on the SOURCES."
            collect
            (apply 'propertize
                   (concat (when beginp calfw-fstring-period-start)
-                          (calfw--render-left inwidth title ?-)
+                          (calfw--render-left
+                           inwidth title calfw-fchar-period-line)
                           (when endp calfw-fstring-period-end))
                   'face (calfw--render-get-face-period content 'calfw-periods-face)
                   'font-lock-face (calfw--render-get-face-period content 'calfw-periods-face)
@@ -2445,7 +2451,8 @@ Return a list of strings representing the periods."
                     (calfw--tp
                      (concat
                       (if beginp calfw-fstring-period-start " ")
-                      (calfw--render-left width title ?-)
+                      (calfw--render-left
+                       width title calfw-fchar-period-line)
                       (if endp calfw-fstring-period-end " "))
                      'cfw:event ;; Set cfw:event to all the text
                      (get-text-property 0 'cfw:event content))
@@ -2880,7 +2887,11 @@ TEXT is a content to show."
   "Layout details and return the text.
 DATE is a date to show.  MODEL is model object."
   (let* ((EOL "\n")
-         (HLINE (calfw--rt (concat (make-string (window-width) ?-) EOL) 'calfw-grid-face))
+         (HLINE (calfw--rt (concat (make-string
+                                    (window-width)
+                                    calfw-fchar-horizontal-line)
+                                   EOL)
+                           'calfw-grid-face))
          (holiday (calfw-model-get-holiday-by-date date model))
          (annotation (calfw-model-get-annotation-by-date date model))
          (periods (calfw-model-get-periods-by-date date model))
