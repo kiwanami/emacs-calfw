@@ -694,7 +694,7 @@ The following values are possible:
               (?e end-time    calfw--event-format-field-time)
               (?l location    calfw--event-format-field-string)
               (?d description calfw--event-format-field-string))))
-   'cfw:source (calfw-event-source event)))
+   'cfw:event event))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Rendering Destination
@@ -1053,19 +1053,29 @@ Optional argument INITIAL-DATE specifies the date to display
 
 ;;; Models
 
-(defvar calfw-default-text-sorter 'string-lessp "[internal] Default sorting criteria in a calendar cell.")
+(defun calfw-sorter-start-time (x y)
+  "Default sorter for events in calfw events.
+Use this function to sort by start time first."
+  (if-let ((ex (get-text-property 0 'cfw:event x))
+           (ey (get-text-property 0 'cfw:event y))
+           (cmp (cl-some (lambda (x y) (and (/= x y) (- x y)))
+                         (calfw-event-start-time ex)
+                         (calfw-event-start-time ey))))
+      (< cmp 0)
+    (string-lessp x y)))
 
 (defun calfw-model-abstract-new (date contents-sources annotation-sources &optional sorter)
   "Return an abstract model object.
 
 DATE is the initial date, CONTENTS-SOURCES is a list of contents
-functions, ANNOTATION-SOURCES is a list of annotation functions, and
-SORTER is a function to sort the contents."
+functions, ANNOTATION-SOURCES is a list of annotation functions,
+and SORTER is a function to sort the contents (defaults to
+`calfw-sorter-start-time')."
   (unless date (setq date (calendar-current-date)))
   `((init-date . ,date)
     (contents-sources . ,contents-sources)
     (annotation-sources . ,annotation-sources)
-    (sorter . ,(or sorter calfw-default-text-sorter))))
+    (sorter . ,(or sorter 'calfw-sorter-start-time))))
 
 (defun calfw-model-abstract-derived (date org-model)
   "Return an abstract model object.
@@ -1391,10 +1401,12 @@ Returns the sorted list."
 (defun calfw--render-get-face-period (text default-face)
   "Return a face for the source object of the period TEXT.
 
-The face is derived from the `cfw:source' text property of TEXT,
-and DEFAULT-FACE is returned if the source or background color
-are nil."
-  (let* ((src (get-text-property 0 'cfw:source text))
+The face is derived from the source of the `cfw:event' (or the
+`cfw:source') text property of TEXT, and DEFAULT-FACE is returned
+if the source or background color are nil."
+  (let* ((src (if-let* ((ev (get-text-property 0 'cfw:event text)))
+                  (calfw-event-source ev)
+                (get-text-property 0 'cfw:source text)))
          (bg-color (and src (calfw--source-period-bgcolor-get src)))
          (fg-color (and src (calfw--source-period-fgcolor-get src))))
     (cond
@@ -1405,9 +1417,12 @@ are nil."
 (defun calfw--render-get-face-content (text default-face)
   "Return a face for the source object of the content TEXT.
 
-The face is derived from the `cfw:source' text property of TEXT,
-or DEFAULT-FACE if the source or its foreground color is nil."
-  (let* ((src (get-text-property 0 'cfw:source text))
+The face is derived from the source of the `cfw:event' (or the
+`cfw:source') text property of TEXT, or DEFAULT-FACE if the
+source or its foreground color is nil."
+  (let* ((src (if-let* ((ev (get-text-property 0 'cfw:event text)))
+                  (calfw-event-source ev)
+                (get-text-property 0 'cfw:source text)))
          (fg-color (and src (calfw-source-color src))))
     (cond
      ((or (null src) (null fg-color)) default-face)
@@ -1651,6 +1666,7 @@ The footer is rendered based on the SOURCES."
                   'face (calfw--render-get-face-period content 'calfw-periods-face)
                   'font-lock-face (calfw--render-get-face-period content 'calfw-periods-face)
                   'cfw:period t
+                  'cfw:event (get-text-property 0 'cfw:event content) ;; Reapply to whole string
                   props)))
 
 (defun calfw--render-periods-title (date week-day begin end content cell-width inwidth)
@@ -2420,15 +2436,19 @@ Return a list of strings representing the periods."
                for title = (calfw--render-truncate
                             (concat
                              (calfw-strtime begin) " - "
-                             (calfw-strtime end) " : "
-                             content) width t)
+                             (calfw-strtime end) " "
+                             content)
+                            width t)
                collect
                (if content
                    (calfw--rt
-                    (concat
-                     (if beginp "(" " ")
-                     (calfw--render-left width title ?-)
-                     (if endp ")" " "))
+                    (calfw--tp
+                     (concat
+                      (if beginp calfw-fstring-period-start " ")
+                      (calfw--render-left width title ?-)
+                      (if endp calfw-fstring-period-end " "))
+                     'cfw:event ;; Set cfw:event to all the text
+                     (get-text-property 0 'cfw:event content))
                     (calfw--render-get-face-period content 'calfw-periods-face))
                  "")))))
 

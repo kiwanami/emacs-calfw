@@ -1,6 +1,8 @@
 
-## 2.1
+## development
 - Added `calfw-toolbar-buttons` to customize buttons on the toolbar.
+- Removed `calfw-default-text-sorter`, `calfw-sorter-start-time` is not set by default.
+- `cfw:event` is saved as text property instead of `cfw:source` when an event is rendered.
 
 ## 2.0
 - Renamed all symbols to start with the package name.
