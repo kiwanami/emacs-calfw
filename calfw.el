@@ -2086,6 +2086,31 @@ Return value is appended to LST if provided."
       (days . ,(calfw--view-model-make-days ; a list of days, which corresponds to the index of `headers'
                 begin-date end-date))))))
 
+
+(defun calfw--calc-param (dest columns rows height-offset
+                               &optional min-cell-width)
+  "Return rendering parameters for a calfw view in DEST.
+
+DEST is the calendar destination. COLUMNS/ROWS is the number of
+calendar columns (e.g. days) and rows to divide the view into.
+HEIGHT-OFFSET is the number of lines reserved for headers,
+footers, and other UI elements, subtracted from the total window
+height. MIN-CELL-WIDTH sets a lower bound on the width of each
+cell (default 5). The function returns an alist with:
+`cell-width' `cell-height' `total-width' `columns'."
+  (let* ((win-width (calfw-dest-width dest))
+         (win-height (max 15 (- (calfw-dest-height dest) height-offset)))
+         (min-cell-width (or min-cell-width 5))
+         (junctions-width (* (char-width calfw-fchar-junction) (1+ columns)))
+         (cell-width (calfw--round-cell-width
+                      (max min-cell-width (/ (- win-width junctions-width)
+                                             columns))))
+         (cell-height (max 2 (/ win-height rows)))
+         (total-width (+ (* cell-width columns) junctions-width)))
+    `((cell-width . ,cell-width)
+      (cell-height . ,cell-height)
+      (total-width . ,total-width)
+      (columns . ,columns))))
 
 
 ;;; view-month
@@ -2108,22 +2133,6 @@ Return value is appended to LST if provided."
    ((eql (char-width calfw-fchar-horizontal-line) 1) width)
    (t (- width (% width (char-width calfw-fchar-horizontal-line))))))
 
-(defun calfw--view-month-calc-param (dest total-weeks)
-  "Calculate cell size from DEST and TOTAL-WEEKS and return an alist of parameters."
-  (let*
-      ((win-width (calfw-dest-width dest))
-       ;; title 2, toolbar 1, header 2, hline 7, footer 1, margin 2 => 15
-       (win-height (max 15 (- (calfw-dest-height dest) 15)))
-       (junctions-width (* (char-width calfw-fchar-junction) 8)) ; weekdays+1
-       (cell-width  (calfw--round-cell-width
-                     (max 5 (/ (- win-width junctions-width) 7)))) ; weekdays
-       (cell-height (max 2 (/ win-height total-weeks))) ; max weeks = 6
-       (total-width (+ (* cell-width calfw-week-days) junctions-width)))
-    `((cell-width . ,cell-width)
-      (cell-height . ,cell-height)
-      (total-width . ,total-width)
-      (columns . ,calfw-week-days))))
-
 (defun calfw--view-month (component)
   "Render monthly calendar view.
 
@@ -2132,7 +2141,8 @@ Render the monthly calendar view for COMPONENT."
          (model (calfw--view-month-model (calfw-component-model component)))
          (total-weeks (length (calfw--k 'weeks model)))
          (param (calfw--render-append-parts
-                 (calfw--view-month-calc-param dest total-weeks)))
+                 ;; title 2, toolbar 1, header 2, hline 7, footer 1, margin 2 => 15
+                 (calfw--calc-param dest calfw-week-days total-weeks 15 5)))
          (total-width (calfw--k 'total-width param))
          (EOL (calfw--k 'eol param)) (VL (calfw--k 'vl param))
          (hline (calfw--k 'hline param)) (cline (calfw--k 'cline param)))
@@ -2177,23 +2187,6 @@ Render the monthly calendar view for COMPONENT."
 
 ;; (calfw-view-week-model (calfw-model-abstract-new (calfw-date 1 1 2011) nil nil))
 
-(defun calfw--view-week-calc-param (dest)
-  "Calculate cell size from the reference size and return rendering parameters.
-
-Return an alist of rendering parameters based on the size of DEST."
-  (let*
-      ((win-width (calfw-dest-width dest))
-       ;; title 2, toolbar 1, header 2, hline 2, footer 1, margin 2 => 10
-       (win-height (max 15 (- (calfw-dest-height dest) 10)))
-       (junctions-width (* (char-width calfw-fchar-junction) 8))
-       (cell-width  (calfw--round-cell-width
-                     (max 5 (/ (- win-width junctions-width) 7))))
-       (cell-height (max 2 win-height))
-       (total-width (+ (* cell-width calfw-week-days) junctions-width)))
-    `((cell-width . ,cell-width)
-      (cell-height . ,cell-height)
-      (total-width . ,total-width)
-      (columns . ,calfw-week-days))))
 
 (defun calfw--view-week (component)
   "Render weekly calendar view for COMPONENT.
@@ -2202,7 +2195,9 @@ Render the weekly calendar view based on the COMPONENT's model and
 parameters.  The model contains the begin and end dates, and the
 parameters specify the layout and formatting."
   (let* ((dest (calfw-component-dest component))
-         (param (calfw--render-append-parts (calfw--view-week-calc-param dest)))
+         (param (calfw--render-append-parts
+                 ;; title 2, toolbar 1, header 2, hline 2, footer 1, margin 2 => 10
+                 (calfw--calc-param dest calfw-week-days 1 10 5)))
          (total-width (calfw--k 'total-width param))
          (EOL (calfw--k 'eol param)) (VL (calfw--k 'vl param))
          (hline (calfw--k 'hline param)) (cline (calfw--k 'cline param))
@@ -2267,25 +2262,6 @@ parameters specify the layout and formatting."
 
 ;; (calfw-view-two-weeks-model (calfw-model-abstract-new (calfw-date 1 1 2011) nil nil))
 
-(defun calfw--view-two-weeks-calc-param (dest)
-  "Calculate cell size from the reference size and return rendering parameters.
-
-Calculate cell size from the reference size in DEST and return an
-alist of rendering parameters."
-  (let*
-      ((win-width (calfw-dest-width dest))
-       ;; title 2, toolbar 1, header 2, hline 3, footer 1, margin 2 => 11
-       (win-height (max 15 (- (calfw-dest-height dest) 11)))
-       (junctions-width (* (char-width calfw-fchar-junction) 8))
-       (cell-width  (calfw--round-cell-width
-                     (max 5 (/ (- win-width junctions-width) 7))))
-       (cell-height (max 2 (/ win-height 2)))
-       (total-width (+ (* cell-width calfw-week-days) junctions-width)))
-    `((cell-width . ,cell-width)
-      (cell-height . ,cell-height)
-      (total-width . ,total-width)
-      (columns . ,calfw-week-days))))
-
 (defun calfw--view-two-weeks (component)
   "Render two-weeks calendar view for COMPONENT.
 
@@ -2293,7 +2269,9 @@ Render two-weeks calendar view for COMPONENT.  The calendar is
 rendered to the destination specified by the component.  The model
 of the component is updated."
   (let* ((dest (calfw-component-dest component))
-         (param (calfw--render-append-parts (calfw--view-two-weeks-calc-param dest)))
+         (param (calfw--render-append-parts
+                 ;; title 2, toolbar 1, header 2, hline 3, footer 1, margin 2 => 11
+                 (calfw--calc-param dest calfw-week-days 2 11 5)))
          (total-width (calfw--k 'total-width param))
          (EOL (calfw--k 'eol param)) (VL (calfw--k 'vl param))
          (hline (calfw--k 'hline param)) (cline (calfw--k 'cline param))
@@ -2329,30 +2307,12 @@ of the component is updated."
 
 ;;; view-day
 
-(defun calfw--view-day-calc-param (dest &optional num)
-  "Calculate cell size from the reference size and return rendering parameters.
-
-Calculate cell size from the reference size and return an alist of
-rendering parameters for DEST.  NUM is the number of columns."
-  (let*
-      ((num (or num 1))
-       (win-width (calfw-dest-width dest))
-       ;; title 2, toolbar 1, header 2, hline 2, footer 1, margin 2 => 10
-       (win-height (max 15 (- (calfw-dest-height dest) 10)))
-       (junctions-width (* (char-width calfw-fchar-junction) (1+ num)))
-       (cell-width  (calfw--round-cell-width
-                     (max 3 (/ (- win-width junctions-width) num))))
-       (cell-height win-height)
-       (total-width (+ (* cell-width num) junctions-width)))
-    `((cell-width . ,cell-width)
-      (cell-height . ,cell-height)
-      (total-width . ,total-width)
-      (columns . ,num))))
-
 (defun calfw--view-day (component)
   "Render daily calendar view for COMPONENT."
   (let* ((dest (calfw-component-dest component))
-         (param (calfw--render-append-parts (calfw--view-day-calc-param dest)))
+         (param (calfw--render-append-parts
+                 ;; title 2, toolbar 1, header 2, hline 2, footer 1, margin 2 => 10
+                 (calfw--calc-param dest 1 1 10 3)))
          (total-width (calfw--k 'total-width param))
          (EOL (calfw--k 'eol param)) (VL (calfw--k 'vl param))
          (hline (calfw--k 'hline param)) (cline (calfw--k 'cline param))
