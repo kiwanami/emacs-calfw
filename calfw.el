@@ -802,8 +802,9 @@ Sets `calfw-dest-today-ol' of DEST to the created overlays."
   "Return the default calendar frame dimensions as a cons of width and height.
 Width is in characters, while height is in lines. Use WINDOW if
 given, otherwise the selected window."
-  (cons (window-max-chars-per-line)
-        (window-screen-lines)))
+  (with-selected-window window
+    (cons (window-max-chars-per-line)
+          (window-screen-lines))))
 
 (defun calfw-dest-init-buffer (&optional buf width height custom-map)
   "Create a buffer destination.
@@ -2243,8 +2244,12 @@ parameters specify the layout and formatting."
         (cond
          ((calfw-date-between old-begin-date old-end-date in-date)
           in-date)
-         ((calfw-date-between old-end-date (calfw-date-after old-end-date calfw-week-days) in-date)
-          old-end-date)
+         ((calfw-date-between old-end-date
+                              (calfw-date-after old-end-date calfw-week-days)
+                              in-date)
+          ;; If the new date is between the old-end-date and next week, then
+          ;; start at the end-date.
+          (calfw-date-after old-end-date 1))
          ((calfw-date-between (calfw-date-after old-begin-date (- calfw-week-days)) old-begin-date in-date)
           (calfw-date-after old-begin-date (- calfw-week-days)))
          (t in-date))))
@@ -2286,8 +2291,10 @@ of the component is updated."
       (calfw-render-title-period begin-date end-date)
       'calfw-title-face)
      EOL (calfw--render-toolbar total-width 'two-weeks
-                                'calfw-navi-previous-week-command
-                                'calfw-navi-next-week-command)
+                                (lambda () (interactive)
+                                  (calfw-navi-previous-week-command 2))
+                                (lambda () (interactive)
+                                  (calfw-navi-next-week-command 2)))
      EOL hline)
     ;; day names
     (calfw--render-day-of-week-names model param)
@@ -2752,11 +2759,12 @@ With prefix arg NO-RESIZE, don't fit calendar to window size."
   "Move the cursor forward NUM days.  If NUM is nil, 1 is used.
 Moves backward if NUM is negative."
   (interactive "p")
-  (when (calfw-cp-get-component)
+  (when-let* ((component (calfw-cp-get-component))
+              (model (calfw-component-model component)))
     (unless num (setq num 1))
-    (let* ((cursor-date (calfw-cursor-to-nearest-date))
-           (new-cursor-date (calfw-date-after cursor-date num)))
-      (calfw-navi-goto-date new-cursor-date))))
+    (let* ((cur-date (calfw--k 'begin-date model))
+           (new-date (calfw-date-after cur-date num)))
+      (calfw-navi-goto-date new-date))))
 
 (defun calfw-navi-previous-day-command (&optional num)
   "Move the cursor back NUM days.  If NUM is nil, 1 is used.
@@ -2794,18 +2802,19 @@ Moves forward if NUM is negative."
   "Move the cursor forward NUM months.  If NUM is nil, 1 is used.
 Movement is backward if NUM is negative."
   (interactive "p")
-  (when (calfw-cp-get-component)
+  (when-let* ((component (calfw-cp-get-component))
+              (model (calfw-component-model component)))
     (unless num (setq num 1))
-    (let* ((cursor-date (calfw-cursor-to-nearest-date))
-           (month (calendar-extract-month cursor-date))
-           (day   (calendar-extract-day   cursor-date))
-           (year  (calendar-extract-year  cursor-date))
+    (let* ((cur-date (calfw--k 'begin-date model))
+           (month (calendar-extract-month cur-date))
+           (day   (calendar-extract-day   cur-date))
+           (year  (calendar-extract-year  cur-date))
            (last (progn
                    (calendar-increment-month month year num)
                    (calendar-last-day-of-month month year)))
            (day (min last day))
-           (new-cursor-date (calfw-date month day year)))
-      (calfw-navi-goto-date new-cursor-date))))
+           (new-date (calfw-date month day year)))
+      (calfw-navi-goto-date new-date))))
 
 (defun calfw-navi-previous-month-command (&optional num)
   "Move the cursor back NUM months.  If NUM is nil, 1 is used.
