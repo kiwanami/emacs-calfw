@@ -626,7 +626,7 @@ CLR2 is composited with 1-ALPHA transpancy."
   end-time    ; end of the event (optional)
   description ; event description [string] (optional)
   location    ; location [string] (optional)
-  source      ; [internal] source of the event
+  source      ; source of the event
   status       ; 'cancelled, 'tentative, 'confirmed or nil
   data        ; reference to event data
   )
@@ -795,7 +795,15 @@ Sets `calfw-dest-today-ol' of DEST to the created overlays."
 
 ;; Buffer
 
-(defconst calfw-calendar-buffer-name "*cfw-calendar*" "[internal] Default buffer name for the calendar view.")
+(defconst calfw-calendar-buffer-name "*cfw-calendar*"
+  "Default buffer name for the calendar view.")
+
+(defun calfw-default-window-dims (&optional window)
+  "Return the default calendar frame dimensions as a cons of width and height.
+Width is in characters, while height is in lines. Use WINDOW if
+given, otherwise the selected window."
+  (cons (window-max-chars-per-line)
+        (window-screen-lines)))
 
 (defun calfw-dest-init-buffer (&optional buf width height custom-map)
   "Create a buffer destination.
@@ -809,18 +817,18 @@ shows BUF or the selected window.  The component
 object is stored at the buffer local variable `calfw-component'.
 CUSTOM-MAP is the additional keymap that is added to default
 keymap `calfw-calendar-mode-map'."
-  (let
-      ((buffer (or buf (get-buffer-create calfw-calendar-buffer-name)))
-       (window (or (and buf (get-buffer-window buf)) (selected-window)))
-       dest)
+  (let* ((buffer (or buf (get-buffer-create calfw-calendar-buffer-name)))
+         (window (or (and buf (get-buffer-window buf)) (selected-window)))
+         (dims (calfw-default-window-dims window))
+         dest)
     (setq dest
           (make-calfw-dest
            :type 'buffer
            :min-func 'point-min
            :max-func 'point-max
            :buffer buffer
-           :width (or width (window-width window))
-           :height (or height (window-height window))
+           :width (or width (car dims))
+           :height (or height (cdr dims))
            :clear-func (lambda ()
                          (with-current-buffer buffer
                            (erase-buffer)))))
@@ -840,16 +848,16 @@ of the region.  This destination is employed to be embedded in
 some application buffer.  The destination does not set up any
 modes or keymaps for the buffer, and is the responsibility of the
 application that uses calfw."
-  (let
-      ((mark-begin mark-begin) (mark-end mark-end)
-       (window (or (get-buffer-window buf) (selected-window))))
+  (let* ((mark-begin mark-begin) (mark-end mark-end)
+         (window (or (get-buffer-window buf) (selected-window)))
+         (dims (calfw-default-window-dims window)))
     (make-calfw-dest
      :type 'region
      :min-func (lambda () (marker-position mark-begin))
      :max-func (lambda () (marker-position mark-end))
      :buffer buf
-     :width (or width (window-width window))
-     :height (or height (window-height window))
+     :width (or width (car dims))
+     :height (or height (cdr dims))
      :clear-func
      (lambda ()
        (calfw--dest-region-clear (marker-position mark-begin)
@@ -867,18 +875,18 @@ application that uses calfw."
 
 (defun calfw-dest-init-inline (width height)
   "Create a text destination with given WIDTH and HEIGHT."
-  (let
-      ((buffer (get-buffer-create calfw-dest-background-buffer))
-       (window (selected-window))
-       dest)
+  (let* ((buffer (get-buffer-create calfw-dest-background-buffer))
+         (window (selected-window))
+         (dims (calfw-default-window-dims window))
+         dest)
     (setq dest
           (make-calfw-dest
            :type 'text
            :min-func 'point-min
            :max-func 'point-max
            :buffer buffer
-           :width (or width (window-width window))
-           :height (or height (window-height window))
+           :width (or width (car dims))
+           :height (or height (cdr dims))
            :clear-func (lambda ()
                          (with-current-buffer buffer
                            (erase-buffer)))))
@@ -980,9 +988,10 @@ VIEW is a symbol of the view type."
   "Resize the COMPONENT size to WIDTH and HEIGHT and re-draw the content."
   (let* ((dest (calfw-component-dest component))
          (buf (calfw-dest-buffer dest))
-         (window (or (and buf (get-buffer-window buf)) (selected-window))))
-    (setf (calfw-dest-width dest) (or width (window-width window))
-          (calfw-dest-height dest) (or height (window-height window)))))
+         (window (or (and buf (get-buffer-window buf)) (selected-window)))
+         (dims (calfw-default-window-dims window)))
+    (setf (calfw-dest-width dest) (or width (car dims))
+          (calfw-dest-height dest) (or height (cdr dims)))))
 
 ;; Hook
 
@@ -2736,14 +2745,15 @@ Changes the view of the current component, obtained via
       (calfw-cp-goto-date cp date)
       (calfw--cp-fire-click-hooks cp))))
 
-(defun calfw-refresh-calendar-buffer (no-resize)
+(defun calfw-refresh-calendar-buffer (&optional no-resize)
   "Clear the calendar and render again.
 With prefix arg NO-RESIZE, don't fit calendar to window size."
   (interactive "P")
   (let ((cp (calfw-cp-get-component)))
     (when cp
       (unless no-resize
-        (calfw-cp-resize cp (window-width) (window-height)))
+        (let ((dims (calfw-default-window-dims)))
+          (calfw-cp-resize cp (car dims) (cdr dims))))
       (cl-loop for s in (calfw-cp-get-contents-sources cp t)
                for f = (calfw-source-update s)
                if f do (funcall f))
@@ -2888,7 +2898,7 @@ TEXT is a content to show."
 DATE is a date to show.  MODEL is model object."
   (let* ((EOL "\n")
          (HLINE (calfw--rt (concat (make-string
-                                    (window-width)
+                                    (car (calfw-default-window-dims))
                                     calfw-fchar-horizontal-line)
                                    EOL)
                            'calfw-grid-face))
