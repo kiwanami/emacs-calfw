@@ -99,14 +99,37 @@ v m | `calfw-change-view-month'
     ;;       (when (buffer-live-p org-agenda-buffer)
     ;;         org-agenda-buffer))
     (org-compile-prefix-format nil)
-    (cl-loop for date in (calfw-enumerate-days begin end) append
-             (cl-loop for file in org-files
-                      append
-                      (progn
-                        (org-check-agenda-file file)
-                        (apply 'org-agenda-get-day-entries
-                               file date
-                               calfw-org-agenda-schedule-args))))))
+
+    ;; We need several hacks to resolve issues like those in #91.
+    ;;
+    ;; Org diary for schedules/deadline is weird. It returns the first date an
+    ;; item is scheduled, then does not return any that were scheduled before
+    ;; today but after that first date (and no real way to control "today").
+    ;; To resolve, we employ an incomplete "feature" using
+    ;; `org-extend-today-until' to redefine that "today" is one second before
+    ;; the start of the current date.
+
+    ;; Then it returns all future events if `org-agenda-show-future-repeats'
+    ;; is non-nil, but the `date' property is set to the date of the first
+    ;; scheduled date if it is in the past relative to today. To resolve this,
+    ;; we instead update the value of `date' to be our input.
+    (let ((now (float-time (current-time))))
+      (cl-loop for date in (calfw-enumerate-days begin end) append
+               (let* ((target (float-time (calfw-calendar-to-emacs date)))
+                      (org-extend-today-until
+                       (max 0 (/ (- now target -1) 3600))))
+                 (cl-loop for file in org-files
+                          append
+                          (progn
+                            (org-check-agenda-file file)
+                            ;; We set the date here, since we cannot rely on the
+                            ;; existing `date' property for schedules and
+                            ;; deadlines.
+                            (mapcar
+                             (lambda (x) (calfw--tp x 'date date))
+                             (apply 'org-agenda-get-day-entries
+                                    file date
+                                    calfw-org-agenda-schedule-args)))))))))
 
 (defun calfw-org-onclick ()
   "Jump to the clicked org item."
@@ -272,11 +295,11 @@ If TEXT does not have a range, return nil."
    (unless (member range periods)
      (push range periods))
    else do
-                                        ; dotime is not present if this event was already added as a timerange
-   (if (calfw-org--tp i 'dotime)
-       (setq contents (calfw--contents-add
-		       (calfw-org-normalize-date date)
-		       line contents)))
+   ;; dotime is not present if this event was already added as a timerange
+   (when (calfw-org--tp i 'dotime)
+     (setq contents (calfw--contents-add
+		     (calfw-org-normalize-date date)
+		     line contents)))
    finally return (nconc contents (list (cons 'periods periods)))))
 
 (defun calfw-org--schedule-sorter (text1 text2)
