@@ -1690,7 +1690,10 @@ The footer is rendered based on the SOURCES."
 
 Return nil if CONTENT is nil.  WEEK-DAY, BEGIN, END,
 CELL-WIDTH, and INWIDTH are also arguments."
-  (let* ((week-begin (calfw-date-after date (- week-day)))
+  (let* ((week-begin (calfw-date-after date
+                                       (- (mod (- week-day
+                                                  calendar-week-start-day)
+                                               7))))
          ;; (month-begin (calfw-date
          ;;               (calendar-extract-month date)
          ;;               1 (calendar-extract-year date)))
