@@ -114,22 +114,23 @@ v m | `calfw-change-view-month'
     ;; scheduled date if it is in the past relative to today. To resolve this,
     ;; we instead update the value of `date' to be our input.
     (let ((now (float-time (current-time))))
-      (cl-loop for date in (calfw-enumerate-days begin end) append
-               (let* ((target (float-time (calfw-calendar-to-emacs date)))
-                      (org-extend-today-until
-                       (max 0 (/ (- now target -1) 3600))))
-                 (cl-loop for file in org-files
-                          append
-                          (progn
-                            (org-check-agenda-file file)
-                            ;; We set the date here, since we cannot rely on the
-                            ;; existing `date' property for schedules and
-                            ;; deadlines.
-                            (mapcar
-                             (lambda (x) (calfw--tp x 'date date))
-                             (apply 'org-agenda-get-day-entries
-                                    file date
-                                    calfw-org-agenda-schedule-args)))))))))
+      (cl-loop
+       for date in (calfw-enumerate-days begin end)
+       for target = (float-time (calfw-calendar-to-emacs date))
+       for org-extend-today-until = (max 0 (/ (- now target -1) 3600))
+       append
+       (cl-loop
+        for file in org-files
+        append
+        (progn
+          (org-check-agenda-file file)
+          ;; We set the date here, since we cannot rely on the
+          ;; existing `date' property for schedules and
+          ;; deadlines.
+          (mapcar (lambda (entry) (calfw--tp entry 'date date))
+                  (apply 'org-agenda-get-day-entries
+                         file date
+                         calfw-org-agenda-schedule-args))))))))
 
 (defun calfw-org-onclick ()
   "Jump to the clicked org item."
@@ -259,28 +260,37 @@ those string in multi-lines.")
     (calendar-gregorian-from-absolute date))
    (t date)))
 
-(defun calfw-org-get-timerange (text)
+(defun calfw-org-get-timerange (text &optional at-begin)
   "Return a range object (begin end text).
-If TEXT does not have a range, return nil."
-  (let* ((dotime (calfw-org--tp text 'dotime)))
-    (and (stringp dotime) (and dotime (string-match org-ts-regexp dotime))
-	 (let ((date-string  (match-string 1 dotime))
-	       (extra (calfw-org--tp text 'extra)))
-	   (if (and extra (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra))
-	       (let* ((cur-day (string-to-number
-				(match-string 1 extra)))
-		      (total-days (string-to-number
-				   (match-string 2 extra)))
-		      (start-date (time-subtract
-				   (org-read-date nil t date-string)
-				   (seconds-to-time (* 3600 24 (- cur-day 1)))))
-		      (end-date (time-add
-				 (org-read-date nil t date-string)
-				 (seconds-to-time (* 3600 24 (- total-days cur-day))))))
-		 (list (calendar-gregorian-from-absolute (time-to-days start-date))
-		       (calendar-gregorian-from-absolute
-                        (time-to-days end-date))
-                       text)))))))
+If TEXT does not have a range, return nil.
+If AT-BEGIN is non-nil, then it should be the date of the first
+day in the calendar."
+  (let* ((dotime (calfw-org--tp text 'dotime))
+         date-string)
+    (and (or (and (stringp dotime)
+                  (string-match org-ts-regexp dotime)
+                  (setq date-string (match-string 1 dotime)))
+             at-begin)
+	 (let ((extra (calfw-org--tp text 'extra)))
+	   (when (and extra (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra))
+	     (let* ((cur-day (string-to-number
+			      (match-string 1 extra)))
+		    (total-days (string-to-number
+				 (match-string 2 extra)))
+                    (date (if date-string
+                              (org-read-date nil t date-string)
+                            (calfw-calendar-to-emacs at-begin)))
+		    (start-date (time-subtract
+				 date
+                                 ;; Add an extra second to ensure robustness
+				 (seconds-to-time (1- (* 3600 24 (- cur-day 1))))))
+		    (end-date (time-add
+			       date
+			       (seconds-to-time (* 3600 24 (- total-days cur-day))))))
+	       (list (calendar-gregorian-from-absolute (time-to-days start-date))
+		     (calendar-gregorian-from-absolute
+                      (time-to-days end-date))
+                     text)))))))
 
 (defun calfw-org--schedule-period-to-calendar (org-files begin end)
   "Return calfw calendar items between BEGIN and END from ORG-FILES."
@@ -290,8 +300,9 @@ If TEXT does not have a range, return nil."
    for i in (calfw-org--collect-schedules-period org-files begin end)
    for date = (calfw-org--tp i 'date)
    for line = (funcall calfw-org-schedule-summary-transformer i)
-   for range = (calfw-org-get-timerange line)
-   if range do
+   for range = (calfw-org-get-timerange line (and (equal date begin) date))
+   if range
+   do
    (unless (member range periods)
      (push range periods))
    else do
