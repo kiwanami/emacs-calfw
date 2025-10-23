@@ -2816,8 +2816,9 @@ Movement is backward if NUM is negative."
            (last (progn
                    (calendar-increment-month month year num)
                    (calendar-last-day-of-month month year)))
-           (day (min last day))
-           (new-date (calfw-date month day year)))
+           ;; (day (min last day))
+           ;; Go to mid month
+           (new-date (calfw-date month (/ (+ last 1) 2) year)))
       (calfw-navi-goto-date new-date))))
 
 (defun calfw-navi-previous-month-command (&optional num)
