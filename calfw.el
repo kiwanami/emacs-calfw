@@ -777,15 +777,15 @@ Sets `calfw-dest-today-ol' of DEST to the created overlays."
   ;; " Put a highlight face on today."
   (let (ols)
     (calfw-dest-with-region dest
-                            (calfw--find-all-by-date
-                             dest (calendar-current-date)
-                             (lambda (begin end)
-                               (let ((overlay (make-overlay begin end)))
-                                 (overlay-put overlay 'face
-                                              (if (eq 'calfw-day-title-face
-                                                      (get-text-property begin 'face))
-                                                  'calfw-today-title-face 'calfw-today-face))
-                                 (push overlay ols)))))
+      (calfw--find-all-by-date
+       dest (calendar-current-date)
+       (lambda (begin end)
+         (let ((overlay (make-overlay begin end)))
+           (overlay-put overlay 'face
+                        (if (eq 'calfw-day-title-face
+                                (get-text-property begin 'face))
+                            'calfw-today-title-face 'calfw-today-face))
+           (push overlay ols)))))
     (setf (calfw-dest-today-ol dest) ols)))
 
 
@@ -1039,10 +1039,10 @@ Optional argument INITIAL-DATE specifies the date to display
       (calfw--dest-ol-today-clear dest)
       (let ((buffer-read-only nil))
         (calfw-dest-with-region dest
-                                (calfw-dest-clear dest)
-                                (funcall (calfw--cp-dispatch-view-impl
-                                          (calfw-component-view component))
-                                         component)))
+          (calfw-dest-clear dest)
+          (funcall (calfw--cp-dispatch-view-impl
+                    (calfw-component-view component))
+                   component)))
       (when calfw-highlight-today
         (calfw--dest-ol-today-set dest))
       (when initial-date

@@ -33,7 +33,7 @@
 ;; ;; use org agenda buffer style keybinding.
 ;; ;; (setq calfw-org-overwrite-default-keybinding t)
 ;;
-;; M-x calfw-open-org-calendar
+;; M-x calfw-org-open-calendar
 
 ;;; Code:
 
@@ -69,11 +69,6 @@ For example:
   "Default arguments for collecting agenda entries.
 If value is nil, `org-agenda-entry-types' is used.")
 
-(defvar calfw-org-icalendars nil
-  "Org buffers for exporting icalendars.
-Setting a list of the custom agenda files, one can use the
-different agenda files from the default agenda ones.")
-
 (defvar calfw-org-overwrite-default-keybinding nil
   "Overwrite default keybinding.
 
@@ -96,15 +91,16 @@ v m | `calfw-change-view-month'
 (defvar calfw-org-face-agenda-item-foreground-color "Seagreen4"
   "Variable for org agenda item foreground color.")
 
-(defun calfw-org--collect-schedules-period (begin end)
-  "Return org schedule items between BEGIN and END."
+(defun calfw-org--collect-schedules-period (org-files begin end)
+  "Return org schedule items between BEGIN and END from ORG-FILES."
   (let ((org-agenda-prefix-format " "))
-    (setq org-agenda-buffer
-          (when (buffer-live-p org-agenda-buffer)
-            org-agenda-buffer))
+    ;; @AL: This seems wrong
+    ;; (setq org-agenda-buffer
+    ;;       (when (buffer-live-p org-agenda-buffer)
+    ;;         org-agenda-buffer))
     (org-compile-prefix-format nil)
     (cl-loop for date in (calfw-enumerate-days begin end) append
-             (cl-loop for file in (or calfw-org-icalendars (org-agenda-files nil 'ifmode))
+             (cl-loop for file in org-files
                       append
                       (progn
                         (org-check-agenda-file file)
@@ -115,8 +111,7 @@ v m | `calfw-change-view-month'
 (defun calfw-org-onclick ()
   "Jump to the clicked org item."
   (interactive)
-  (let (
-        (marker (get-text-property (point) 'org-marker))
+  (let ((marker (get-text-property (point) 'org-marker))
         (link   (get-text-property (point) 'org-link))
         (file   (get-text-property (point) 'cfw:org-file))
         (beg    (get-text-property (point) 'cfw:org-h-beg))
@@ -193,7 +188,9 @@ ITEM is an org entry.  Return a string with text properties."
          (extra (calfw-org--tp item 'extra)))
     (setq text (substring-no-properties text))
     (when (and extra (string-match (concat "^" org-deadline-string ".*") extra))
-      (add-text-properties 0 (length text) (list 'face (org-agenda-deadline-face 1.0)) text))
+      (add-text-properties 0 (length text) (list 'face
+                                                 (org-agenda-deadline-face 1.0))
+                           text))
     (if org-todo-keywords-for-agenda
         (when (string-match (concat "^[\t ]*\\<\\(" (mapconcat 'identity org-todo-keywords-for-agenda "\\|") "\\)\\>") text)
           (add-text-properties (match-beginning 1) (match-end 1) (list 'face (org-get-todo-face (match-string 1 text))) text)))
@@ -262,12 +259,12 @@ If TEXT does not have a range, return nil."
                         (time-to-days end-date))
                        text)))))))
 
-(defun calfw-org--schedule-period-to-calendar (begin end)
-  "Return calfw calendar items between BEGIN and END from org schedule data."
+(defun calfw-org--schedule-period-to-calendar (org-files begin end)
+  "Return calfw calendar items between BEGIN and END from ORG-FILES."
   (cl-loop
    ;;with calfw-org-todo-keywords-regexp = (regexp-opt org-todo-keywords-for-agenda) ; dynamic bind
    with contents = nil with periods = nil
-   for i in (calfw-org--collect-schedules-period begin end)
+   for i in (calfw-org--collect-schedules-period org-files begin end)
    for date = (calfw-org--tp i 'date)
    for line = (funcall calfw-org-schedule-summary-transformer i)
    for range = (calfw-org-get-timerange line)
@@ -488,22 +485,28 @@ Open the `org-agenda' buffer for the date at point, DATE."
      ("SPC" . calfw-org-open-agenda-day)))
   "Key map for the calendar buffer.")
 
-(defun calfw-org-create-source (&optional color)
-  "Create an `org-agenda' source.
-
-COLOR, if given, is the color to use.
-Returns a new calfw source."
+(defun calfw-org-create-source (name org-files color)
+  "Create a calfw source named NAME with org files ORG-FILES and COLOR."
   (make-calfw-source
-   :name "org-agenda"
-   :color (or color calfw-org-face-agenda-item-foreground-color)
-   :data 'calfw-org--schedule-period-to-calendar))
+   :name name :color color
+   :data (apply-partially 'calfw-org--schedule-period-to-calendar org-files)))
 
-(defun calfw-org-open-calendar ()
-  "Open an org schedule calendar in the new buffer."
+(cl-defun calfw-org-open-calendar (&optional name org-files)
+  "Open an org schedule calendar in a new buffer.
+
+Events are taken from ORG-FILES (defaults to those returned by
+`org-agenda-files') and NAME is the name of the calendar
+(defaults to \"org-agenda\")."
   (interactive)
   (save-excursion
-    (let* ((source1 (calfw-org-create-source))
-           (curr-keymap (if calfw-org-overwrite-default-keybinding calfw-org-custom-map calfw-org-schedule-map))
+    (let* ((source1 (calfw-org-create-source
+                     (or name "org-agenda")
+                     (or org-files
+                         (org-agenda-files nil 'ifmode))
+                     calfw-org-face-agenda-item-foreground-color))
+           (curr-keymap (if calfw-org-overwrite-default-keybinding
+                            calfw-org-custom-map
+                          calfw-org-schedule-map))
            (cp (calfw-create-calendar-component-buffer
                 :view 'month
                 :contents-sources (list source1)

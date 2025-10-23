@@ -4,6 +4,8 @@
 - Removed `calfw-default-text-sorter`, `calfw-sorter-start-time` is not set by default.
 - `cfw:event` is saved as text property instead of `cfw:source` when an event is rendered.
 - Added customization `calfw-fchar-period-line`.
+- Removed `calfw-org-icalendars`. Pass org files directly to
+  `calfw-org-open-calendar`.
 
 ## 2.0
 - Renamed all symbols to start with the package name.
