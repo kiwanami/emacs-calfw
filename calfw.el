@@ -2068,14 +2068,18 @@ Return value is appended to LST if provided."
 
 (defun calfw--view-model-make-common-data-for-weeks (model begin-date end-date)
   "Return a model object for week based views from MODEL, BEGIN-DATE and END-DATE."
-  (calfw--model-create-updated-view-data
-   model
-   (calfw--view-model-make-common-data
-    model begin-date end-date
-    `((headers . ,(calfw--view-model-make-day-names-for-week)) ; a list of the index of day-of-week
-      (weeks . ,(calfw--view-model-make-weeks ; a matrix of day-of-month, which corresponds to the index of `headers'
-                 (calfw-week-begin-date begin-date)
-                 (calfw-week-end-date   end-date)))))))
+  (let ((begin-date (calfw-week-begin-date begin-date))
+        (end-date (calfw-week-end-date end-date)))
+    (calfw--model-create-updated-view-data
+     model
+     (calfw--view-model-make-common-data
+      model
+      begin-date
+      end-date
+      `((headers . ,(calfw--view-model-make-day-names-for-week)) ; a list of the index of day-of-week
+        (weeks . ,(calfw--view-model-make-weeks ; a matrix of day-of-month, which corresponds to the index of `headers'
+                   begin-date
+                   end-date)))))))
 
 (defun calfw--view-model-make-common-data-for-days (model begin-date end-date)
   "Return a MODEL object for linear views of days between BEGIN-DATE and END-DATE."
@@ -2762,7 +2766,7 @@ Moves backward if NUM is negative."
   (when-let* ((component (calfw-cp-get-component))
               (model (calfw-component-model component)))
     (unless num (setq num 1))
-    (let* ((cur-date (calfw--k 'begin-date model))
+    (let* ((cur-date (calfw--k 'init-date model))
            (new-date (calfw-date-after cur-date num)))
       (calfw-navi-goto-date new-date))))
 
@@ -2805,7 +2809,7 @@ Movement is backward if NUM is negative."
   (when-let* ((component (calfw-cp-get-component))
               (model (calfw-component-model component)))
     (unless num (setq num 1))
-    (let* ((cur-date (calfw--k 'begin-date model))
+    (let* ((cur-date (calfw--k 'init-date model))
            (month (calendar-extract-month cur-date))
            (day   (calendar-extract-day   cur-date))
            (year  (calendar-extract-year  cur-date))
