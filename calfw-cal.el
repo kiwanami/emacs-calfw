@@ -106,7 +106,7 @@ Return the `calfw-event`."
              ;;for dmarker = (nth 3 i)
              for pspec = (cons date-spec title)
              do
-             (if (string-match "%%(diary-block" date-spec)
+             (if (string-match "%(diary-block" date-spec)
                  (unless (member pspec periods)
                    (push pspec periods))
                (push i non-periods)))
@@ -116,35 +116,16 @@ Return the `calfw-event`."
       collect (calfw-cal--entry-to-event date string))
      (list (cons 'periods
                  (cl-map 'list (function (lambda (period)
-                                           (let ((spec (read (substring (car period) 2))))
-                                             (cond
-                                              ((eq calendar-date-style 'american)
-                                               (list
-                                                (list (nth 1 spec)
-                                                      (nth 2 spec)
-                                                      (nth 3 spec))
-                                                (list (nth 4 spec)
-                                                      (nth 5 spec)
-                                                      (nth 6 spec))
-                                                (cdr period)))
-                                              ((eq calendar-date-style 'european)
-                                               (list
-                                                (list (nth 2 spec)
-                                                      (nth 1 spec)
-                                                      (nth 3 spec))
-                                                (list (nth 5 spec)
-                                                      (nth 4 spec)
-                                                      (nth 6 spec))
-                                                (cdr period)))
-                                              ((eq calendar-date-style 'iso)
-                                               (list
-                                                (list (nth 2 spec)
-                                                      (nth 3 spec)
-                                                      (nth 1 spec))
-                                                (list (nth 5 spec)
-                                                      (nth 6 spec)
-                                                      (nth 4 spec))
-                                                (cdr period)))))))
+                                           (let ((spec (read (substring (car period) 1))))
+                                             (list (diary-make-date
+                                                    (nth 1 spec)
+                                                    (nth 2 spec)
+                                                    (nth 3 spec))
+                                                   (diary-make-date
+                                                    (nth 4 spec)
+                                                    (nth 5 spec)
+                                                    (nth 6 spec))
+                                                   (cdr period)))))
                          periods))))))
 
 (defvar calfw-cal-schedule-map
