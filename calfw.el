@@ -1695,7 +1695,7 @@ CELL-WIDTH, and INWIDTH are also arguments."
   (let* ((week-begin (calfw-date-after date
                                        (- (mod (- week-day
                                                   calendar-week-start-day)
-                                               7))))
+                                               calfw-week-days))))
          ;; (month-begin (calfw-date
          ;;               (calendar-extract-month date)
          ;;               1 (calendar-extract-year date)))
