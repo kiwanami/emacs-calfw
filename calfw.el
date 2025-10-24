@@ -2793,13 +2793,15 @@ Moves forward if NUM is negative."
   (interactive "p")
   (calfw-navi-next-day-command (* (- calfw-week-days) (or num 1))))
 
-(defun calfw-navi-next-view (&optional num date-key)
-  "Move the cursor forward NUM months.  If NUM is nil, 1 is used.
-Movement is backward if NUM is negative."
+(defun calfw-navi-next-view (&optional num date)
+  "Move the cursor forward NUM of days.  If NUM is nil, 1 is used.
+Movement is backward if NUM is negative. Use DATE as the current
+date if provided, otherwise use the `end-date' of the current
+model"
   (interactive "p")
   (when-let* ((component (calfw-cp-get-component))
               (model (calfw-component-model component)))
-    (let* ((cur-date (calfw--k (or date-key 'end-date) model))
+    (let* ((cur-date (or date (calfw--k 'end-date model)))
            (new-date
             (calendar-gregorian-from-absolute
              (+ (calendar-absolute-from-gregorian cur-date)
@@ -2807,10 +2809,14 @@ Movement is backward if NUM is negative."
       (calfw-navi-goto-date new-date))))
 
 (defun calfw-navi-prev-view (&optional num)
-  "Move the cursor forward NUM months.  If NUM is nil, 1 is used.
-Movement is backward if NUM is negative."
+  "Move the cursor backward NUM of views. If NUM is nil, 1 is used.
+NUM is multiplied by the number of displayed days to determine
+which date to go to."
   (interactive "p")
-  (calfw-navi-next-view (- (or num 1)) 'begin-date))
+  (when-let* ((component (calfw-cp-get-component))
+              (model (calfw-component-model component)))
+    (calfw-navi-next-view (- (or num 1))
+                          (calfw--k 'begin-date model))))
 
 (defun calfw-navi-next-month-command (&optional num)
   "Move the cursor forward NUM months.  If NUM is nil, 1 is used.
