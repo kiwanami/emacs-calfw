@@ -1674,16 +1674,17 @@ The footer is rendered based on the SOURCES."
            for title  = (calfw--render-periods-title
                          date week-day begin end content cell-width inwidth)
            collect
-           (apply 'propertize
-                  (concat (when beginp calfw-fstring-period-start)
-                          (calfw--render-left
-                           inwidth title calfw-fchar-period-line)
-                          (when endp calfw-fstring-period-end))
-                  'face (calfw--render-get-face-period content 'calfw-periods-face)
-                  'font-lock-face (calfw--render-get-face-period content 'calfw-periods-face)
-                  'cfw:period t
-                  'cfw:event (get-text-property 0 'cfw:event content) ;; Reapply to whole string
-                  props)))
+           (calfw--render-default-content-face
+            (apply 'propertize
+                   (concat (when beginp calfw-fstring-period-start)
+                           (calfw--render-left
+                            inwidth title calfw-fchar-period-line)
+                           (when endp calfw-fstring-period-end))
+                   ;; TODO
+                   'cfw:period t
+                   'cfw:event (get-text-property 0 'cfw:event content) ;; Reapply to whole string
+                   props)
+            (calfw--render-get-face-period content 'calfw-periods-face))))
 
 (defun calfw--render-periods-title (date week-day begin end content cell-width inwidth)
   "Return a title string for DATE.
