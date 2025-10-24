@@ -802,7 +802,7 @@ Sets `calfw-dest-today-ol' of DEST to the created overlays."
   "Return the default calendar frame dimensions as a cons of width and height.
 Width is in characters, while height is in lines. Use WINDOW if
 given, otherwise the selected window."
-  (with-selected-window window
+  (with-selected-window (or window (selected-window))
     (cons (window-max-chars-per-line)
           (window-screen-lines))))
 
@@ -1539,14 +1539,14 @@ FN) where TITLE is the button title and FN is the function to
 call. If FN is a (:view VIEW) then it is pressing the button
 changes the view to VIEW.")
 
-(defun calfw--render-toolbar (width current-view prev-cmd next-cmd)
+(defun calfw--render-toolbar (width current-view)
   "Return a text string of the toolbar.
 
 WIDTH is the width of the toolbar.  CURRENT-VIEW is a symbol
 representing the current view type.  PREV-CMD and NEXT-CMD are
 the commands for moving the view."
-  (let* ((prev (calfw--render-button " < " prev-cmd))
-         (next (calfw--render-button " > " next-cmd))
+  (let* ((prev (calfw--render-button " < " #'calfw-navi-prev-view))
+         (next (calfw--render-button " > " #'calfw-navi-next-view))
          (sp  " "))
     (cl-labels
         ((format-btns (btns)
@@ -2161,9 +2161,7 @@ Render the monthly calendar view for COMPONENT."
     (insert
      (calfw--rt (calfw-render-title-month (calfw--k 'init-date model))
                 'calfw-title-face)
-     EOL (calfw--render-toolbar total-width 'month
-                                'calfw-navi-previous-month-command
-                                'calfw-navi-next-month-command)
+     EOL (calfw--render-toolbar total-width 'month)
      EOL hline)
     ;; day names
     (calfw--render-day-of-week-names model param)
@@ -2220,9 +2218,7 @@ parameters specify the layout and formatting."
      (calfw--rt
       (calfw-render-title-period begin-date end-date)
       'calfw-title-face)
-     EOL (calfw--render-toolbar total-width 'week
-                                'calfw-navi-previous-week-command
-                                'calfw-navi-next-week-command)
+     EOL (calfw--render-toolbar total-width 'week)
      EOL hline)
     ;; day names
     (calfw--render-day-of-week-names model param)
@@ -2298,11 +2294,7 @@ of the component is updated."
      (calfw--rt
       (calfw-render-title-period begin-date end-date)
       'calfw-title-face)
-     EOL (calfw--render-toolbar total-width 'two-weeks
-                                (lambda () (interactive)
-                                  (calfw-navi-previous-week-command 2))
-                                (lambda () (interactive)
-                                  (calfw-navi-next-week-command 2)))
+     EOL (calfw--render-toolbar total-width 'two-weeks)
      EOL hline)
     ;; day names
     (calfw--render-day-of-week-names model param)
@@ -2342,9 +2334,7 @@ of the component is updated."
      (calfw--rt
       (calfw-render-title-day current-date)
       'calfw-title-face)
-     EOL (calfw--render-toolbar total-width 'day
-                                'calfw-navi-previous-day-command
-                                'calfw-navi-next-day-command)
+     EOL (calfw--render-toolbar total-width 'day)
      EOL hline)
     ;; day names
     (calfw--render-day-of-week-names model param)
@@ -2588,9 +2578,9 @@ calendar view."
      ("^" . calfw-navi-goto-week-begin-command)
      ("$" . calfw-navi-goto-week-end-command)
 
-     ("<"   . calfw-navi-previous-month-command)
+     ("<"   . calfw-navi-prev-view)
+     (">"   . calfw-navi-next-view)
      ;;("M-v" . calfw-navi-previous-month-command)
-     (">"   . calfw-navi-next-month-command)
      ;;("C-v" . calfw-navi-next-month-command)
      ("<prior>" . calfw-navi-previous-month-command)
      ("<next>"  . calfw-navi-next-month-command)
@@ -2767,12 +2757,9 @@ With prefix arg NO-RESIZE, don't fit calendar to window size."
   "Move the cursor forward NUM days.  If NUM is nil, 1 is used.
 Moves backward if NUM is negative."
   (interactive "p")
-  (when-let* ((component (calfw-cp-get-component))
-              (model (calfw-component-model component)))
-    (unless num (setq num 1))
-    (let* ((cur-date (calfw--k 'init-date model))
-           (new-date (calfw-date-after cur-date num)))
-      (calfw-navi-goto-date new-date))))
+  (let* ((cur-date (calfw-cursor-to-nearest-date))
+         (new-date (calfw-date-after cur-date (or num 1))))
+    (calfw-navi-goto-date new-date)))
 
 (defun calfw-navi-previous-day-command (&optional num)
   "Move the cursor back NUM days.  If NUM is nil, 1 is used.
@@ -2806,24 +2793,40 @@ Moves forward if NUM is negative."
   (interactive "p")
   (calfw-navi-next-day-command (* (- calfw-week-days) (or num 1))))
 
-(defun calfw-navi-next-month-command (&optional num)
+(defun calfw-navi-next-view (&optional num date-key)
   "Move the cursor forward NUM months.  If NUM is nil, 1 is used.
 Movement is backward if NUM is negative."
   (interactive "p")
   (when-let* ((component (calfw-cp-get-component))
               (model (calfw-component-model component)))
-    (unless num (setq num 1))
-    (let* ((cur-date (calfw--k 'init-date model))
-           (month (calendar-extract-month cur-date))
-           (day   (calendar-extract-day   cur-date))
-           (year  (calendar-extract-year  cur-date))
-           (last (progn
-                   (calendar-increment-month month year num)
-                   (calendar-last-day-of-month month year)))
-           ;; (day (min last day))
-           ;; Go to mid month
-           (new-date (calfw-date month (/ (+ last 1) 2) year)))
+    (let* ((cur-date (calfw--k (or date-key 'end-date) model))
+           (new-date
+            (calendar-gregorian-from-absolute
+             (+ (calendar-absolute-from-gregorian cur-date)
+                (or num 1)))))
       (calfw-navi-goto-date new-date))))
+
+(defun calfw-navi-prev-view (&optional num)
+  "Move the cursor forward NUM months.  If NUM is nil, 1 is used.
+Movement is backward if NUM is negative."
+  (interactive "p")
+  (calfw-navi-next-view (- (or num 1)) 'begin-date))
+
+(defun calfw-navi-next-month-command (&optional num)
+  "Move the cursor forward NUM months.  If NUM is nil, 1 is used.
+Movement is backward if NUM is negative."
+  (interactive "p")
+  (unless num (setq num 1))
+  (let* ((cur-date (calfw-cursor-to-nearest-date))
+         (month (calendar-extract-month cur-date))
+         (day   (calendar-extract-day   cur-date))
+         (year  (calendar-extract-year  cur-date))
+         (last (progn
+                 (calendar-increment-month month year num)
+                 (calendar-last-day-of-month month year)))
+         (day (min last day))
+         (new-date (calfw-date month day year)))
+    (calfw-navi-goto-date new-date)))
 
 (defun calfw-navi-previous-month-command (&optional num)
   "Move the cursor back NUM months.  If NUM is nil, 1 is used.
