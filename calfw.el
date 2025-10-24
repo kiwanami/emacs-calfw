@@ -509,13 +509,13 @@ Returns a list of HOURS and MINUTES."
 
 (defun calfw-week-begin-date (date)
   "Return date of beginning of the week in which DATE is."
-  (let ((num (- calendar-week-start-day
+  (let ((num (- (car calfw-week-days-list)
                 (calendar-day-of-week date))))
     (calfw-date-after date (if (< 0 num) (- num calfw-week-days) num))))
 
 (defun calfw-week-end-date (date)
   "Return date of end of the week in which DATE is."
-  (let ((num (+ (- calendar-week-start-day 1)
+  (let ((num (+ (- (car calfw-week-days-list) 1)
                 (- calfw-week-days (calendar-day-of-week date)))))
     (calfw-date-after date (cond
                             ((> 0 num) (+ num calfw-week-days))
@@ -1027,6 +1027,12 @@ HOOK is a function that has no argument."
 
 (defvar calfw-highlight-today t
   "Variable to control whether today is rendered differently than other days.")
+
+(defvar calfw-week-days-list
+  (cl-loop for i from 0 below calfw-week-days
+           collect (% (+ calendar-week-start-day i) calfw-week-days))
+  "Week days to show in calendar.
+Any days not in this list will be hidden.")
 
 (defun calfw--cp-update (component &optional initial-date)
   "Clear and re-draw the COMPONENT content.
@@ -1694,7 +1700,7 @@ Return nil if CONTENT is nil.  WEEK-DAY, BEGIN, END,
 CELL-WIDTH, and INWIDTH are also arguments."
   (let* ((week-begin (calfw-date-after date
                                        (- (mod (- week-day
-                                                  calendar-week-start-day)
+                                                  (car calfw-week-days-list))
                                                calfw-week-days))))
          ;; (month-begin (calfw-date
          ;;               (calendar-extract-month date)
@@ -1999,16 +2005,17 @@ Returns the ROWS with text properties added."
   (let* (;; (first-day-day (calendar-day-of-week begin-date))
          weeks)
     (cl-loop with i = begin-date
-             with day = calendar-week-start-day
+             with day = (car calfw-week-days-list)
              with week = nil
              do
              ;; flush a week
-             (when (and (= day calendar-week-start-day) week)
+             (when (and (= day (car calfw-week-days-list)) week)
                (push (nreverse week) weeks)
                (setq week nil)
                (when (calfw-date-less-equal-p end-date i) (cl-return)))
              ;; add a day
-             (push i week)
+             (when (member day calfw-week-days-list)
+               (push i week))
              ;; increment
              (setq day (% (1+ day) calfw-week-days))
              (setq i (calfw-date-after i 1)))
@@ -2023,11 +2030,6 @@ Returns the ROWS with text properties added."
            (when (calfw-date-less-equal-p end-date i)
              (cl-return (reverse days)))
            (setq i (calfw-date-after i 1))))
-
-(defun calfw--view-model-make-day-names-for-week ()
-  "Return a list of indices representing the days of the week."
-  (cl-loop for i from 0 below calfw-week-days
-           collect (% (+ calendar-week-start-day i) calfw-week-days)))
 
 (defun calfw--view-model-make-day-names-for-days (begin-date end-date)
   "Return a list of the days of the week between BEGIN-DATE and END-DATE."
@@ -2081,7 +2083,7 @@ Return value is appended to LST if provided."
       model
       begin-date
       end-date
-      `((headers . ,(calfw--view-model-make-day-names-for-week)) ; a list of the index of day-of-week
+      `((headers . ,calfw-week-days-list) ; a list of the index of day-of-week
         (weeks . ,(calfw--view-model-make-weeks ; a matrix of day-of-month, which corresponds to the index of `headers'
                    begin-date
                    end-date)))))))
@@ -2152,7 +2154,9 @@ Render the monthly calendar view for COMPONENT."
          (total-weeks (length (calfw--k 'weeks model)))
          (param (calfw--render-append-parts
                  ;; title 2, toolbar 1, header 2, hline 7, footer 1, margin 2 => 15
-                 (calfw--calc-param dest calfw-week-days total-weeks 15 5)))
+                 (calfw--calc-param dest
+                                    (length calfw-week-days-list)
+                                    total-weeks 15 5)))
          (total-width (calfw--k 'total-width param))
          (EOL (calfw--k 'eol param)) (VL (calfw--k 'vl param))
          (hline (calfw--k 'hline param)) (cline (calfw--k 'cline param)))
@@ -2203,13 +2207,15 @@ Render the weekly calendar view based on the COMPONENT's model and
 parameters.  The model contains the begin and end dates, and the
 parameters specify the layout and formatting."
   (let* ((dest (calfw-component-dest component))
+         (model (calfw--view-week-model (calfw-component-model component)))
          (param (calfw--render-append-parts
                  ;; title 2, toolbar 1, header 2, hline 2, footer 1, margin 2 => 10
-                 (calfw--calc-param dest calfw-week-days 1 10 5)))
+                 (calfw--calc-param dest
+                                    (length calfw-week-days-list)
+                                    1 10 5)))
          (total-width (calfw--k 'total-width param))
          (EOL (calfw--k 'eol param)) (VL (calfw--k 'vl param))
          (hline (calfw--k 'hline param)) (cline (calfw--k 'cline param))
-         (model (calfw--view-week-model (calfw-component-model component)))
          (begin-date (calfw--k 'begin-date model))
          (end-date (calfw--k 'end-date model)))
     ;; update model
@@ -2279,13 +2285,15 @@ Render two-weeks calendar view for COMPONENT.  The calendar is
 rendered to the destination specified by the component.  The model
 of the component is updated."
   (let* ((dest (calfw-component-dest component))
+         (model (calfw--view-two-weeks-model (calfw-component-model component)))
          (param (calfw--render-append-parts
                  ;; title 2, toolbar 1, header 2, hline 3, footer 1, margin 2 => 11
-                 (calfw--calc-param dest calfw-week-days 2 11 5)))
+                 (calfw--calc-param dest
+                                    (length calfw-week-days-list)
+                                    2 11 5)))
          (total-width (calfw--k 'total-width param))
          (EOL (calfw--k 'eol param)) (VL (calfw--k 'vl param))
          (hline (calfw--k 'hline param)) (cline (calfw--k 'cline param))
-         (model (calfw--view-two-weeks-model (calfw-component-model component)))
          (begin-date (calfw--k 'begin-date model))
          (end-date (calfw--k 'end-date model)))
     ;; update model

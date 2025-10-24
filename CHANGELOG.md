@@ -6,6 +6,8 @@
 - Added customization `calfw-fchar-period-line`.
 - Removed `calfw-org-icalendars`. Pass org files directly to
   `calfw-org-open-calendar`.
+- Added new variable `calfw-week-days-list` to include list of days that will
+  be shown in the calendar.
 
 ## 2.0
 - Renamed all symbols to start with the package name.
