@@ -116,7 +116,10 @@ Return the `calfw-event`."
       collect (calfw-cal--entry-to-event date string))
      (list (cons 'periods
                  (cl-map 'list (function (lambda (period)
-                                           (let ((spec (read (substring (car period) 1))))
+                                           (let ((spec
+                                                  (read (string-trim-left
+                                                         (car period)
+                                                         "[%]+"))))
                                              (list (diary-make-date
                                                     (nth 1 spec)
                                                     (nth 2 spec)
