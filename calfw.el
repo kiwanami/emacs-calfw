@@ -957,16 +957,17 @@ EXCLUDE-HIDDEN, if non-nil, excludes hidden sources."
   "Move the cursor in DEST to DATE if the cursor is not already on DATE.
 
 FORCE non-nil unconditionally moves the cursor."
-  (when (or force
-            ;; Check if there's a current component, otherwise
-            ;; `calfw-cursor-to-nearest-date' signals an error.
-            (null (calfw-cp-get-component t))
-            (not (equal (calfw--cursor-to-date) date)))
-    (let ((pos (calfw--find-by-date dest date)))
-      (when pos
-        (goto-char pos)
-        (unless (eql (selected-window) (get-buffer-window (current-buffer)))
-          (set-window-point (get-buffer-window (current-buffer)) pos))))))
+  ;; Check if there's a current component, otherwise
+  ;; `calfw-cursor-to-nearest-date' signals an error.
+  (when (calfw-cp-get-component t)
+    (when (or force
+              (not (equal (calfw--cursor-to-date) date)))
+      (let ((pos (calfw--find-by-date dest date))
+            (wnd (get-buffer-window (current-buffer))))
+        (when pos
+          (goto-char pos)
+          (unless (eql (selected-window) wnd)
+            (set-window-point wnd pos)))))))
 
 (defun calfw-cp-set-contents-sources (component sources)
   "Set content sources for COMPONENT to SOURCES."
