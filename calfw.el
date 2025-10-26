@@ -1456,17 +1456,15 @@ source or its foreground color is nil."
   "Put the default content face on STR, retaining existing faces.
 
 Use DEFAULT-FACE if non-nil.  Return the modified string."
-  ;;
-  (cl-loop for i from 0 below (length str)
-           with ret = (substring str 0)
-           with face = (or default-face
-                           (calfw--render-get-face-content
-                            str 'calfw-default-content-face))
-           unless (get-text-property i 'face ret)
-           do
-           (put-text-property i (1+ i) 'face face ret)
-           (put-text-property i (1+ i) 'font-lock-face face ret)
-           finally return ret))
+  (add-face-text-property
+   0
+   (length str)
+   (or default-face
+       (calfw--render-get-face-content
+        str 'calfw-default-content-face))
+   t
+   str)
+  str)
 
 (defun calfw--render-get-week-face (daynum &optional default-face)
   "Return face for DAYNUM, or DEFAULT-FACE if DAYNUM is not a weekend."
