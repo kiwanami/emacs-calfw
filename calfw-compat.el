@@ -5,7 +5,6 @@
 ;; Author: Al Haji-Ali <abdo.haji.ali at gmail dot com>
 ;; Version: 2.0
 ;; Keywords: calendar, org
-;; Package-Requires: ((emacs "28.1") (calfw "2.0"))
 ;; URL: https://github.com/haji-ali/emacs-calfw
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -28,6 +27,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'cl-macs)  ;; for cl--find-class
 
 (when nil

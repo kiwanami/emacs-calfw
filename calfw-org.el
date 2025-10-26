@@ -127,7 +127,7 @@ v m | `calfw-change-view-month'
           ;; existing `date' property for schedules and
           ;; deadlines.
           (mapcar (lambda (entry) (calfw--tp entry 'date date))
-                  (apply 'org-agenda-get-day-entries
+                  (apply #'org-agenda-get-day-entries
                          file date
                          calfw-org-agenda-schedule-args))))))))
 
@@ -147,7 +147,7 @@ v m | `calfw-change-view-month'
       (switch-to-buffer (marker-buffer marker))
       (widen)
       (goto-char (marker-position marker))
-      (when (eq major-mode 'org-mode)
+      (when (derived-mode-p 'org-mode)
         (org-reveal)))
     (when beg
       (find-file file)
@@ -184,7 +184,7 @@ v m | `calfw-change-view-month'
     ;; (when (string-match calfw-org-todo-keywords-regexp item) ; dynamic bind
     ;;   (setq item (replace-match "" nil nil item)))
     (if tags
-        (when (string-match (concat "[\t ]*:+" (mapconcat 'identity tags ":+") ":+[\t ]*$") item)
+        (when (string-match (concat "[\t ]*:+" (mapconcat #'identity tags ":+") ":+[\t ]*$") item)
           (setq item (replace-match "" nil nil item))))
     (when (string-match "[0-9]\\{2\\}:[0-9]\\{2\\}\\(-[0-9]\\{2\\}:[0-9]\\{2\\}\\)?[\t ]+" item)
       (setq item (replace-match "" nil nil item)))
@@ -215,7 +215,7 @@ ITEM is an org entry.  Return a string with text properties."
                                                  (org-agenda-deadline-face 1.0))
                            text))
     (if org-todo-keywords-for-agenda
-        (when (string-match (concat "^[\t ]*\\<\\(" (mapconcat 'identity org-todo-keywords-for-agenda "\\|") "\\)\\>") text)
+        (when (string-match (concat "^[\t ]*\\<\\(" (mapconcat #'identity org-todo-keywords-for-agenda "\\|") "\\)\\>") text)
           (add-text-properties (match-beginning 1) (match-end 1) (list 'face (org-get-todo-face (match-string 1 text))) text)))
     ;;; ------------------------------------------------------------------------
     ;;; act for org link
@@ -232,14 +232,14 @@ ITEM is an org entry.  Return a string with text properties."
                             'org-link link)))
           (if desc
               (progn
-                (setq desc (apply 'propertize desc link-props))
+                (setq desc (apply #'propertize desc link-props))
                 (setq text (replace-match desc nil nil text)))
-            (setq link (apply 'propertize link link-props))
+            (setq link (apply #'propertize link link-props))
             (setq text (replace-match link nil nil text)))))
     (when time-str
       (setq text (concat time-str text)))
     (propertize
-     (apply 'propertize text props)
+     (apply #'propertize text props)
      ;; include org filename
      ;; (and buffer (concat " " (buffer-name buffer)))
      'keymap calfw-org-text-keymap
@@ -463,7 +463,7 @@ Returns an alist of `:periods' and `:contents'."
   (with-current-buffer  (get-buffer-create calfw-calendar-buffer-name)
     (let ((pos (calfw-cursor-to-nearest-date)))
       (concat "<"
-              (format-time-string  "%Y-%m-%d %a"
+              (format-time-string  "%F %a"
                                    (encode-time 0 0 0
                                                 (calendar-extract-day pos)
                                                 (calendar-extract-month pos)
@@ -495,6 +495,7 @@ Open the `org-agenda' buffer for the date at point, DATE."
     (when date
       (org-agenda-list nil (calendar-absolute-from-gregorian date) 'day))))
 
+;; TODO: Need to find a better place to do org-specific mapping
 (define-key
  calfw-calendar-mode-map "c" 'calfw-org-capture)
 
@@ -522,14 +523,14 @@ Open the `org-agenda' buffer for the date at point, DATE."
   "Create a calfw source named NAME with org files ORG-FILES and COLOR."
   (make-calfw-source
    :name name :color color
-   :data (apply-partially 'calfw-org--schedule-period-to-calendar org-files)))
+   :data (apply-partially #'calfw-org--schedule-period-to-calendar org-files)))
 
 (cl-defun calfw-org-open-calendar (&optional name org-files)
   "Open an org schedule calendar in a new buffer.
 
-Events are taken from ORG-FILES (defaults to those returned by
+Events are taken from ORG-FILES \\=(defaults to those returned by
 `org-agenda-files') and NAME is the name of the calendar
-(defaults to \"org-agenda\")."
+\\=(defaults to \"org-agenda\")."
   (interactive)
   (save-excursion
     (let* ((source1 (calfw-org-create-source
@@ -547,7 +548,7 @@ Events are taken from ORG-FILES (defaults to those returned by
                 :sorter 'calfw-org--schedule-sorter)))
       (switch-to-buffer (calfw-cp-get-buffer cp))
       (when (not org-todo-keywords-for-agenda)
-        (message "Warn : open org-agenda buffer first.")))))
+        (message "Warning: open org-agenda buffer first.")))))
 
 ;; (defun calfw-org-from-calendar ()
 ;;   "Do something. This command should be executed on the calfw calendar."

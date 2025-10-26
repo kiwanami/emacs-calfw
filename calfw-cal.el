@@ -42,6 +42,7 @@
 
 (require 'calfw)
 (require 'calendar)
+(require 'diary-lib)  ;; for diary-make-date
 
 (defvar calfw-cal-diary-regex
   (let ((time   "[[:digit:]]\\{2\\}:[[:digit:]]\\{2\\}")
@@ -49,8 +50,7 @@
     (concat "\\(" time "\\)?"
             "\\(?:" blanks "-" blanks "\\(" time "\\)\\)?"
             blanks "\\(.*\\)"))
-  "Regex extracting start/end time and title from a diary string."
-  )
+  "Regex extracting start/end time and title from a diary string.")
 
 (defun calfw-cal--entry-to-event (date string)
   "Create a `calfw-event` from a diary entry STRING on DATE.
@@ -60,7 +60,7 @@ Return the `calfw-event`."
                        "[\t ]+" " " (string-trim string))
                       "\n"))
          (first      (car lines))
-         (desc       (mapconcat 'identity (cdr lines) "\n"))
+         (desc       (mapconcat #'identity (cdr lines) "\n"))
          (title      (progn
                        (string-match calfw-cal-diary-regex first)
                        (match-string 3 first)))
@@ -69,13 +69,13 @@ Return the `calfw-event`."
          (properties (list 'mouse-face 'highlight
                            'help-echo string
                            'cfw-marker (copy-marker (point-at-bol)))))
-    (make-calfw-event :title       (apply 'propertize title properties)
+    (make-calfw-event :title       (apply #'propertize title properties)
                       :start-date  date
                       :start-time  (when start
                                      (calfw-parse-str-time start))
                       :end-time    (when end
                                      (calfw-parse-str-time end))
-                      :description (apply 'propertize desc properties))))
+                      :description (apply #'propertize desc properties))))
 
 (defun calfw-cal-onclick ()
   "Jump to the clicked diary item."

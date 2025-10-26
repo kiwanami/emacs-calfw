@@ -68,8 +68,8 @@ If cache data exists, this function uses the cache.  Returns
 
 (defun calfw-howm--convert-date (date)
   "Convert a DATE from the Emacs calendar list to howm encoded days."
-  (apply 'howm-encode-day
-         (mapcar 'number-to-string
+  (apply #'howm-encode-day
+         (mapcar #'number-to-string
                  (list (calendar-extract-day date)
                        (calendar-extract-month date)
                        (calendar-extract-year date)))))
@@ -108,8 +108,10 @@ argument.")
            for i in (calfw-howm--schedule-period begin end)
            for date = (calfw-emacs-to-calendar
                        (seconds-to-time (+ 10 (* (howm-schedule-date i) 24 3600))))
-           for (datestr num type summary) = (calfw-howm--schedule-parse-line (howm-item-summary i))
-           for summary = (funcall calfw-howm-schedule-summary-transformer summary)
+           for (_ num type summary) = (calfw-howm--schedule-parse-line
+                                       (howm-item-summary i))
+           for summary = (funcall calfw-howm-schedule-summary-transformer
+                                  summary)
            do
            (cond
             ((and (string= type "@") (< 0 num))
@@ -203,15 +205,15 @@ The date is determined by `calfw-cursor-to-nearest-date'."
   "Create a calendar component region for the howm menu with WIDTH and HEIGHT.
 
 VIEW specifies the initial view."
-  (let ((custom-map (copy-keymap calfw-howm-schedule-inline-keymap)) cp)
+  (let ((custom-map (copy-keymap calfw-howm-schedule-inline-keymap)))
     (set-keymap-parent custom-map calfw-calendar-mode-map)
-    (setq cp (calfw-create-calendar-component-region
-              :width width :height (or height 10)
-              :keymap custom-map
-              :contents-sources (append (list (calfw-howm-create-source))
-                                        calfw-howm-schedule-contents)
-              :annotation-sources calfw-howm-annotation-contents
-              :view (or view 'month))))
+    (calfw-create-calendar-component-region
+     :width width :height (or height 10)
+     :keymap custom-map
+     :contents-sources (append (list (calfw-howm-create-source))
+                               calfw-howm-schedule-contents)
+     :annotation-sources calfw-howm-annotation-contents
+     :view (or view 'month)))
   "") ; for null output
 
 ;;; Installation
@@ -219,8 +221,8 @@ VIEW specifies the initial view."
 (defun calfw-howm-install-schedules ()
   "Add a schedule collection function to calfw for howm schedule data."
   (interactive)
-  (add-hook 'howm-after-save-hook 'calfw-howm-schedule-cache-clear)
-  (add-to-list 'howm-menu-allow 'calfw-howm-schedule-inline))
+  (add-hook 'howm-after-save-hook #'calfw-howm-schedule-cache-clear)
+  (add-to-list 'howm-menu-allow #'calfw-howm-schedule-inline))
 
 ;;; for Elscreen
 

@@ -255,8 +255,8 @@ BODY is executed."
   "Normalize the current buffer by removing line continuations and VALUE=DATE.
 
 Removes line continuations (newline followed by space) and
-`VALUE=DATE' from `DTSTART' and `DTEND' properties in the current
-buffer.  The buffer is marked as unmodified."
+VALUE=DATE from DTSTART and DTEND properties in the current
+buffer. The buffer is marked as unmodified."
   (save-excursion
     (goto-char (point-min))
     (while (re-search-forward "\n " nil t)
@@ -329,7 +329,7 @@ Returns a calfw source."
            (calfw-ical-to-calendar url begin end))))
 
 (defun calfw-ical-open-calendar (url color)
-  "Display a calendar buffer for the iCalendar at URL."
+  "Display a calendar buffer for the iCalendar at URL using COLOR."
   (save-excursion
     (let ((cp (calfw-create-calendar-component-buffer
                :view 'month

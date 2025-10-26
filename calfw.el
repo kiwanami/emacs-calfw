@@ -328,6 +328,12 @@ See `calfw-event-format' for possible values."
 
 ;;; Utilities
 
+(defvar calfw-week-days-list
+  (cl-loop for i from 0 below calfw-week-days
+           collect (% (+ calendar-week-start-day i) calfw-week-days))
+  "Week days to show in calendar.
+Any days not in this list will be hidden.")
+
 (defun calfw--k (key alist)
   "Get a content by KEY from the given ALIST."
   ;;
@@ -336,7 +342,7 @@ See `calfw-event-format' for possible values."
 (defun calfw--sym (&rest strings)
   "Concatenate STRINGS and return as symbol."
   ;;
-  (intern-soft (apply 'concat strings)))
+  (intern-soft (apply #'concat strings)))
 
 (defun calfw--rt (text face)
   "Put a FACE to the given TEXT."
@@ -468,7 +474,7 @@ Returns a list of HOURS and MINUTES."
 (defun calfw-parsetime-emacs (str)
   "Transform the string format YYYY/MM/DD in STR to an Emacs time value."
   (when (string-match "\\([0-9]+\\)\\/\\([0-9]+\\)\\/\\([0-9]+\\)" str)
-    (apply 'encode-time
+    (apply #'encode-time
            (let (ret)
              (dotimes (i 6)
                (push (string-to-number (or (match-string (+ i 1) str) "0")) ret))
@@ -613,7 +619,7 @@ CLR2 is composited with 1-ALPHA transpancy."
                            (* (- 1 alpha) c2)))
                       (color-name-to-rgb clr1)
                       (color-name-to-rgb clr2))))
-    (apply 'color-rgb-to-hex (append result-rgb '(2)))))
+    (apply #'color-rgb-to-hex (append result-rgb '(2)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Calendar event
 
@@ -689,9 +695,10 @@ The following values are possible:
   (calfw--tp
    (format-spec
     format-string
-    (mapcar #'(lambda (field)
-                `(,(car field) . ,(calfw--event-format-field
-                                   event (cadr field) (caddr field))))
+    (mapcar (lambda (field)
+              (cons (car field) .
+                    (calfw--event-format-field
+                     event (cadr field) (caddr field))))
             '((?t title       calfw--event-format-field-string)
               (?S start-date  calfw--event-format-field-date)
               (?s start-time  calfw--event-format-field-time)
@@ -834,7 +841,7 @@ keymap `calfw-calendar-mode-map'."
                          (with-current-buffer buffer
                            (erase-buffer)))))
     (with-current-buffer buffer
-      (unless (eq major-mode 'calfw-calendar-mode)
+      (unless (derived-mode-p 'calfw-calendar-mode)
         (calfw-calendar-mode custom-map)))
     dest))
 
@@ -1028,12 +1035,6 @@ HOOK is a function that has no argument."
 (defvar calfw-highlight-today t
   "Variable to control whether today is rendered differently than other days.")
 
-(defvar calfw-week-days-list
-  (cl-loop for i from 0 below calfw-week-days
-           collect (% (+ calendar-week-start-day i) calfw-week-days))
-  "Week days to show in calendar.
-Any days not in this list will be hidden.")
-
 (defun calfw--cp-update (component &optional initial-date)
   "Clear and re-draw the COMPONENT content.
 
@@ -1076,8 +1077,7 @@ Optional argument INITIAL-DATE specifies the date to display
 ;;; Models
 
 (defun calfw-sorter-start-time (x y)
-  "Default sorter for events in calfw events.
-Use this function to sort by start time first."
+  "Return non-nil if event X has a start time before Y."
   (if-let ((ex (get-text-property 0 'cfw:event x))
            (ey (get-text-property 0 'cfw:event y))
            (cmp (cl-some (lambda (x y) (and (/= x y) (- x y)))
@@ -1254,7 +1254,7 @@ Returns a list of the form \\='((START-DATE END-DATE EVENT) ...)."
              (cl-destructuring-bind (begin end . summaries) period
                (list begin end
                      (calfw--tp (if (listp summaries)
-                                    (mapconcat 'identity (calfw-flatten summaries) " ")
+                                    (mapconcat #'identity (calfw-flatten summaries) " ")
                                   summaries)
                                 'cfw:source source)))))))
 
@@ -1613,7 +1613,7 @@ If all calendars are already shown, hide them all."
            (sources (calfw--model-get-contents-sources
                      (calfw-component-model comp)))
            (all-shown (not (cl-some
-                            'identity
+                            #'identity
                             (cl-loop for s in sources
                                      collect
                                      (calfw-source-hidden s))))))
@@ -1680,12 +1680,11 @@ The footer is rendered based on the SOURCES."
                          date week-day begin end content cell-width inwidth)
            collect
            (calfw--render-default-content-face
-            (apply 'propertize
+            (apply #'propertize
                    (concat (when beginp calfw-fstring-period-start)
                            (calfw--render-left
                             inwidth title calfw-fchar-period-line)
                            (when endp calfw-fstring-period-end))
-                   ;; TODO
                    'cfw:period t
                    'cfw:event (get-text-property 0 'cfw:event content) ;; Reapply to whole string
                    props)
@@ -1803,7 +1802,7 @@ plist of parameters."
                       (insert
                        VL (calfw--tp
                            (calfw--render-separator
-                            (calfw--render-left cell-width (and row (format "%s" row))))
+                            (calfw--render-left cell-width row))
                            'cfw:date date)))
              (insert VL EOL))
     (insert cline)))
@@ -1973,10 +1972,10 @@ Returns the ROWS with text properties added."
 
 (defun calfw--render-map-event-content (lst event-fun)
   "Map EVENT-FUN over LST, applying it to `calfw-event's."
-  (mapcar #'(lambda (evt)
-              (if (calfw-event-p evt)
-                  (funcall event-fun evt)
-                evt))
+  (mapcar (lambda (evt)
+            (if (calfw-event-p evt)
+                (funcall event-fun evt)
+              evt))
           lst))
 
 (defun calfw--render-event-overview-content (lst)
@@ -2391,8 +2390,9 @@ TITLE-FUNC.  Optional DAYS, CONTENT-FUN, and DO-WEEKS are also used."
                                              date week-day raw-periods cell-width)
                                           (calfw--render-periods-days
                                            date raw-periods cell-width))
-                                        (mapcar 'calfw--render-default-content-face
-                                                raw-contents)))
+                                        (mapcar
+                                         #'calfw--render-default-content-face
+                                         raw-contents)))
             for num-label = (if prs-contents
                                 (format "(%s)"
                                         (+ (length raw-contents)
