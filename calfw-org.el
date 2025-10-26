@@ -94,11 +94,10 @@ v m | `calfw-change-view-month'
 (defun calfw-org--collect-schedules-period (org-files begin end)
   "Return org schedule items between BEGIN and END from ORG-FILES."
   (let ((org-agenda-prefix-format " "))
-    ;; @AL: This seems wrong
-    ;; (setq org-agenda-buffer
-    ;;       (when (buffer-live-p org-agenda-buffer)
-    ;;         org-agenda-buffer))
-    (org-compile-prefix-format nil)
+    (let ((org-agenda-buffer
+           (when (buffer-live-p org-agenda-buffer)
+             org-agenda-buffer)))
+      (org-compile-prefix-format nil))
 
     ;; We need several hacks to resolve issues like those in #91.
     ;;
