@@ -700,7 +700,7 @@ The following values are possible:
    (format-spec
     format-string
     (mapcar (lambda (field)
-              (cons (car field) .
+              (cons (car field)
                     (calfw--event-format-field
                      event (cadr field) (caddr field))))
             '((?t title       calfw--event-format-field-string)
