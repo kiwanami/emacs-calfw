@@ -313,6 +313,10 @@ See `calfw-event-format' for possible values."
      :foreground "Cyan" :weight bold))
   "Face for today." :group 'calfw)
 
+(defface calfw-sanitized-face
+  '((t (:box nil)))
+  "Face to remove any unsupported attributes." :group 'calfw)
+
 (defvar calfw-item-separator-color-face "SlateBlue"
   "Color for the separator line of items in a day.")
 
@@ -1457,13 +1461,10 @@ source or its foreground color is nil."
 
 Use DEFAULT-FACE if non-nil.  Return the modified string."
   (add-face-text-property
-   0
-   (length str)
-   (or default-face
-       (calfw--render-get-face-content
-        str 'calfw-default-content-face))
-   t
-   str)
+   0 (length str) (or default-face
+                      (calfw--render-get-face-content
+                       str 'calfw-default-content-face))
+   t str)
   str)
 
 (defun calfw--render-get-week-face (daynum &optional default-face)
@@ -1489,6 +1490,12 @@ ELLIPSIS is the string to use as ellipsis."
           (calfw--tp str 'help-echo org))
         str)
     org))
+
+(defun calfw--sanitize-text (text)
+  "Cleans up TEXT so that it is ready to be used in a calfw layout."
+  (add-face-text-property 0 (length text) 'calfw-sanitized-face nil text)
+  (calfw--tp text 'display nil)
+  text)
 
 (defface calfw-toolbar-face
   '((((class color) (background light))
@@ -1709,7 +1716,7 @@ CELL-WIDTH, and INWIDTH are also arguments."
          ;; (title-begin (calendar-gregorian-from-absolute title-begin-abs))
          (num (- (calendar-absolute-from-gregorian date) title-begin-abs)))
     (when content
-      (cl-loop with title = (substring content 0)
+      (cl-loop with title = (calfw--sanitize-text (substring content 0))
                for i from 0 below num
                for pdate = (calendar-gregorian-from-absolute (+ title-begin-abs i))
                for chopn = (+ (if (equal begin pdate) 1 0) (if (equal end pdate) 1 0))
@@ -2379,11 +2386,15 @@ TITLE-FUNC.  Optional DAYS, CONTENT-FUN, and DO-WEEKS are also used."
             for week-day     = (nth count headers)
             for ant          = (calfw--rt (calfw--contents-get date annotations)
                                           'calfw-annotation-face)
+            ;; calfw--sanitize-text is called on periods later in
+            ;; calfw--render-periods-title.
             for raw-periods  = (calfw--contents-get date raw-periods-all)
-            for raw-contents = (calfw--render-sort-contents
-                                (funcall content-fun
-                                         (calfw-model-get-contents-by-date date model))
-                                sorter)
+            for raw-contents = (mapcar
+                                'calfw--sanitize-text
+                                (calfw--render-sort-contents
+                                 (funcall content-fun
+                                          (calfw-model-get-contents-by-date date model))
+                                 sorter))
             for prs-contents = (calfw--render-rows-prop
                                 (append (if do-weeks
                                             (calfw--render-periods

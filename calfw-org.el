@@ -242,10 +242,7 @@ ITEM is an org entry.  Return a string with text properties."
      (apply #'propertize text props)
      ;; include org filename
      ;; (and buffer (concat " " (buffer-name buffer)))
-     'keymap calfw-org-text-keymap
-     ;; Delete the display property, since displaying images will break our
-     ;; table layout.
-     'display nil)))
+     'keymap calfw-org-text-keymap)))
 
 (defvar calfw-org-schedule-summary-transformer 'calfw-org-summary-format
   "Transforms the org item string to calendar title.
@@ -351,7 +348,6 @@ and `cfw:org-loc' properties."
               (org-element-property :minute-start t-obj)))
     (org-element-property :title h-obj))
    'keymap calfw-org-text-keymap
-   'display nil
    'cfw:org-file file
    'cfw:org-h-beg h-beg
    'cfw:org-loc loc))
