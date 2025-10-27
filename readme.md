@@ -332,6 +332,30 @@ In the current implementation, the Calfw has 3 strategies: none, simple and word
 - `calfw-render-line-breaker-wordwrap`
     - This strategy breaks lines with the emacs function `fill-region`. Although, the line breaking algorithm of the Emacs is not so smart as more complicated ones, such as Knuth/Plass algorithm, this strategy is better than the simple one.
 
+
+### Right-to-left text
+
+Right-to-left text in events can disorder the cells in the calfw table. If
+this happens you can fix it by adding the right-to-left enforcement character
+to the table lines:
+
+```el
+(let ((ltr (char-to-string ?\u202A))
+      (vars '(calfw-fchar-vertical-line
+              calfw-fchar-top-left-corner
+              calfw-fchar-top-junction
+              calfw-fchar-left-junction
+              calfw-fchar-junction)))
+  (dolist (var vars)
+    (let ((val (symbol-value var)))
+      (set var (concat (if (characterp val)
+                           (char-to-string val)
+                         val)
+                       ltr)))))
+```
+
+(The fix adds a "Left-to-right Embedding" unicode character to column breaks)
+
 ## Calfw framework details
 
 In this section, I would explain how to add a new calendar source and how to embed the calfw component in the other applications.

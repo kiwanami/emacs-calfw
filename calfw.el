@@ -76,44 +76,52 @@
 ;;; Customs
 
 (defcustom calfw-fchar-vertical-line ?|
-  "The character used for drawing vertical lines."
+  "The character used for drawing vertical lines.
+If a string, it is assume to be the width of one-character."
   :group 'calfw
-  :type 'character)
+  :type '(character string))
 
 (defcustom calfw-fchar-horizontal-line ?-
-  "The character used for drawing horizontal lines."
+  "The character used for drawing horizontal lines.
+If a string, it is assume to be the width of one-character."
   :group 'calfw
-  :type 'character)
+  :type '(character string))
 
 (defcustom calfw-fchar-junction ?+
-  "The character used for drawing junction lines."
+  "The character used for drawing junction lines.
+If a string, it is assume to be the width of one-character."
   :group 'calfw
-  :type 'character)
+  :type '(character string))
 
 (defcustom calfw-fchar-top-right-corner ?+
-  "The character used for drawing the top-right corner."
+  "The character used for drawing the top-right corner.
+If a string, it is assume to be the width of one-character."
   :group 'calfw
-  :type 'character)
+  :type '(character string))
 
 (defcustom calfw-fchar-top-left-corner ?+
-  "The character used for drawing the top-left corner."
+  "The character used for drawing the top-left corner.
+If a string, it is assume to be the width of one-character."
   :group 'calfw
-  :type 'character)
+  :type '(character string))
 
 (defcustom calfw-fchar-left-junction ?+
-  "The character used for drawing junction lines at the left side."
+  "The character used for drawing junction lines at the left side.
+If a string, it is assume to be the width of one-character."
   :group 'calfw
-  :type 'character)
+  :type '(character string))
 
 (defcustom calfw-fchar-right-junction ?+
-  "The character used for drawing junction lines at the right side."
+  "The character used for drawing junction lines at the right side.
+If a string, it is assume to be the width of one-character."
   :group 'calfw
-  :type 'character)
+  :type '(character string))
 
 (defcustom calfw-fchar-top-junction ?+
-  "The character used for drawing junction lines at the top side."
+  "The character used for drawing junction lines at the top side.
+If a string, it is assume to be the width of one-character."
   :group 'calfw
-  :type 'character)
+  :type '(character string))
 
 (defcustom calfw-fstring-period-start "("
   "The string used to indicate the beginning of a period."
@@ -121,9 +129,10 @@
   :type 'string)
 
 (defcustom calfw-fchar-period-line ?-
-  "The char used to indicate continuation of period."
+  "The char used to indicate continuation of period.
+If a string, it is assume to be the width of one-character."
   :group 'calfw
-  :type 'character)
+  :type '(character string))
 
 (defcustom calfw-fstring-period-end ")"
   "The string used to indicate the end of a period."
@@ -377,6 +386,22 @@ Any days not in this list will be hidden.")
              (setq ret (cons name (cons val ret))))
            (setq props (cddr props))
            finally return ret))
+
+(defun calfw--make-string (length char-or-string)
+  "Create a string of LENGTH by repeating CHAR-OR-STRING.
+
+If CHAR-OR-STRING is a character or a string."
+  (if (characterp char-or-string)
+      (make-string length char-or-string)
+    (apply 'concat (make-list length char-or-string))))
+
+(defun calfw--char-width (char-or-string)
+  "Return the display width of CHAR-OR-STRING.
+
+If CHAR-OR-STRING is a character or a string."
+  (if (characterp char-or-string)
+      (char-width char-or-string)
+    (string-width char-or-string)))
 
 (defun calfw--define-keymap (keymap-list)
   "Key map definition utility.
@@ -1924,25 +1949,38 @@ to MAX-LINE-NUM.  Returns a list of strings."
          (cell-width (calfw--k 'cell-width param))
          (columns (calfw--k 'columns param))
          (num-cell-char
-          (/ cell-width (char-width calfw-fchar-horizontal-line))))
+          (/ cell-width (calfw--char-width calfw-fchar-horizontal-line))))
     (append
      param
-     `((eol . ,EOL) (vl . ,(calfw--rt (make-string 1 calfw-fchar-vertical-line) 'calfw-grid-face))
+     `((eol . ,EOL) (vl . ,(calfw--rt
+                            (calfw--make-string 1 calfw-fchar-vertical-line)
+                            'calfw-grid-face))
        (hline . ,(calfw--rt
                   (concat
                    (cl-loop for i from 0 below columns concat
                             (concat
-                             (make-string 1 (if (= i 0) calfw-fchar-top-left-corner calfw-fchar-top-junction))
-                             (make-string num-cell-char calfw-fchar-horizontal-line)))
-                   (make-string 1 calfw-fchar-top-right-corner) EOL)
+                             (calfw--make-string
+                              1 (if (= i 0)
+                                    calfw-fchar-top-left-corner
+                                  calfw-fchar-top-junction))
+                             (calfw--make-string
+                              num-cell-char
+                              calfw-fchar-horizontal-line)))
+                   (calfw--make-string 1 calfw-fchar-top-right-corner) EOL)
                   'calfw-grid-face))
        (cline . ,(calfw--rt
                   (concat
                    (cl-loop for i from 0 below columns concat
                             (concat
-                             (make-string 1 (if (= i 0) calfw-fchar-left-junction calfw-fchar-junction))
-                             (make-string num-cell-char calfw-fchar-horizontal-line)))
-                   (make-string 1 calfw-fchar-right-junction) EOL) 'calfw-grid-face))))))
+                             (calfw--make-string
+                              1 (if (= i 0)
+                                    calfw-fchar-left-junction
+                                  calfw-fchar-junction))
+                             (calfw--make-string
+                              num-cell-char
+                              calfw-fchar-horizontal-line)))
+                   (calfw--make-string 1 calfw-fchar-right-junction) EOL)
+                  'calfw-grid-face))))))
 
 (defun calfw--render-day-of-week-names (model param)
   "Insert week names based on MODEL.
@@ -2117,7 +2155,7 @@ cell (default 5). The function returns an alist with:
   (let* ((win-width (calfw-dest-width dest))
          (win-height (max 15 (- (calfw-dest-height dest) height-offset)))
          (min-cell-width (or min-cell-width 5))
-         (junctions-width (* (char-width calfw-fchar-junction) (1+ columns)))
+         (junctions-width (* (calfw--char-width calfw-fchar-junction) (1+ columns)))
          (cell-width (calfw--round-cell-width
                       (max min-cell-width (/ (- win-width junctions-width)
                                              columns))))
@@ -2146,8 +2184,8 @@ cell (default 5). The function returns an alist with:
 (defun calfw--round-cell-width (width)
   "Adjust WIDTH to be a multiple of `calfw-fchar-horizontal-line' width."
   (cond
-   ((eql (char-width calfw-fchar-horizontal-line) 1) width)
-   (t (- width (% width (char-width calfw-fchar-horizontal-line))))))
+   ((eql (calfw--char-width calfw-fchar-horizontal-line) 1) width)
+   (t (- width (% width (calfw--char-width calfw-fchar-horizontal-line))))))
 
 (defun calfw--view-month (component)
   "Render monthly calendar view.
@@ -2902,7 +2940,7 @@ TEXT is a content to show."
   "Layout details and return the text.
 DATE is a date to show.  MODEL is model object."
   (let* ((EOL "\n")
-         (HLINE (calfw--rt (concat (make-string
+         (HLINE (calfw--rt (concat (calfw--make-string
                                     (car (calfw-default-window-dims))
                                     calfw-fchar-horizontal-line)
                                    EOL)
