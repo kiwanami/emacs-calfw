@@ -6,7 +6,7 @@
 ;; Maintainer: Al Haji-Ali <abdo.haji.ali at gmail.com>
 ;; Version: 2.0
 ;; Keywords: calendar, org
-;; Package-Requires: ((emacs "28.1") (calfw "2.0"))
+;; Package-Requires: ((emacs "28.1") (calfw "2.0") (org "9.7"))
 ;; URL: https://github.com/haji-ali/emacs-calfw
 
 ;; This program is free software; you can redistribute it and/or modify
