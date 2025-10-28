@@ -2287,31 +2287,19 @@ parameters specify the layout and formatting."
 
 ;;; view-two-weeks
 
-(defun calfw-view-two-weeks-model-adjust (model)
-  "Adjust the begin date of the two-weeks MODEL."
-  (let ((in-date (calfw--k 'init-date model)))
-    (cond
-     ((eq 'two-weeks (calfw--k 'type model))
-      (let ((old-begin-date (calfw--k 'begin-date model))
-            (old-end-date (calfw--k 'end-date model)))
-        (cond
-         ((calfw-date-between old-begin-date old-end-date in-date)
-          in-date)
-         ((calfw-date-between old-end-date
-                              (calfw-date-after old-end-date calfw-week-days)
-                              in-date)
-          ;; If the new date is between the old-end-date and next week, then
-          ;; start at the end-date.
-          (calfw-date-after old-end-date 1))
-         ((calfw-date-between (calfw-date-after old-begin-date (- calfw-week-days)) old-begin-date in-date)
-          (calfw-date-after old-begin-date (- calfw-week-days)))
-         (t in-date))))
-     (t in-date))))
-
 (defun calfw--view-two-weeks-model (model)
   "Create a logical view model of two-weeks calendar from MODEL."
-  (let* ((init-date (calfw-view-two-weeks-model-adjust model))
-         (begin-date (calfw-week-begin-date init-date))
+  ;; (calfw--k 'init-date model)
+  (let* ((init-date (calfw--k 'init-date model))
+         (week-no (/ (- (calendar-absolute-from-gregorian init-date)
+                        calendar-week-start-day) 7))
+         (old-week-no (/ (- (calendar-absolute-from-gregorian
+                             (calfw--k 'begin-date model))
+                            calendar-week-start-day) 7))
+         (begin-date (calfw-week-begin-date
+                      (if (eq (mod week-no 2) (mod old-week-no 2))
+                          init-date
+                        (calfw-date-after init-date (- calfw-week-days)))))
          (end-date (calfw-date-after begin-date (1- (* 2 calfw-week-days)))))
     ;; model
     (append
@@ -2327,7 +2315,8 @@ Render two-weeks calendar view for COMPONENT.  The calendar is
 rendered to the destination specified by the component.  The model
 of the component is updated."
   (let* ((dest (calfw-component-dest component))
-         (model (calfw--view-two-weeks-model (calfw-component-model component)))
+         (model (calfw--view-two-weeks-model
+                 (calfw-component-model component)))
          (param (calfw--render-append-parts
                  ;; title 2, toolbar 1, header 2, hline 3, footer 1, margin 2 => 11
                  (calfw--calc-param dest
