@@ -146,21 +146,21 @@ Optional arguments NAME and COLOR specify the calendar name and
 color. VIEW specifies the initial view. ANNOTATION-SOURCES
 specifies the annotation sources. CUSTOM-MAP specifies the
 keymap. ARGS are passed to
-`calfw-create-calendar-component-buffer’."
+`calfw-open-calendar-buffer’."
   (interactive)
-  (let ((cp (calfw-create-calendar-component-buffer
-             :view view
-             :custom-map custom-map
-             :annotation-sources annotation-sources
-             :contents-sources
-             (append (list
-                      (make-calfw-source
-                       :name name
-                       :color color
-                       :update 'calfw-howm-schedule-cache-clear
-                       :data 'calfw-howm--schedule-period-to-calendar))
-                     calfw-howm-schedule-contents))))
-    (switch-to-buffer (calfw-cp-get-buffer cp))))
+  (apply #'calfw-open-calendar-buffer
+         :view view
+         :custom-map custom-map
+         :annotation-sources annotation-sources
+         :contents-sources
+         (append (list
+                  (make-calfw-source
+                   :name name
+                   :color color
+                   :update 'calfw-howm-schedule-cache-clear
+                   :data 'calfw-howm--schedule-period-to-calendar))
+                 calfw-howm-schedule-contents)
+         args))
 
 (defun calfw-howm-from-calendar ()
   "Display a howm schedule summary of the date on the cursor.

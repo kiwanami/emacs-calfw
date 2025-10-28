@@ -148,21 +148,19 @@ Return the `calfw-event`."
   "Open the diary schedule calendar in a new buffer.
 
 Optional arguments NAME, COLOR, and ARGS are passed to
-`calfw-create-calendar-component-buffer'.  VIEW specifies the
+`calfw-open-calendar-buffer'.  VIEW specifies the
 initial view.  CUSTOM-MAP specifies the keymap."
   (interactive)
-  (let* ((cp (apply
-              #'calfw-create-calendar-component-buffer
-              :view view
-              :custom-map custom-map
-              :contents-sources
-              (list
-               (make-calfw-source
-                :name name
-                :color color
-                :data 'calfw-cal--schedule-period-to-calendar))
-              args)))
-    (switch-to-buffer (calfw-cp-get-buffer cp))))
+  (apply #'calfw-open-calendar-buffer
+         :view view
+         :custom-map custom-map
+         :contents-sources
+         (list
+          (make-calfw-source
+           :name name
+           :color color
+           :data 'calfw-cal--schedule-period-to-calendar))
+         args))
 
 (defun calfw-cal-from-calendar ()
   "Insert a new item.  This command should be executed on the calfw calendar."

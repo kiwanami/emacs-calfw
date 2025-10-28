@@ -326,19 +326,17 @@ Returns a list of calendar events."
   "Display a calendar buffer for the iCalendar at URL using COLOR.
 
 NAME defaults to ‘ical’ and the calendar VIEW defaults to ‘month’.
-ARGS are passed to `calfw-create-calendar-component-buffer’."
-  (let ((cp (apply
-             #'calfw-create-calendar-component-buffer
-             :view view
-             :contents-sources
-             (list
-              (make-calfw-source
-               :name name
-               :color color
-               :update (apply-partially #'calfw-ical-data-cache-clear url)
-               :data (apply-partially #'calfw-ical-to-calendar url)))
-             args)))
-    (switch-to-buffer (calfw-cp-get-buffer cp))))
+ARGS are passed to `calfw-open-calendar-buffer’."
+  (apply #'calfw-open-calendar-buffer
+         :view view
+         :contents-sources
+         (list
+          (make-calfw-source
+           :name name
+           :color color
+           :update (apply-partially #'calfw-ical-data-cache-clear url)
+           :data (apply-partially #'calfw-ical-to-calendar url)))
+         args))
 
 ;; (progn (eval-current-buffer) (calfw-ical-open-calendar "./ics/test.ics"
 ;;                                                         "#2952a3"))

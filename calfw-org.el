@@ -531,23 +531,22 @@ and NAME is the name of the calendar (defaults to
 \"org-agenda\"). COLOR specifies the color of the calendar. Other
 keyword arguments such as VIEW, SORTER, and CUSTOM-MAP (with
 default values) along with ARGS are passed to
-`calfw-create-calendar-component-buffer'."
+`calfw-open-calendar-buffer'."
   (interactive)
-  (let ((cp (apply
-             #'calfw-create-calendar-component-buffer
-             :contents-sources
-             (list
-              (make-calfw-source
-               :name name :color color
-               :data (apply-partially
-                      #'calfw-org--schedule-period-to-calendar org-files)))
-             :view view
-             :custom-map custom-map
-             :sorter sorter
-             args)))
-    (switch-to-buffer (calfw-cp-get-buffer cp))
-    (when (not org-todo-keywords-for-agenda)
-      (message "Warning: open org-agenda buffer first."))))
+  (apply #'calfw-open-calendar-buffer
+         :contents-sources
+         (list
+          (make-calfw-source
+           :name name :color color
+           :data (apply-partially
+                  #'calfw-org--schedule-period-to-calendar org-files)))
+         :view view
+         :custom-map custom-map
+         :sorter sorter
+         args)
+
+  (when (not org-todo-keywords-for-agenda)
+    (message "Warning: open org-agenda buffer first.")))
 
 ;; (defun calfw-org-from-calendar ()
 ;;   "Do something. This command should be executed on the calfw calendar."

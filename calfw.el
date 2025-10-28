@@ -3070,21 +3070,16 @@ the position of the item, or nil if no item is found."
 
 ;; buffer
 
-(cl-defun calfw-open-calendar-buffer
-    (&key date buffer custom-map contents-sources annotation-sources view sorter)
+(cl-defun calfw-open-calendar-buffer (&rest args)
   "Open a calendar buffer.
 
-DATE is the initial focus date, BUFFER is the buffer to use,
-CUSTOM-MAP is the keymap, CONTENTS-SOURCES are the sources for
-contents, ANNOTATION-SOURCES are the sources for annotations, VIEW
-is the view to use, and SORTER is the sorter to use."
+ARGS are passed as is to
+`calfw-create-calendar-component-buffer'."
   (interactive)
   (let (cp)
     (save-excursion
-      (setq cp (calfw-create-calendar-component-buffer
-		:date date :buffer buffer :custom-map custom-map
-		:contents-sources contents-sources
-		:annotation-sources annotation-sources :view view :sorter sorter)))
+      (setq cp (apply #'calfw-create-calendar-component-buffer
+                      args)))
     (switch-to-buffer (calfw-cp-get-buffer cp))))
 
 (cl-defun calfw-create-calendar-component-buffer
