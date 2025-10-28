@@ -137,26 +137,32 @@ Return the `calfw-event`."
      ("i" . calfw-cal-from-calendar)))
   "Key map for the calendar buffer.")
 
-(defun calfw-cal-create-source (&optional color)
-  "Create diary calendar source.
+(cl-defun calfw-cal-open-diary-calendar
+    (&optional (name "calendar diary")
+               (color "SaddleBrown")
+               &rest args
+               &key
+               (view 'month)
+               (custom-map calfw-cal-schedule-map)
+               &allow-other-keys)
+  "Open the diary schedule calendar in a new buffer.
 
-COLOR is the color to use for diary entries.
-Returns the calendar source."
-  (make-calfw-source
-   :name "calendar diary"
-   :color (or color "SaddleBrown")
-   :data 'calfw-cal--schedule-period-to-calendar))
-
-(defun calfw-cal-open-diary-calendar ()
-  "Open the diary schedule calendar in the new buffer."
+Optional arguments NAME, COLOR, and ARGS are passed to
+`calfw-create-calendar-component-buffer'.  VIEW specifies the
+initial view.  CUSTOM-MAP specifies the keymap."
   (interactive)
-  (save-excursion
-    (let* ((source1 (calfw-cal-create-source))
-           (cp (calfw-create-calendar-component-buffer
-                :view 'month
-                :custom-map calfw-cal-schedule-map
-                :contents-sources (list source1))))
-      (switch-to-buffer (calfw-cp-get-buffer cp)))))
+  (let* ((cp (apply
+              #'calfw-create-calendar-component-buffer
+              :view view
+              :custom-map custom-map
+              :contents-sources
+              (list
+               (make-calfw-source
+                :name name
+                :color color
+                :data 'calfw-cal--schedule-period-to-calendar))
+              args)))
+    (switch-to-buffer (calfw-cp-get-buffer cp))))
 
 (defun calfw-cal-from-calendar ()
   "Insert a new item.  This command should be executed on the calfw calendar."

@@ -2289,22 +2289,25 @@ parameters specify the layout and formatting."
 
 (defun calfw--view-two-weeks-model (model)
   "Create a logical view model of two-weeks calendar from MODEL."
-  ;; (calfw--k 'init-date model)
-  (let* ((init-date (calfw--k 'init-date model))
-         (week-no (/ (- (calendar-absolute-from-gregorian init-date)
-                        calendar-week-start-day) 7))
-         (old-week-no (/ (- (calendar-absolute-from-gregorian
-                             (calfw--k 'begin-date model))
-                            calendar-week-start-day) 7))
-         (begin-date (calfw-week-begin-date
-                      (if (eq (mod week-no 2) (mod old-week-no 2))
-                          init-date
-                        (calfw-date-after init-date (- calfw-week-days)))))
-         (end-date (calfw-date-after begin-date (1- (* 2 calfw-week-days)))))
-    ;; model
-    (append
-     (calfw--view-model-make-common-data-for-weeks model begin-date end-date)
-     `((type . two-weeks)))))
+  (cl-labels
+      ((calc-week-no (date)
+         (and date
+              (/ (- (calendar-absolute-from-gregorian date)
+                    calendar-week-start-day)
+                 7))))
+    (let* ((init-date (calfw--k 'init-date model))
+           (week-no (calc-week-no init-date))
+           (old-week-no (calc-week-no (calfw--k 'begin-date model)))
+           (begin-date (calfw-week-begin-date
+                        (if (or (not old-week-no)
+                                (eq (mod week-no 2) (mod old-week-no 2)))
+                            init-date
+                          (calfw-date-after init-date (- calfw-week-days)))))
+           (end-date (calfw-date-after begin-date (1- (* 2 calfw-week-days)))))
+      ;; model
+      (append
+       (calfw--view-model-make-common-data-for-weeks model begin-date end-date)
+       `((type . two-weeks))))))
 
 ;; (calfw-view-two-weeks-model (calfw-model-abstract-new (calfw-date 1 1 2011) nil nil))
 

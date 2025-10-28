@@ -88,9 +88,6 @@ v w | `calfw-change-view-week'
 v m | `calfw-change-view-month'
 ------------------------------------------------")
 
-(defvar calfw-org-face-agenda-item-foreground-color "Seagreen4"
-  "Variable for org agenda item foreground color.")
-
 (defun calfw-org--collect-schedules-period (org-files begin end)
   "Return org schedule items between BEGIN and END from ORG-FILES."
   (let ((org-agenda-prefix-format " "))
@@ -515,36 +512,42 @@ Open the `org-agenda' buffer for the date at point, DATE."
      ("SPC" . calfw-org-open-agenda-day)))
   "Key map for the calendar buffer.")
 
-(defun calfw-org-create-source (name org-files color)
-  "Create a calfw source named NAME with org files ORG-FILES and COLOR."
-  (make-calfw-source
-   :name name :color color
-   :data (apply-partially #'calfw-org--schedule-period-to-calendar org-files)))
-
-(cl-defun calfw-org-open-calendar (&optional name org-files)
+(cl-defun calfw-org-open-calendar
+    (&optional org-files
+               (name "org-agenda")
+               (color "Seagreen4")
+               &rest args
+               &key
+               (view 'month)
+               (sorter 'calfw-org--schedule-sorter)
+               (custom-map (if calfw-org-overwrite-default-keybinding
+                               calfw-org-custom-map
+                             calfw-org-schedule-map))
+               &allow-other-keys)
   "Open an org schedule calendar in a new buffer.
 
-Events are taken from ORG-FILES \\=(defaults to those returned by
-`org-agenda-files') and NAME is the name of the calendar
-\\=(defaults to \"org-agenda\")."
+Events are taken from ORG-FILES (defaults to `org-agenda-files`)
+and NAME is the name of the calendar (defaults to
+\"org-agenda\"). COLOR specifies the color of the calendar. Other
+keyword arguments such as VIEW, SORTER, and CUSTOM-MAP (with
+default values) along with ARGS are passed to
+`calfw-create-calendar-component-buffer'."
   (interactive)
-  (save-excursion
-    (let* ((source1 (calfw-org-create-source
-                     (or name "org-agenda")
-                     (or org-files
-                         (org-agenda-files nil 'ifmode))
-                     calfw-org-face-agenda-item-foreground-color))
-           (curr-keymap (if calfw-org-overwrite-default-keybinding
-                            calfw-org-custom-map
-                          calfw-org-schedule-map))
-           (cp (calfw-create-calendar-component-buffer
-                :view 'month
-                :contents-sources (list source1)
-                :custom-map curr-keymap
-                :sorter 'calfw-org--schedule-sorter)))
-      (switch-to-buffer (calfw-cp-get-buffer cp))
-      (when (not org-todo-keywords-for-agenda)
-        (message "Warning: open org-agenda buffer first.")))))
+  (let ((cp (apply
+             #'calfw-create-calendar-component-buffer
+             :contents-sources
+             (list
+              (make-calfw-source
+               :name name :color color
+               :data (apply-partially
+                      #'calfw-org--schedule-period-to-calendar org-files)))
+             :view view
+             :custom-map custom-map
+             :sorter sorter
+             args)))
+    (switch-to-buffer (calfw-cp-get-buffer cp))
+    (when (not org-todo-keywords-for-agenda)
+      (message "Warning: open org-agenda buffer first."))))
 
 ;; (defun calfw-org-from-calendar ()
 ;;   "Do something. This command should be executed on the calfw calendar."

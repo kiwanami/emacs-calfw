@@ -122,16 +122,6 @@ argument.")
              (setq contents (calfw--contents-add date summary contents))))
            finally return (nconc contents (list (cons 'periods periods)))))
 
-(defun calfw-howm-create-source (&optional color)
-  "Create a howm source.
-
-COLOR is the color of the source."
-  (make-calfw-source
-   :name "howm schedule"
-   :color (or color "SteelBlue")
-   :update 'calfw-howm-schedule-cache-clear
-   :data 'calfw-howm--schedule-period-to-calendar))
-
 (defvar calfw-howm-schedule-map
   (calfw--define-keymap
    '(("RET" . calfw-howm-from-calendar)
@@ -141,17 +131,36 @@ COLOR is the color of the source."
 (defvar calfw-howm-schedule-contents nil  "A list of calfw-source objects for schedule contents.")
 (defvar calfw-howm-annotation-contents nil  "A list of calfw-source objects for annotations.")
 
-(defun calfw-howm-open-calendar ()
-  "Open a howm schedule calendar in the new buffer."
+(cl-defun calfw-howm-open-calendar
+    (&optional (name "howm schedule")
+               (color "SteelBlue")
+               &rest args
+               &key
+               (view 'month)
+               (annotation-sources calfw-howm-annotation-contents)
+               (custom-map calfw-howm-schedule-map)
+               &allow-other-keys)
+  "Open a howm schedule calendar in a new buffer.
+
+Optional arguments NAME and COLOR specify the calendar name and
+color. VIEW specifies the initial view. ANNOTATION-SOURCES
+specifies the annotation sources. CUSTOM-MAP specifies the
+keymap. ARGS are passed to
+`calfw-create-calendar-component-buffer’."
   (interactive)
-  (save-excursion
-    (let ((cp (calfw-create-calendar-component-buffer
-               :custom-map calfw-howm-schedule-map
-               :view 'month
-               :contents-sources (append (list (calfw-howm-create-source))
-                                         calfw-howm-schedule-contents)
-               :annotation-sources calfw-howm-annotation-contents)))
-      (switch-to-buffer (calfw-cp-get-buffer cp)))))
+  (let ((cp (calfw-create-calendar-component-buffer
+             :view view
+             :custom-map custom-map
+             :annotation-sources annotation-sources
+             :contents-sources
+             (append (list
+                      (make-calfw-source
+                       :name name
+                       :color color
+                       :update 'calfw-howm-schedule-cache-clear
+                       :data 'calfw-howm--schedule-period-to-calendar))
+                     calfw-howm-schedule-contents))))
+    (switch-to-buffer (calfw-cp-get-buffer cp))))
 
 (defun calfw-howm-from-calendar ()
   "Display a howm schedule summary of the date on the cursor.

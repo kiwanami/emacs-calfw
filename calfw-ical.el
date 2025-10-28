@@ -316,26 +316,29 @@ Returns a list of calendar events."
            else if (calfw-date-between begin end (calfw-event-start-date event))
            collect event))
 
-(defun calfw-ical-create-source (name url color)
-  "Create a calfw source for an ical calendar at URL.
+(cl-defun calfw-ical-open-calendar
+    (url
+     &optional (name "ical")
+     (color "SaddleBrown")
+     &rest args
+     &key (view 'month)
+     &allow-other-keys)
+  "Display a calendar buffer for the iCalendar at URL using COLOR.
 
-NAME is the name of the calendar, COLOR is the color to use.
-Returns a calfw source."
-  (make-calfw-source
-   :name (concat "iCal:" name)
-   :color color
-   :update (lambda () (calfw-ical-data-cache-clear url))
-   :data (lambda (begin end)
-           (calfw-ical-to-calendar url begin end))))
-
-(defun calfw-ical-open-calendar (url color)
-  "Display a calendar buffer for the iCalendar at URL using COLOR."
-  (save-excursion
-    (let ((cp (calfw-create-calendar-component-buffer
-               :view 'month
-               :contents-sources
-               (list (calfw-ical-create-source "ical" url color)))))
-      (switch-to-buffer (calfw-cp-get-buffer cp)))))
+NAME defaults to ‘ical’ and the calendar VIEW defaults to ‘month’.
+ARGS are passed to `calfw-create-calendar-component-buffer’."
+  (let ((cp (apply
+             #'calfw-create-calendar-component-buffer
+             :view view
+             :contents-sources
+             (list
+              (make-calfw-source
+               :name name
+               :color color
+               :update (apply-partially #'calfw-ical-data-cache-clear url)
+               :data (apply-partially #'calfw-ical-to-calendar url)))
+             args)))
+    (switch-to-buffer (calfw-cp-get-buffer cp))))
 
 ;; (progn (eval-current-buffer) (calfw-ical-open-calendar "./ics/test.ics"
 ;;                                                         "#2952a3"))
