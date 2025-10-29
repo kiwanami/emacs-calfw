@@ -25,10 +25,10 @@ and add the following code to your .emacs.
 ```el
 (require 'calfw)
 
-;; For compatiblity with the old name scheme (starting with `cfw:`
+;; For compatibility with the old name scheme (starting with `cfw:`
 ;; instead of `calfw-`), uncomment the following code:
 ;;
-;; (setq calfw-compat-mark-obsolete nil) ;; This supresses obsolete messages
+;; (setq calfw-compat-mark-obsolete nil) ;; This suppresses obsolete messages
 ;; (require 'calfw-compat)
 ```
 
@@ -138,7 +138,7 @@ If `calfw-org-agenda-schedule-args` is `nil`, the default customize variable `or
 
 - [Worg: Speeding up custom agenda commands](http://orgmode.org/worg/org-tutorials/org-custom-agenda-commands.html#sec-5)
 
-#### Orgmode like key bindng
+#### Orgmode like key binding
 
 You can use another key binding like org agenda buffer, setting `calfw-org-overwrite-default-keybinding` to non-nil, like following code:
 
