@@ -137,6 +137,11 @@ Return the `calfw-event`."
      ("i" . calfw-cal-from-calendar)))
   "Key map for the calendar buffer.")
 
+(defun calfw-cal-create-source (name color)
+  "Create a calfw source with NAME and COLOR from `calendar'."
+  (make-calfw-source :name name :color color
+                     :data 'calfw-cal--schedule-period-to-calendar))
+
 (cl-defun calfw-cal-open-diary-calendar
     (&optional (name "calendar diary")
                (color "SaddleBrown")
@@ -155,11 +160,7 @@ initial view.  CUSTOM-MAP specifies the keymap."
          :view view
          :custom-map custom-map
          :contents-sources
-         (list
-          (make-calfw-source
-           :name name
-           :color color
-           :data 'calfw-cal--schedule-period-to-calendar))
+         (list (calfw-cal-create-source name color))
          args))
 
 (defun calfw-cal-from-calendar ()

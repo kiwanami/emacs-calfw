@@ -213,11 +213,11 @@ Here is the sample code:
   (calfw-open-calendar-buffer
    :contents-sources
    (list
-    (calfw-org-create-source "Green")  ; orgmode source
-    (calfw-howm-create-source "Blue")  ; howm source
-    (calfw-cal-create-source "Orange") ; diary source
-    (calfw-ical-create-source "Moon" "~/moon.ics" "Gray")  ; ICS source1
-    (calfw-ical-create-source "gcal" "https://..../basic.ics" "IndianRed") ; google calendar ICS
+    (calfw-org-create-source nil "org-agenda" "Green")  ; orgmode source from org-agenda files
+    (calfw-howm-create-source "howm" "Blue")  ; howm source
+    (calfw-cal-create-source "diary" "Orange") ; diary source
+    (calfw-ical-create-source "~/moon.ics" "Moon" "Gray")  ; ICS source1
+    (calfw-ical-create-source "https://..../basic.ics" "gcal" "IndianRed") ; google calendar ICS
    )))
 ```
 

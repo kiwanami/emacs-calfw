@@ -316,6 +316,13 @@ Returns a list of calendar events."
            else if (calfw-date-between begin end (calfw-event-start-date event))
            collect event))
 
+(defun calfw-ical-create-source (url name color)
+  "Create a calfw source from an ical file at URL with NAME and COLOR."
+  (make-calfw-source :name name :color color
+                     :update (apply-partially #'calfw-ical-data-cache-clear
+                                              url)
+                     :data (apply-partially #'calfw-ical-to-calendar url)))
+
 (cl-defun calfw-ical-open-calendar
     (url
      &optional (name "ical")
@@ -330,12 +337,7 @@ ARGS are passed to `calfw-open-calendar-buffer’."
   (apply #'calfw-open-calendar-buffer
          :view view
          :contents-sources
-         (list
-          (make-calfw-source
-           :name name
-           :color color
-           :update (apply-partially #'calfw-ical-data-cache-clear url)
-           :data (apply-partially #'calfw-ical-to-calendar url)))
+         (list (calfw-ical-create-source url name color))
          args))
 
 ;; (progn (eval-current-buffer) (calfw-ical-open-calendar "./ics/test.ics"

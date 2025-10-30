@@ -131,6 +131,12 @@ argument.")
 (defvar calfw-howm-schedule-contents nil  "A list of calfw-source objects for schedule contents.")
 (defvar calfw-howm-annotation-contents nil  "A list of calfw-source objects for annotations.")
 
+(defun calfw-howm-create-source (name color)
+  "Create a calfw source from howm with NAME and COLOR."
+  (make-calfw-source :name name :color color
+                     :update 'calfw-howm-schedule-cache-clear
+                     :data 'calfw-howm--schedule-period-to-calendar))
+
 (cl-defun calfw-howm-open-calendar
     (&optional (name "howm schedule")
                (color "SteelBlue")
@@ -153,12 +159,7 @@ keymap. ARGS are passed to
          :custom-map custom-map
          :annotation-sources annotation-sources
          :contents-sources
-         (append (list
-                  (make-calfw-source
-                   :name name
-                   :color color
-                   :update 'calfw-howm-schedule-cache-clear
-                   :data 'calfw-howm--schedule-period-to-calendar))
+         (append (list (calfw-howm-create-source name color))
                  calfw-howm-schedule-contents)
          args))
 

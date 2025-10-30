@@ -512,6 +512,16 @@ Open the `org-agenda' buffer for the date at point, DATE."
      ("SPC" . calfw-org-open-agenda-day)))
   "Key map for the calendar buffer.")
 
+(defun calfw-org-create-source (org-files name color)
+  "Create a calfw source from a list of ORG-FILES with NAME and COLOR.
+ORG-FILES defaults to `org-agenda-files`."
+  (make-calfw-source
+   :name name :color color
+   :data (apply-partially
+          #'calfw-org--schedule-period-to-calendar
+          (or org-files
+              (org-agenda-files nil 'ifmode)))))
+
 (cl-defun calfw-org-open-calendar
     (&optional org-files
                (name "org-agenda")
@@ -535,11 +545,7 @@ default values) along with ARGS are passed to
   (interactive)
   (apply #'calfw-open-calendar-buffer
          :contents-sources
-         (list
-          (make-calfw-source
-           :name name :color color
-           :data (apply-partially
-                  #'calfw-org--schedule-period-to-calendar org-files)))
+         (list (calfw-org-create-source org-files name color))
          :view view
          :custom-map custom-map
          :sorter sorter
