@@ -211,19 +211,36 @@ The date is determined by `calfw-cursor-to-nearest-date'."
    '(("RET" . calfw-howm-from-calendar)))
   "Key map for the howm inline calendar.")
 
-(defun calfw-howm-schedule-inline (&optional width height view)
+(cl-defun calfw-howm-schedule-inline
+    (&optional
+     width
+     (height 10)
+     (name "howm schedule")
+     (color "SteelBlue")
+     &rest args
+     &key
+     (view 'month)
+     (annotation-sources calfw-howm-annotation-contents)
+     (custom-map calfw-howm-schedule-inline-keymap)
+     &allow-other-keys)
   "Create a calendar component region for the howm menu with WIDTH and HEIGHT.
 
-VIEW specifies the initial view."
-  (let ((custom-map (copy-keymap calfw-howm-schedule-inline-keymap)))
+Optional arguments NAME and COLOR specify the calendar name and
+color. VIEW specifies the initial view. ANNOTATION-SOURCES
+specifies the annotation sources. CUSTOM-MAP specifies the
+keymap. ARGS are passed to
+`calfw-create-calendar-component-region’."
+  (let ((custom-map (copy-keymap custom-map)))
     (set-keymap-parent custom-map calfw-calendar-mode-map)
-    (calfw-create-calendar-component-region
-     :width width :height (or height 10)
-     :keymap custom-map
-     :contents-sources (append (list (calfw-howm-create-source))
-                               calfw-howm-schedule-contents)
-     :annotation-sources calfw-howm-annotation-contents
-     :view (or view 'month)))
+    (apply #'calfw-create-calendar-component-region
+           :width width :height height
+           :keymap custom-map
+           :contents-sources
+           (append (list (calfw-howm-create-source name color))
+                   calfw-howm-schedule-contents)
+           :annotation-sources annotation-sources
+           :view view
+           args))
   "") ; for null output
 
 ;;; Installation
