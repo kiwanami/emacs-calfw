@@ -14,6 +14,7 @@
   `calfw-cal-open-diary-calendar`, `calfw-ical-open-calendar`,
   `calfw-org-open-calendar` and `calfw-howm-open-calendar`.
 - Added new function `calfw--concat-wrap` which is used to wrap calendars in footer.
+- Added new customization `calfw-grid-height-offset`
 
 ## 2.0
 - Renamed all symbols to start with the package name.
