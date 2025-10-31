@@ -841,7 +841,7 @@ Width is in characters, while height is in lines. Use WINDOW if
 given, otherwise the selected window."
   (with-selected-window (or window (selected-window))
     (cons (window-max-chars-per-line)
-          (window-screen-lines))))
+          (floor (window-screen-lines)))))
 
 (defun calfw-dest-init-buffer (&optional buf width height custom-map)
   "Create a buffer destination.
