@@ -4,10 +4,16 @@
 - Removed `calfw-default-text-sorter`, `calfw-sorter-start-time` is not set by default.
 - `cfw:event` is saved as text property instead of `cfw:source` when an event is rendered.
 - Added customization `calfw-fchar-period-line`.
-- Removed `calfw-org-icalendars`. Pass org files directly to
-  `calfw-org-open-calendar`.
+- Removed `calfw-org-icalendars`. Pass org files directly to `calfw-org-open-calendar`.
 - Added new variable `calfw-week-days-list` to include list of days that will
   be shown in the calendar.
+- Changed order of arguments of `calfw-cal-create-source`,
+  `calfw-ical-create-source`, `calfw-org-create-source` and
+  `calfw-howm-create-source`.
+- Changed and expanded optional and key arguments of
+  `calfw-cal-open-diary-calendar`, `calfw-ical-open-calendar`,
+  `calfw-org-open-calendar` and `calfw-howm-open-calendar`.
+- Added new function `calfw--concat-wrap` which is used to wrap calendars in footer.
 
 ## 2.0
 - Renamed all symbols to start with the package name.
