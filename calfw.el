@@ -1659,7 +1659,7 @@ If all calendars are already shown, hide them all."
   "Return a text of the footer.
 
 The footer is rendered based on the SOURCES."
-  (let* ((spaces (make-string 5 ? ))
+  (let* ((spaces " ")
          (whole-text
           (mapconcat
            #'identity
