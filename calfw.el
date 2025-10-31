@@ -1956,7 +1956,8 @@ except for the last line, which is left-aligned.
 Returns a list of lines."
   (let ((lines '())
         (line '())
-        (len 0))
+        (len 0)
+        (sep ?\s))
     ;; Split segments into wrapped lines
     (dolist (seg segments)
       (let ((seglen (string-width seg)))
@@ -1981,14 +1982,15 @@ Returns a list of lines."
                          (extra (% spaces gaps))
                          (space-list
                           (append
-                           (make-list extra (make-string (+ base 1) ?\s))
-                           (make-list (- gaps extra) (make-string base ?\s))
+                           (make-list extra (make-string (+ base 1) sep))
+                           (make-list (- gaps extra) (make-string base sep))
                            (list "")))) ; no space after the last word
                     (apply #'concat (cl-mapcar #'concat line space-list)))))
 
       (append
        (mapcar #'justify (nreverse lines))
-       (when line (list (mapconcat #'identity (nreverse line) " ")))))))
+       (when line (list (mapconcat #'identity (nreverse line)
+                                   (char-to-string sep))))))))
 
 (defun calfw--render-append-parts (param)
   "Append rendering parts to PARAM and return a new list."
