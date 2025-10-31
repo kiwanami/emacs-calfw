@@ -1655,41 +1655,43 @@ If all calendars are already shown, hide them all."
                      all-shown))
       (calfw--cp-update comp))))
 
-(defun calfw--render-footer (_width sources)
+(defun calfw--render-footer (width sources)
   "Return a text of the footer.
 
 The footer is rendered based on the SOURCES."
   (let* ((spaces (make-string 5 ? ))
          (whole-text
           (mapconcat
-           'identity
-           (cl-loop
-            with keymap = (progn
-                            (let ((kmap (make-sparse-keymap)))
-                              (define-key kmap [mouse-1] 'calfw-event-mouse-click-toggle-calendar)
-                              (define-key kmap [13] 'calfw-event-toggle-calendar)
-                              kmap))
-            for s in sources
-            for hidden-p = (calfw-source-hidden s)
-            for title = (calfw--tp (substring (calfw-source-name s) 0)
-                                   'cfw:source s)
-            for dot   = (calfw--tp (substring "(==)" 0) 'cfw:source s)
-            collect
-            (progn
-              (calfw--tp dot 'mouse-face 'highlight)
-              (propertize
-               (calfw--render-default-content-face
-                (concat
-                 "[" (calfw--rt dot
-                                (if hidden-p
-                                    'calfw-calendar-hidden-face
-                                  (calfw--render-get-face-period dot 'calfw-periods-face)))
-                 " " title "]")
-                (if hidden-p
-                    'calfw-calendar-hidden-face
-                  (calfw--render-get-face-content title
-                                                  'calfw-default-content-face)))
-               'keymap keymap)))
+           #'identity
+           (calfw--concat-warp
+            (cl-loop
+             with keymap = (progn
+                             (let ((kmap (make-sparse-keymap)))
+                               (define-key kmap [mouse-1] 'calfw-event-mouse-click-toggle-calendar)
+                               (define-key kmap [13] 'calfw-event-toggle-calendar)
+                               kmap))
+             for s in sources
+             for hidden-p = (calfw-source-hidden s)
+             for title = (calfw--tp (substring (calfw-source-name s) 0)
+                                    'cfw:source s)
+             for dot   = (calfw--tp (substring "(==)" 0) 'cfw:source s)
+             collect
+             (progn
+               (calfw--tp dot 'mouse-face 'highlight)
+               (propertize
+                (calfw--render-default-content-face
+                 (concat
+                  "[" (calfw--rt dot
+                                 (if hidden-p
+                                     'calfw-calendar-hidden-face
+                                   (calfw--render-get-face-period dot 'calfw-periods-face)))
+                  " " title "]")
+                 (if hidden-p
+                     'calfw-calendar-hidden-face
+                   (calfw--render-get-face-content title
+                                                   'calfw-default-content-face)))
+                'keymap keymap)))
+            (- width (length spaces)))
            (concat "\n" spaces))))
     (concat
      spaces
@@ -1943,6 +1945,50 @@ to MAX-LINE-NUM.  Returns a list of strings."
                 (setq cont nil))
               (setq last ps))))
           (or (and ret (nreverse ret)) '("")))))))
+
+(defun calfw--concat-warp (segments width)
+  "Concatenate SEGMENTS into lines wrapped and justified to WIDTH.
+
+Each segment is a word-like string that is not split across lines.
+Lines are filled with spaces so their visible width is exactly WIDTH,
+except for the last line, which is left-aligned.
+
+Returns a list of lines."
+  (let ((lines '())
+        (line '())
+        (len 0))
+    ;; Split segments into wrapped lines
+    (dolist (seg segments)
+      (let ((seglen (string-width seg)))
+        (if (and line (> (+ len 1 seglen) width))
+            ;; Start new line
+            (progn
+              (push (nreverse line) lines)
+              (setq line (list seg)
+                    len seglen))
+          ;; Continue current line
+          (when line (setq len (1+ len))) ; add one for space
+          (push seg line)
+          (setq len (+ len seglen)))))
+
+    ;; Build justified text
+    (cl-labels ((justify (line)
+                  (let* ((n (length line))
+                         (text-width (apply #'+ (mapcar #'string-width line)))
+                         (spaces (- width text-width))
+                         (gaps (max 1 (1- n)))
+                         (base (/ spaces gaps))
+                         (extra (% spaces gaps))
+                         (space-list
+                          (append
+                           (make-list extra (make-string (+ base 1) ?\s))
+                           (make-list (- gaps extra) (make-string base ?\s))
+                           (list "")))) ; no space after the last word
+                    (apply #'concat (cl-mapcar #'concat line space-list)))))
+
+      (append
+       (mapcar #'justify (nreverse lines))
+       (when line (list (mapconcat #'identity (nreverse line) " ")))))))
 
 (defun calfw--render-append-parts (param)
   "Append rendering parts to PARAM and return a new list."
