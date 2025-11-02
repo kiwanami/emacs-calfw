@@ -648,14 +648,18 @@ Returns a color string."
 
 (defun calfw-composite-color (clr1 alpha clr2)
   "Return the combination of CLR1 with ALPHA and CLR2.
-CLR2 is composited with 1-ALPHA transpancy."
+CLR2 is composited with 1-ALPHA transparency. If CLR2 is
+unspecified, CLR1 is returned unchanged."
   (let* ((result-rgb (cl-mapcar
                       (lambda (c1 c2)
                         (+ (* alpha c1)
                            (* (- 1 alpha) c2)))
                       (color-name-to-rgb clr1)
                       (color-name-to-rgb clr2))))
-    (apply #'color-rgb-to-hex (append result-rgb '(2)))))
+    (if result-rgb
+        (apply #'color-rgb-to-hex (append result-rgb '(2)))
+      clr1)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Calendar event
 
