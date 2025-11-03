@@ -96,10 +96,11 @@ Following programs are also useful:
 ### For howm users:
 
 ```el
-(eval-after-load "howm-menu" '(progn
-  (require 'calfw-howm)
-  (calfw-howm-install-schedules)
-  (define-key howm-mode-map (kbd "M-C") 'calfw-howm-open-calendar)))
+(eval-after-load "howm-menu"
+  '(progn
+     (require 'calfw-howm)
+     (calfw-howm-install-schedules)
+     (define-key howm-mode-map (kbd "M-C") 'calfw-howm-open-calendar)))
 ```
 
 If you are using Elscreen, here is useful.

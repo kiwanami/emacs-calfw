@@ -632,19 +632,28 @@ If `calfw-source-period-fgcolor' is nil, the black or white
   "Return a suitable foreground color for SRC-COLOR.
 
  Use `calfw-composite-color' with SRC-COLOR, a weight of 0.7, and
- the default face's foreground color."
+ the default face's foreground color (or black if unavailable)."
   ;; The calfw way
   ;; (cl-destructuring-bind
   ;;     (r g b) (color-values (or color "black"))
   ;;   (if (< 147500 (+ r g b)) "black" "white"))
                                         ; (* 65536 3 0.75)
-  (calfw-composite-color src-color 0.7 (face-foreground 'default)))
+  (let ((fg (face-foreground 'default)))
+    (calfw-composite-color src-color 0.7
+                           (if (or (null fg) (equal fg "unspecified-fg"))
+                               "black"
+                             fg))))
 
 (defun calfw-make-bg-color (src-color _fg-color)
-  "Compose SRC-COLOR with the default background color.
+  "Return a suitable background color for SRC-COLOR.
 
-Returns a color string."
-  (calfw-composite-color src-color 0.3 (face-background 'default)))
+Use `calfw-composite-color' with SRC-COLOR, a weight of 0.3, and
+ the default face's background color (or white if unavailable)."
+  (let ((bg (face-background 'default)))
+    (calfw-composite-color src-color 0.3
+                           (if (or (null bg) (equal bg "unspecified-bg"))
+                               "white"
+                             bg))))
 
 (defun calfw-composite-color (clr1 alpha clr2)
   "Return the combination of CLR1 with ALPHA and CLR2.
