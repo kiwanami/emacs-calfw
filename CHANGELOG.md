@@ -8,6 +8,9 @@
   be shown in the calendar.
 - Added new function `calfw--concat-wrap` which is used to wrap calendars in footer.
 - Added new customization `calfw-grid-height-offset`
+- Added new face `calfw-default-face` which is used when calculating the
+  foreground and background colours of events.
+- Added new customization `calfw-event-color-composition`.
 
 ### Changed
 - Removed `calfw-default-text-sorter`, `calfw-sorter-start-time` is not set by default.

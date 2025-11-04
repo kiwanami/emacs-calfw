@@ -227,9 +227,32 @@ See `calfw-event-format' for possible values."
 (defcustom calfw-grid-height-offset 6
   "Number of lines to reduce height of grid by.
 This should account at least for the title, toolbar, header and
-footer.")
+footer."
+  :group 'calfw
+  :type 'integer)
+
+(defcustom calfw-event-color-composition '(0.7 . 0.3)
+  "The amount to composite an event color with `calfw-default-face'.
+It's a CONS whose CAR is used for foreground colour and CDR is
+used for the background colour."
+  :group 'calfw
+  :type '(cons float float))
 
 ;;; Faces
+
+(defface calfw-default-face
+  (let* ((ufg (equal (face-foreground 'default nil t) "unspecified-fg"))
+         (ubg (equal (face-background 'default nil t) "unspecified-bg")))
+    `((((background dark))
+       :inherit default
+       :foreground ,(or (and ufg "white") 'unspecified)
+       :background ,(or (and ubg "black") 'unspecified))
+      (((background light))
+       :inherit default
+       :foreground ,(or (and ufg "black") 'unspecified)
+       :background ,(or (and ubg "white") 'unspecified))))
+  "Face used to determine default colors."
+  :group 'calfw)
 
 (defface calfw-title-face
   '((((class color) (background light))
@@ -631,29 +654,22 @@ If `calfw-source-period-fgcolor' is nil, the black or white
 (defun calfw-make-fg-color (src-color _bg-color)
   "Return a suitable foreground color for SRC-COLOR.
 
- Use `calfw-composite-color' with SRC-COLOR, a weight of 0.7, and
- the default face's foreground color (or black if unavailable)."
-  ;; The calfw way
-  ;; (cl-destructuring-bind
-  ;;     (r g b) (color-values (or color "black"))
-  ;;   (if (< 147500 (+ r g b)) "black" "white"))
-                                        ; (* 65536 3 0.75)
-  (let ((fg (face-foreground 'default)))
-    (calfw-composite-color src-color 0.7
-                           (if (or (null fg) (equal fg "unspecified-fg"))
-                               "black"
-                             fg))))
+Use `calfw-composite-color' with SRC-COLOR, weight from
+`calfw-event-color-composition', and the background color of
+`calfw-default-face'. _BG-COLOR is ignored."
+  (calfw-composite-color src-color
+                         (car calfw-event-color-composition)
+                         (face-foreground 'calfw-default-face nil t)))
 
 (defun calfw-make-bg-color (src-color _fg-color)
   "Return a suitable background color for SRC-COLOR.
 
-Use `calfw-composite-color' with SRC-COLOR, a weight of 0.3, and
- the default face's background color (or white if unavailable)."
-  (let ((bg (face-background 'default)))
-    (calfw-composite-color src-color 0.3
-                           (if (or (null bg) (equal bg "unspecified-bg"))
-                               "white"
-                             bg))))
+Use `calfw-composite-color' with SRC-COLOR, weight from
+`calfw-event-color-composition', and the foreground color of
+`calfw-default-face'. _FG-COLOR is ignored."
+  (calfw-composite-color src-color
+                         (cdr calfw-event-color-composition)
+                         (face-background 'calfw-default-face nil t)))
 
 (defun calfw-composite-color (clr1 alpha clr2)
   "Return the combination of CLR1 with ALPHA and CLR2.
@@ -665,9 +681,9 @@ unspecified, CLR1 is returned unchanged."
                            (* (- 1 alpha) c2)))
                       (color-name-to-rgb clr1)
                       (color-name-to-rgb clr2))))
-    (if result-rgb
-        (apply #'color-rgb-to-hex (append result-rgb '(2)))
-      clr1)))
+    (or (and result-rgb
+             (apply #'color-rgb-to-hex (append result-rgb '(2))))
+        clr1)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Calendar event
