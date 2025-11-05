@@ -391,9 +391,8 @@ Any days not in this list will be hidden.")
   "Put a FACE to the given TEXT."
   ;;
   (unless (stringp text) (setq text (format "%s" (or text ""))))
-  (put-text-property 0 (length text) 'face face text)
-  (put-text-property 0 (length text) 'font-lock-face face text)
-  text)
+  (calfw--tp text 'face face)
+  (calfw--tp text 'font-lock-face face))
 
 (defun calfw--tp (text prop value)
   "Put a text property PROP with VALUE to the entire TEXT."
@@ -625,7 +624,8 @@ Returns a list of HOURS and MINUTES."
 ;; If `period-bgcolor' is nil, the value of `color' is used.
 ;; If `period-fgcolor' is nil, the black or white (negative color of `period-bgcolor') is used.
 
-(cl-defstruct calfw-source name data update color period-bgcolor period-fgcolor opt-face opt-period-face hidden)
+(cl-defstruct calfw-source name data update color period-bgcolor
+              period-fgcolor opt-face opt-period-face hidden)
 
 (defun calfw--source-period-bgcolor-get (source)
   "Return a background color for period items in SOURCE.
@@ -1437,8 +1437,8 @@ Returns STRING."
       (cond
        ((or (null last-face) (listp last-face))
         (setq last-face (append last-face `(:underline ,calfw-item-separator-color-face)))
-        (put-text-property 0 (length string) 'face last-face string)
-        (put-text-property 0 (length string) 'font-lock-face last-face string))
+        (calfw--tp string 'face last-face)
+        (calfw--tp string 'font-lock-face last-face))
        ((symbolp last-face)
         (let ((attrs (face-all-attributes last-face (selected-frame))))
           (setq attrs ; transform alist to plist
@@ -1446,8 +1446,8 @@ Returns STRING."
                          for (n . v) in (append attrs `((:underline . ,calfw-item-separator-color-face)))
                          do (setq nattrs (cons n (cons v nattrs)))
                          finally return nattrs))
-          (put-text-property 0 (length string) 'face attrs string)
-          (put-text-property 0 (length string) 'font-lock-face attrs string)))
+          (calfw--tp string 'face attrs)
+          (calfw--tp string 'font-lock-face attrs)))
        (t
         (message "DEBUG? CALFW- FACE %S / %S" string last-face)))))
   string)
@@ -1730,7 +1730,7 @@ The footer is rendered based on the SOURCES."
                    (calfw--render-get-face-content title
                                                    'calfw-default-content-face)))
                 'keymap keymap)))
-            (- width (length spaces)))
+            (- width (string-width spaces)))
            (concat "\n" spaces))))
     (concat
      spaces
@@ -1787,7 +1787,7 @@ CELL-WIDTH, and INWIDTH are also arguments."
                for i from 0 below num
                for pdate = (calendar-gregorian-from-absolute (+ title-begin-abs i))
                for chopn = (+ (if (equal begin pdate) 1 0) (if (equal end pdate) 1 0))
-               for del = (truncate-string-to-width title (- cell-width chopn))
+               for del = (calfw--render-truncate title (- cell-width chopn))
                do
                (setq title (substring title (length del)))
                finally return
@@ -1917,7 +1917,7 @@ ROWS list, unless it already has a `cfw:period' property.  Returns
 ROWS."
   (let ((last-line (car (last rows))))
     (unless (get-text-property 0 'cfw:period last-line)
-      (put-text-property 0 (length last-line) 'cfw:item-separator t last-line))
+      (calfw--tp last-line 'cfw:item-separator t))
     rows))
 
 (defun calfw-render-line-breaker-none (line _w _n)
@@ -2378,7 +2378,7 @@ parameters specify the layout and formatting."
          (and date
               (/ (- (calendar-absolute-from-gregorian date)
                     calendar-week-start-day)
-                 7))))
+                 calfw-week-days))))
     (let* ((init-date (calfw--k 'init-date model))
            (week-no (calc-week-no init-date))
            (old-week-no (calc-week-no (calfw--k 'begin-date model)))
