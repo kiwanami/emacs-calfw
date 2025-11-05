@@ -1548,6 +1548,9 @@ ELLIPSIS is the string to use as ellipsis."
   (if (< limit-width (string-width org))
       (let ((str (truncate-string-to-width
                   (substring org 0) limit-width 0 nil ellipsis)))
+        ;; Add the same properties to the whole string, in case an ellipsis is
+        ;; added.
+        (add-text-properties 0 (length str) (text-properties-at 0 str) str)
         (unless (get-text-property 0 'help-echo str)
           (calfw--tp str 'help-echo org))
         str)
