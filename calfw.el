@@ -1115,7 +1115,8 @@ Optional argument INITIAL-DATE specifies the date to display
           (calfw-dest-clear dest)
           (funcall (calfw--cp-dispatch-view-impl
                     (calfw-component-view component))
-                   component)))
+                   component)
+          (goto-char (point-min))))
       (when calfw-highlight-today
         (calfw--dest-ol-today-set dest))
       (when initial-date
