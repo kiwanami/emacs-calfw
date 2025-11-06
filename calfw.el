@@ -1711,9 +1711,8 @@ The footer is rendered based on the SOURCES."
                                kmap))
              for s in sources
              for hidden-p = (calfw-source-hidden s)
-             for title = (calfw--tp (substring (calfw-source-name s) 0)
-                                    'cfw:source s)
-             for dot   = (calfw--tp (substring "(==)" 0) 'cfw:source s)
+             for title = (calfw--tp (calfw-source-name s) 'cfw:source s)
+             for dot   = (calfw--tp "(==)" 'cfw:source s)
              collect
              (progn
                (calfw--tp dot 'mouse-face 'highlight)
