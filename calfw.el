@@ -1543,14 +1543,15 @@ Use DEFAULT-FACE if non-nil.  Return the modified string."
   "Truncate a string ORG to LIMIT-WIDTH, like `truncate-string-to-width'.
 
 ELLIPSIS is the string to use as ellipsis."
-  ;; "
   (setq org (replace-regexp-in-string "\n" " " org))
   (if (< limit-width (string-width org))
       (let ((str (truncate-string-to-width
-                  (substring org 0) limit-width 0 nil ellipsis)))
-        ;; Add the same properties to the whole string, in case an ellipsis is
-        ;; added.
-        (add-text-properties 0 (length str) (text-properties-at 0 str) str)
+                  (substring org 0) limit-width 0 nil
+                  (when ellipsis
+                    (apply #'propertize
+                           (or (and (stringp ellipsis) ellipsis)
+                               (truncate-string-ellipsis))
+                           (text-properties-at (1- (length org)) org))))))
         (unless (get-text-property 0 'help-echo str)
           (calfw--tp str 'help-echo org))
         str)
