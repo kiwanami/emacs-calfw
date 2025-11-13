@@ -257,7 +257,11 @@ those string in multi-lines.")
   "Return a range object (begin end text).
 If TEXT does not have a range, return nil.
 If AT-BEGIN is non-nil, then it should be the date of the first
-day in the calendar."
+day in the calendar.
+
+If TEXT does not correspond to a range, then nil is returned. If
+it does, but is not the first one (and at-begin is nil) then t is
+returned."
   (let* ((dotime (calfw-org--tp text 'dotime))
          date-string)
     (and (or (and (stringp dotime)
@@ -280,10 +284,12 @@ day in the calendar."
 		    (end-date (time-add
 			       date
 			       (seconds-to-time (* 3600 24 (- total-days cur-day))))))
-	       (list (calendar-gregorian-from-absolute (time-to-days start-date))
-		     (calendar-gregorian-from-absolute
-                      (time-to-days end-date))
-                     text)))))))
+	       (if (or (eq cur-day 1) at-begin)
+                   (list (calendar-gregorian-from-absolute (time-to-days start-date))
+		         (calendar-gregorian-from-absolute
+                          (time-to-days end-date))
+                         text)
+                 t)))))))
 
 (defun calfw-org--schedule-period-to-calendar (org-files begin end)
   "Return calfw calendar items between BEGIN and END from ORG-FILES."
@@ -296,7 +302,8 @@ day in the calendar."
    for range = (calfw-org-get-timerange line (and (equal date begin) date))
    if range
    do
-   (unless (member range periods)
+   (unless (or (eq range t)
+               (member range periods))
      (push range periods))
    else do
    ;; dotime is not present if this event was already added as a timerange
