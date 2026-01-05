@@ -1144,11 +1144,11 @@ Optional argument INITIAL-DATE specifies the date to display
 
 (defun calfw-sorter-start-time (x y)
   "Return non-nil if event X has a start time before Y."
-  (if-let ((ex (get-text-property 0 'cfw:event x))
-           (ey (get-text-property 0 'cfw:event y))
-           (cmp (cl-some (lambda (x y) (and (/= x y) (- x y)))
-                         (calfw-event-start-time ex)
-                         (calfw-event-start-time ey))))
+  (if-let* ((ex (get-text-property 0 'cfw:event x))
+            (ey (get-text-property 0 'cfw:event y))
+            (cmp (cl-some (lambda (x y) (and (/= x y) (- x y)))
+                          (calfw-event-start-time ex)
+                          (calfw-event-start-time ey))))
       (< cmp 0)
     (string-lessp x y)))
 
@@ -1653,9 +1653,9 @@ the commands for moving the view."
 (defun calfw-event-mouse-click-toggle-calendar (event)
   "Toggle the `calfw-source-hidden' property of calendar source at EVENT."
   (interactive "e")
-  (when-let ((s (get-text-property
-                 (posn-point (event-start event))
-                 'cfw:source)))
+  (when-let* ((s (get-text-property
+                  (posn-point (event-start event))
+                  'cfw:source)))
     (setf (calfw-source-hidden s)
           (not (calfw-source-hidden s)))
     (calfw--cp-update (calfw-cp-get-component))))

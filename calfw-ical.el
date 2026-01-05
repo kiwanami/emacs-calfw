@@ -36,7 +36,7 @@
 ;; (require 'calfw-ical)
 ;; To open a calendar buffer, execute the following function.
 ;; (calfw-ical-open-calendar
-;;  "http://www.google.com/calendar/ical/.../basic.ics" "#2952a3")
+;;  "http://www.google.com/calendar/ical/.../basic.ics" "Google" "#2952a3")
 
 ;; Executing the following command, this program clears caches to refresh the ICS data.
 ;; (calfw-ical-data-cache-clear-all)
@@ -125,8 +125,7 @@ and modified.  Recursive events have not been supported yet."
 
 (defun calfw-ical-sanitize-string (string)
   "Sanitize STRING by replacing escaped commas and newlines."
-  (when (and string
-             (> (length string) 0))
+  (when (and string (> (length string) 0))
     (replace-regexp-in-string "\\\\n" "\n"
                               (replace-regexp-in-string "\\\\," "," string))))
 
@@ -341,6 +340,7 @@ ARGS are passed to `calfw-open-calendar-buffer’."
          args))
 
 ;; (progn (eval-current-buffer) (calfw-ical-open-calendar "./ics/test.ics"
+;;                                                         "name"
 ;;                                                         "#2952a3"))
 
 (provide 'calfw-ical)
