@@ -258,6 +258,11 @@ Removes line continuations (newline followed by space) and
 VALUE=DATE from DTSTART and DTEND properties in the current
 buffer. The buffer is marked as unmodified."
   (save-excursion
+    ;; CRLF -> LF
+    (goto-char (point-min))
+    (while (search-forward "\r\n" nil t)
+      (replace-match "\n"))
+    ;; Remove the space at the beginning of the line for RFC 5545
     (goto-char (point-min))
     (while (re-search-forward "\n " nil t)
       (replace-match "")))
