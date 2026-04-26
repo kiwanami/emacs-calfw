@@ -252,11 +252,11 @@ BODY is executed."
 (put 'calfw-ical-with-buffer 'lisp-indent-function 1)
 
 (defun calfw-ical-normalize-buffer ()
-  "Normalize the current buffer by removing line continuations and VALUE=DATE.
+  "Normalize the current buffer for processing by `calfw-ical'.
 
-Removes line continuations (newline followed by space) and
-VALUE=DATE from DTSTART and DTEND properties in the current
-buffer. The buffer is marked as unmodified."
+Removes line continuations (newline followed by space), changes CRLF to
+LF and removes VALUE=DATE from DTSTART and DTEND properties in the
+current buffer. The buffer is marked as unmodified."
   (save-excursion
     ;; CRLF -> LF
     (goto-char (point-min))
