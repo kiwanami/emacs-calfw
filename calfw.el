@@ -146,6 +146,11 @@ For example `calfw-read-date-command-simple' or `calfw-org-read-date-command'."
   :group 'calfw
   :type 'function)
 
+(defcustom calfw-auto-refresh-on-window-resize t
+  "Whether to refresh a calendar buffer when its window is resized."
+  :group 'calfw
+  :type 'boolean)
+
 (defcustom calfw-event-format-overview "%t"
   "Format string of `calfw-event's for overviews (month-, 2-week-, week-view).
 See `calfw-event-format' for possible values."
@@ -2763,6 +2768,14 @@ return `calfw-calendar-mode-map'."
 (defvar calfw-calendar-mode-hook nil
   "This hook is called at end of setting up major mode `calfw-calendar-mode'.")
 
+(defun calfw--refresh-on-window-resize (window)
+  "Refresh the calfw calendar buffer shown in WINDOW once WINDOW is selected.
+Added buffer-locally to `window-size-change-functions' by
+`calfw-calendar-mode'; see `calfw-auto-refresh-on-window-resize'."
+  (when (and calfw-auto-refresh-on-window-resize
+             (eq window (selected-window)))
+    (calfw-refresh-calendar-buffer)))
+
 (defun calfw-calendar-mode (&optional custom-map)
   "Set up `calfw-calendar-mode' as the major mode, using CUSTOM-MAP."
 
@@ -2774,6 +2787,8 @@ return `calfw-calendar-mode-map'."
         mode-name "Calendar Mode")
   (setq buffer-undo-list t
         buffer-read-only t)
+  (add-hook 'window-size-change-functions
+            #'calfw--refresh-on-window-resize nil t)
   (run-hooks 'calfw-calendar-mode-hook))
 
 ;;; Actions
