@@ -2020,7 +2020,7 @@ Returns a list of lines."
     (cl-labels ((justify (line)
                   (let* ((n (length line))
                          (text-width (apply #'+ (mapcar #'string-width line)))
-                         (spaces (- width text-width))
+                         (spaces (max 0 (- width text-width)))
                          (gaps (max 1 (1- n)))
                          (base (/ spaces gaps))
                          (extra (% spaces gaps))
