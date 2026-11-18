@@ -191,6 +191,10 @@ v m | `calfw-change-view-month'
       (setq item (calfw-org--tp org-item 'org-category)))
     item))
 
+(defun calfw-org--format-hm (hour minute)
+  "Format HOUR and MINUTE as a 12-hour \"%I:%M %p\" string."
+  (format-time-string "%I:%M%P" (encode-time (list 0 minute hour 1 1 2000))))
+
 (defun calfw-org-summary-format (item)
   "Format an ITEM for display.
 
@@ -198,7 +202,7 @@ ITEM is an org entry.  Return a string with text properties."
   (let* (;; (time (calfw-org--tp item 'time))
          (time-of-day (calfw-org--tp item 'time-of-day))
          (time-str (and time-of-day
-                        (format "%02i:%02i " (/ time-of-day 100) (% time-of-day 100))))
+                        (concat (calfw-org--format-hm (/ time-of-day 100) (% time-of-day 100)) " ")))
          ;; (category (calfw-org--tp item 'org-category))
          ;; (tags (calfw-org--tp item 'tags))
          ;; (marker (calfw-org--tp item 'org-marker))
@@ -206,6 +210,7 @@ ITEM is an org entry.  Return a string with text properties."
          (text (calfw-org--extract-summary item))
          (props (calfw--extract-text-props item 'face 'keymap))
          (extra (calfw-org--tp item 'extra)))
+    (message "time-of-day=%s, extra=%s" time-of-day extra)
     (setq text (substring-no-properties text))
     (when (and extra (string-match (concat "^" org-deadline-string ".*") extra))
       (add-text-properties 0 (length text) (list 'face
@@ -258,13 +263,17 @@ those string in multi-lines.")
 If TEXT does not have a range, return nil.
 If AT-BEGIN is non-nil, then it should be the date of the first
 day in the calendar."
+
+  ; TODO: Behavior is not consistent with calfw-org-convert-org-to-calfw
   (let* ((dotime (calfw-org--tp text 'dotime))
          date-string)
+    (message "calfw-org-get-timerange: \n\tdotime=%S \n\tat-begin=%S" dotime at-begin)
     (and (or (and (stringp dotime)
                   (string-match org-ts-regexp dotime)
                   (setq date-string (match-string 1 dotime)))
              at-begin)
 	 (let ((extra (calfw-org--tp text 'extra)))
+	   (message "calfw-org-get-timerange: date-string=%S extra=%S" date-string extra)
 	   (when (and extra (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra))
 	     (let* ((cur-day (string-to-number
 			      (match-string 1 extra)))
@@ -285,32 +294,75 @@ day in the calendar."
                       (time-to-days end-date))
                      text)))))))
 
+(defun calfw-org--schedule-item-to-event (item)
+  "Convert the org agenda entry ITEM to a calfw event.
+
+The `org-marker' of ITEM points at its timestamp in the source buffer,
+except for block entries, where it points past the timestamp.  In that
+case the first timestamp in the headline before the marker is used.
+The timestamp and headline are then parsed as in
+`calfw-org-convert-org-to-calfw'.  Return nil if ITEM has no marker."
+  (message "item=%S" (calfw-org--tp item 'org-marker))
+  (when-let* ((marker (calfw-org--tp item 'org-marker)))
+    (with-current-buffer (marker-buffer marker)
+      (let* ((hd-beg (save-excursion
+                       (goto-char marker)
+                       (org-back-to-heading t)
+                       (point)))
+             (ts-beg (save-excursion
+                       (goto-char marker)
+                       (cond ((looking-at-p "<") (point))
+                             ((progn
+                                (goto-char hd-beg)
+                                (re-search-forward org-ts-regexp marker t))
+                              (match-beginning 0))))))
+        (when ts-beg
+          (save-excursion
+            (goto-char ts-beg)
+            (let* ((t-obj (org-element-timestamp-parser))
+                   (h-obj (progn
+                            (org-back-to-heading t)
+                            (org-element-headline-parser (point-max) t)))
+                   (h-beg (point)))
+              (calfw-org-convert-event (buffer-file-name) h-obj t-obj h-beg))))))))
+
 (defun calfw-org--schedule-period-to-calendar (org-files begin end)
-  "Return calfw calendar items between BEGIN and END from ORG-FILES."
+  "Return calfw calendar events between BEGIN and END from ORG-FILES."
   (cl-loop
    ;;with calfw-org-todo-keywords-regexp = (regexp-opt org-todo-keywords-for-agenda) ; dynamic bind
    with contents = nil with periods = nil
-   for i in (calfw-org--collect-schedules-period org-files begin end)
-   for date = (calfw-org--tp i 'date)
-   for line = (funcall calfw-org-schedule-summary-transformer i)
+   for item in (calfw-org--collect-schedules-period org-files begin end)
+   for date = (calfw-org--tp item 'date)
+   for line = (funcall calfw-org-schedule-summary-transformer item)
+    do (message "calfw-org.el:calfw-org--schedule-period-to-calendar date=%s begin=%s end=%s" date begin end)
    for range = (calfw-org-get-timerange line (and (equal date begin) date))
+   for event = (calfw-org--schedule-item-to-event item)
+;   do (when event (message "item=%S" item))
+;   do (when event (message "range=%S line=%S event=%s" range line (calfw-event-to-string event)))
    if range
    do
    (unless (member range periods)
      (push range periods))
    else do
    ;; dotime is not present if this event was already added as a timerange
-   (when (calfw-org--tp i 'dotime)
+   (when (calfw-org--tp item 'dotime)
      (setq contents (calfw--contents-add
 		     (calfw-org-normalize-date date)
 		     line contents)))
    finally return (nconc contents (list (cons 'periods periods)))))
 
+(defun calfw-org--event-time-of-day (text)
+  "Return the start time of the calfw event attached to TEXT as HHMM.
+Return nil if TEXT has no event or the event has no start time."
+  (when-let* ((event (get-text-property 0 'cfw:event text))
+              (time (calfw-event-start-time event)))
+    (+ (* 100 (car time)) (cadr time))))
+
 (defun calfw-org--schedule-sorter (text1 text2)
   "Compare org schedule items TEXT1 and TEXT2."
   (condition-case _
-      (let ((time1 (calfw-org--tp text1 'time-of-day))
-            (time2 (calfw-org--tp text2 'time-of-day)))
+      (let ((time1 (calfw-org--event-time-of-day text1))
+            (time2 (calfw-org--event-time-of-day text2)))
         (cond
          ((and time1 time2) (< time1 time2))
          (time1 t)   ; time object is moved to upper
@@ -321,8 +373,8 @@ day in the calendar."
 (defun calfw-org--schedule-sorter2 (text1 text2)
   "Compare org schedule items TEXT1 and TEXT2."
   (condition-case _
-      (let ((time1 (calfw-org--tp text1 'time-of-day))
-            (time2 (calfw-org--tp text2 'time-of-day)))
+      (let ((time1 (calfw-org--event-time-of-day text1))
+            (time2 (calfw-org--event-time-of-day text2)))
         (cond
          ((and time1 time2) (< time1 time2))
          (time1 nil) ; time object is moved to upper
@@ -340,11 +392,13 @@ and `cfw:org-loc' properties."
   (propertize
    (concat
     (when  (org-element-property :hour-start t-obj)
-      (format "%02i:%02i "
-              (org-element-property :hour-start t-obj)
-              (org-element-property :minute-start t-obj)))
+      (concat (calfw-org--format-hm
+               (org-element-property :hour-start t-obj)
+               (org-element-property :minute-start t-obj))
+              " "))
     (org-element-property :title h-obj))
    'keymap calfw-org-text-keymap
+   'mouse-face 'highlight
    'cfw:org-file file
    'cfw:org-h-beg h-beg
    'cfw:org-loc loc))
@@ -358,6 +412,7 @@ Return a list of formatted properties."
 
 (defun calfw-org-filter-datetime (t-obj lst)
   "Return the datetime object (T-OBJ) formatted according to LST if it is not nil."
+  (message "calfw-org-filter-datetime: t-obj=%s lst=%s" t-obj lst)
   (if (car (calfw-org-format-date t-obj lst))
       (calfw-org-format-date t-obj lst)
     nil))
@@ -394,20 +449,28 @@ Returns an alist of `:periods' and `:contents'."
     (with-current-buffer
         (find-file-noselect file)
       (let*
-          ((elem-obj (org-element-parse-buffer))
-           (pos-lst `(,@(org-element-map elem-obj 'timestamp
+          ((elem-obj (org-element-parse-buffer))                              ; parse out an org element tree
+           (pos-lst `(,@(org-element-map elem-obj 'timestamp                  ; parses <timestamp>
                           (lambda (hl) (org-element-property :begin hl)))
-                      ,@(org-element-map (org-element-map elem-obj 'headline
+                      ,@(org-element-map (org-element-map elem-obj 'headline  ; parses :deadline from headline elements
                                            (lambda (hl)
                                              (org-element-property
                                               :deadline hl)))
                             'timestamp
                           (lambda (hl) (org-element-property :begin hl)))
-                      ,@(org-element-map (org-element-map elem-obj 'headline
+                      ,@(org-element-map (org-element-map elem-obj 'headline  ; parses :scheduled from headline elements
                                            (lambda (hl)
                                              (org-element-property :scheduled hl)))
                             'timestamp
-                          (lambda (hl) (org-element-property :begin hl))))))
+                          (lambda (hl) (org-element-property :begin hl))))))  ; ,@ flattens pos-lst into list of ints
+        (dolist (pos pos-lst)
+          (goto-char pos)
+          (message "calfw-org.el:460 POS=%d TEXT=%s"
+                   pos
+                   (buffer-substring-no-properties
+                    pos
+                    (min (point-max) (+ pos 45))))
+          )
         (cl-loop for pos in pos-lst
                  do (goto-char pos)
                  for t-obj =  (org-element-timestamp-parser)
@@ -417,12 +480,16 @@ Returns an alist of `:periods' and `:contents'."
                  for h-beg  = (point)
                  for event = (calfw-org-convert-event file h-obj t-obj h-beg)
                  for ts-type = (org-element-property :type t-obj)
+                 do (message "calfw-org.el:483 t-obj=%S h-obj=%S h-beg=%S event=%S ts-type=%S" t-obj h-obj h-beg event ts-type)
+                 ; Calendar events with start/end times are considered active-range
+                 ; TODO: Behavior is not consistent with calfw-org-get-timerange
+                 do (message "ts-type=%s event=%s" ts-type (calfw-event-to-string event))
                  if (eq 'active-range ts-type)
                  collect event into periods
                  else if (eq 'active ts-type)
                  collect event into contents
-                 ;; else do
-                 ;; (message "calfw-org: Cannot handle event")
+                 else do
+                 (message "Cannot handle event type %s" ts-type)
                  finally
                  (kill-buffer (get-file-buffer file))
                  (cl-return `((periods ,periods) ,@contents)))))))
@@ -430,6 +497,7 @@ Returns an alist of `:periods' and `:contents'."
 (defun calfw-org-to-calendar (file begin end)
   "Convert org entries in FILE between BEGIN and END to calfw events."
   (cl-loop for event in (calfw-org-convert-org-to-calfw file)
+           do (message "event=%S" event)
            if (and (listp event)
                    (equal 'periods (car event)))
            collect
@@ -438,6 +506,7 @@ Returns an alist of `:periods' and `:contents'."
             (cl-loop for evt in (cadr event)
                      if (and
                          (calfw-date-less-equal-p begin (calfw-event-end-date evt))
+                         ;(calfw-date-less-equal-p begin (or (calfw-event-end-date evt) (calfw-event-start-date evt)))
                          (calfw-date-less-equal-p (calfw-event-start-date evt) end))
                      collect evt))
            else if (calfw-date-between begin end (calfw-event-start-date event))

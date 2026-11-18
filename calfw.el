@@ -667,6 +667,62 @@ CLR2 is composited with 1-ALPHA transpancy."
   data        ; reference to event data
   )
 
+(defun calfw--event-date-string (date)
+  "Return DATE, a (MONTH DAY YEAR) list, as YYYY-MM-DD."
+  (format "%04d-%02d-%02d" (caddr date) (car date) (cadr date)))
+
+(defun calfw--event-time-string (time)
+  "Return TIME, a (HOUR MINUTE) list, as HH:MM."
+  (format "%02d:%02d" (car time) (cadr time)))
+
+(defun calfw-event-to-string (event)
+  "Return a multi-line description of the calfw-event EVENT.
+Each field is printed on its own line, with the labels aligned.
+The title is on the first line; the other fields are indented:
+Title:         \"TITLE\"
+\tStart date:  YYYY-MM-DD
+\tStart time:  HH:MM
+\tEnd date:    YYYY-MM-DD
+\tEnd time:    HH:MM
+\tDescription: \"DESCRIPTION\"
+\tLocation:    \"LOCATION\"
+\tSource:      SOURCE-NAME
+\tStatus:      STATUS
+\tData:        DATA
+A field that the event does not have is printed as \"-\"."
+  (let ((start-date (calfw-event-start-date event))
+        (start-time (calfw-event-start-time event))
+        (end-date (calfw-event-end-date event))
+        (end-time (calfw-event-end-time event))
+        (source (calfw-event-source event)))
+    (mapconcat #'identity
+               (list (format "\n\tTitle:       %S" (let ((title (calfw-event-title event))) (if title (substring-no-properties title) "-")))
+                     (format "\tStart date:  %s"
+                             (if start-date (calfw--event-date-string start-date) "-"))
+                     (format "\tStart time:  %s"
+                             (if start-time (calfw--event-time-string start-time) "-"))
+                     (format "\tEnd date:    %s"
+                             (if end-date (calfw--event-date-string end-date) "-"))
+                     (format "\tEnd time:    %s"
+                             (if end-time (calfw--event-time-string end-time) "-"))
+                     (format "\tDescription: %s"
+                             (if (calfw-event-description event)
+                                 (format "%S" (substring-no-properties (string-trim (calfw-event-description event)))) "-"))
+                     (format "\tLocation:    %s"
+                             (if (calfw-event-location event)
+                                 (format "%S" (calfw-event-location event)) "-"))
+                     (format "\tSource:      %s"
+                             (cond ((calfw-source-p source) (calfw-source-name source))
+                                   (source (format "%S" source))
+                                   (t "-")))
+                     (format "\tStatus:      %s"
+                             (if (calfw-event-status event)
+                                 (format "%S" (calfw-event-status event)) "-"))
+                     (format "\tData:        %s"
+                             (if (calfw-event-data event)
+                                 (format "%S" (calfw-event-data event)) "-")))
+               "\n")))
+
 (defun calfw-event-overview (event)
   "Extract the event overview string from EVENT."
   (calfw-event-format event calfw-event-format-overview))
@@ -1759,6 +1815,7 @@ CELL-WIDTH, and INWIDTH are also arguments."
   "Find the minimum empty row number of the days between BEGIN and END.
 
 PERIODS-EACH-DAYS contains the periods."
+  (message "calfw.el:calfw--render-periods-get-min end=%s" end)
   (cl-loop for row-num from 0 below 30 ; assuming the number of stacked periods is less than 30
            unless
            (cl-loop for d in (calfw-enumerate-days begin end)
@@ -2052,7 +2109,7 @@ TITLE-FUNC are passed to `calfw--render-calendar-cells-days'."
   (cl-loop for week in (calfw--k 'weeks model) do
            (calfw--render-calendar-cells-days model param title-func week
                                               'calfw--render-event-overview-content
-                                              t)))
+                                              t)))  ;; Set to nil to always underline
 
 (defun calfw--render-rows-prop (rows)
   "Put a marker as a text property for TAB navigation in ROWS.
@@ -2467,13 +2524,19 @@ TITLE-FUNC.  Optional DAYS, CONTENT-FUN, and DO-WEEKS are also used."
                                           'calfw-annotation-face)
             ;; calfw--sanitize-text is called on periods later in
             ;; calfw--render-periods-title.
+
+            ;; raw-periods contains calfw-event objs. e.g. file_source. raw-periods-all is of type contents
+            ;; it's ultimately stored in model as 'periods
             for raw-periods  = (calfw--contents-get date raw-periods-all)
+
+            ;; raw-contents contains org-agenda rendering. Data is stored as content-sources in model
             for raw-contents = (mapcar
                                 'calfw--sanitize-text
                                 (calfw--render-sort-contents
                                  (funcall content-fun
                                           (calfw-model-get-contents-by-date date model))
                                  sorter))
+
             for prs-contents = (calfw--render-rows-prop
                                 (append (if do-weeks
                                             (calfw--render-periods
@@ -2493,6 +2556,13 @@ TITLE-FUNC.  Optional DAYS, CONTENT-FUN, and DO-WEEKS are also used."
                         (if num-label (concat " " num-label))
                         (if hday (concat " " (calfw--rt (substring hday 0)
                                                         'calfw-holiday-face))))
+;            do (let ((parts (delq nil
+;                        (list (and raw-contents
+;                                   (format "raw-contents=%s" raw-contents))
+;                              (and raw-periods
+;                                   (format "raw-periods=%s" raw-periods))))))
+;            (when parts
+;              (message "%s" (mapconcat #'identity parts " "))))
             collect
             (cons date (cons (cons tday ant) prs-contents)))
    param))
@@ -2516,6 +2586,7 @@ Return a list of strings representing the periods."
                              (calfw-strtime end) " "
                              content)
                             width t)
+               do (message "title=%s" title) ;; This line is used by file-source
                collect
                (if content
                    (calfw--rt
