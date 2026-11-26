@@ -253,36 +253,50 @@ those string in multi-lines.")
     (calendar-gregorian-from-absolute date))
    (t date)))
 
+(defun calfw-org--add-days (time days)
+  "Return TIME moved by DAYS calendar days, positive or negative, keeping the local wall-clock time."
+  (let ((dt (decode-time time)))
+    ;; parses out the secs min hour day month year ignored dst zone. encode-time will handle month rollovers
+    (encode-time (list (nth 0 dt) (nth 1 dt) (nth 2 dt)
+                       (+ (nth 3 dt) days) (nth 4 dt) (nth 5 dt)
+                       nil -1 nil))))
+
 (defun calfw-org-get-timerange (text &optional at-begin)
   "Return a range object (begin end text).
 If TEXT does not have a range, return nil.
 If AT-BEGIN is non-nil, then it should be the date of the first
 day in the calendar."
+  ;; Parse out dotime into date-string. date-string will be %Y-%m-%d %a, e.g. "2026-11-02 Mon"
   (let* ((dotime (calfw-org--tp text 'dotime))
          date-string)
+    ;; If dotime/date-string and at-begin are nil, return nil.
     (and (or (and (stringp dotime)
                   (string-match org-ts-regexp dotime)
                   (setq date-string (match-string 1 dotime)))
              at-begin)
+   ;; If extra exists, text is part of multi-date event. Else return nil
 	 (let ((extra (calfw-org--tp text 'extra)))
-	   (when (and extra (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra))
+	   (when (and extra (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra)) ; extra has the form ([digits]+/[digits+]), e.g. "(2/3): "
 	     (let* ((cur-day (string-to-number
 			      (match-string 1 extra)))
 		    (total-days (string-to-number
 				 (match-string 2 extra)))
                     (date (if date-string
-                              (org-read-date nil t date-string)
-                            (calfw-calendar-to-emacs at-begin)))
-		    (start-date (time-subtract
-				 date
-                                 ;; Add an extra second to ensure robustness
-				 (seconds-to-time (1- (* 3600 24 (- cur-day 1))))))
-		    (end-date (time-add
-			       date
-			       (seconds-to-time (* 3600 24 (- total-days cur-day))))))
-	       (list (calendar-gregorian-from-absolute (time-to-days start-date))
-		     (calendar-gregorian-from-absolute
-                      (time-to-days end-date))
+                              ;; keep the time in date-string; a missing time defaults to 00:00:00
+                              (org-read-date nil t date-string nil (encode-time 0 0 0 1 1 1970))
+                            (calfw-calendar-to-emacs at-begin))) ;; returns encoded time
+                    (start-date (let* ((encoded-start-date (calfw-org--add-days date (- 1 cur-day)))
+                                       (decoded-start (decode-time encoded-start-date)))
+                                  ;; a start of 00:00:00 becomes 00:00:01
+                                  (if (and (zerop (nth 0 decoded-start))
+                                           (zerop (nth 1 decoded-start))
+                                           (zerop (nth 2 decoded-start)))
+                                      (time-add encoded-start-date 1)
+                                    encoded-start-date)))
+                    (end-date (calfw-org--add-days date (- total-days cur-day))))
+               ;; Returns a range object (begin end text)
+               (list (calendar-gregorian-from-absolute (time-to-days start-date))
+                     (calendar-gregorian-from-absolute (time-to-days end-date))
                      text)))))))
 
 (defun calfw-org--schedule-period-to-calendar (org-files begin end)
